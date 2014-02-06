@@ -66,6 +66,7 @@ func UploadFiles(image string, inifile ini.File) {
 	if err != nil {
 		fmt.Println(err)
 	}
+	defer cmd.Process.Kill()
 	go io.Copy(os.Stdout, stdout)
 	go io.Copy(os.Stderr, stderr)
 
