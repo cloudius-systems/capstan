@@ -38,3 +38,7 @@ To print a list of images in your repository, do:
 ```
 $ capstan images
 ```
+
+## License
+
+Capstan is distributed under the 3-clause BSD license.
