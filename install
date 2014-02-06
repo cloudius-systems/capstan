@@ -1,0 +1,5 @@
+#!/bin/sh
+
+version=$(scripts/version)
+
+go install -ldflags "-X main.VERSION '$version'"
