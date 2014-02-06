@@ -33,6 +33,12 @@ func BuildImage(image string) {
 	if !ok {
 		panic("'base' variable missing from 'config' section")
 	}
+	for _, value := range inifile["manifest"] {
+		if _, err := os.Stat(value); os.IsNotExist(err) {
+			fmt.Printf("%s: no such file or directory\n", value)
+			return
+		}
+	}
 	repo := repository.RepoPath()
 	cmd := exec.Command("cp", repo + "/" + base, repo + "/" + image)
 	_, err := cmd.Output()
