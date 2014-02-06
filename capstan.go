@@ -1,7 +1,7 @@
 package main
 
-import "github.com/penberg/capstan/repository"
-import "github.com/penberg/capstan/qemu"
+import "github.com/cloudius-systems/capstan/repository"
+import "github.com/cloudius-systems/capstan/qemu"
 import "github.com/codegangsta/cli"
 import "os"
 

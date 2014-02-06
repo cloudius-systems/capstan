@@ -2,9 +2,9 @@ package qemu
 
 import (
 	"fmt"
-	"github.com/penberg/capstan/cpio"
-	"github.com/penberg/capstan/nbd"
-	"github.com/penberg/capstan/repository"
+	"github.com/cloudius-systems/capstan/cpio"
+	"github.com/cloudius-systems/capstan/nbd"
+	"github.com/cloudius-systems/capstan/repository"
 	"github.com/vaughan0/go-ini"
 	"io"
 	"io/ioutil"
