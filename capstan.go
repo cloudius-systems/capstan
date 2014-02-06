@@ -33,7 +33,8 @@ func main() {
 			Name:      "run",
 			Usage:     "launch a VM",
 			Action: func(c *cli.Context) {
-				qemu.LaunchVM(c.Args().First())
+				cmd := qemu.LaunchVM(c.Args().First())
+				cmd.Wait()
 			},
 		},
 		{
