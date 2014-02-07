@@ -23,30 +23,30 @@ func main() {
 	app.Usage = "pack, ship, and run applications in light-weight VMs"
 	app.Commands = []cli.Command{
 		{
-			Name:      "push",
-			Usage:     "push an image to a repository",
+			Name:  "push",
+			Usage: "push an image to a repository",
 			Action: func(c *cli.Context) {
 				repository.PushImage(c.Args().First())
 			},
 		},
 		{
-			Name:      "run",
-			Usage:     "launch a VM",
+			Name:  "run",
+			Usage: "launch a VM",
 			Action: func(c *cli.Context) {
 				cmd := qemu.LaunchVM(c.Args().First())
 				cmd.Wait()
 			},
 		},
 		{
-			Name:      "build",
-			Usage:     "build an image",
+			Name:  "build",
+			Usage: "build an image",
 			Action: func(c *cli.Context) {
 				qemu.BuildImage(c.Args().First())
 			},
 		},
 		{
-			Name:      "images",
-			Usage:     "list images",
+			Name:  "images",
+			Usage: "list images",
 			Action: func(c *cli.Context) {
 				repository.ListImages()
 			},

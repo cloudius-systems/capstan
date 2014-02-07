@@ -40,7 +40,7 @@ func BuildImage(image string) {
 		}
 	}
 	repo := repository.RepoPath()
-	cmd := exec.Command("cp", repo + "/" + base, repo + "/" + image)
+	cmd := exec.Command("cp", repo+"/"+base, repo+"/"+image)
 	_, err := cmd.Output()
 	if err != nil {
 		println(err.Error())
@@ -67,7 +67,7 @@ func UploadFiles(image string, inifile ini.File) {
 		fi, err := os.Stat(value)
 		if err != nil {
 			fmt.Println(err)
-			return;
+			return
 		}
 		cpio.WritePadded(conn, cpio.ToWireFormat(key, fi.Size()))
 		b, err := ioutil.ReadFile(value)
@@ -140,7 +140,7 @@ func SetArgs(image string, args string) {
 
 func LaunchVM(image string, extra ...string) *exec.Cmd {
 	file := repository.ImagePath(image)
-	args := append([]string { "-vnc", ":1", "-gdb", "tcp::1234,server,nowait", "-m", "2G", "-smp", "4", "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0,scsi=off", "-drive", "file="+file+",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-redir", "tcp:8080::8080", "-redir", "tcp:2222::22", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-enable-kvm", "-cpu", "host,+x2apic", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio" }, extra...)
+	args := append([]string{"-vnc", ":1", "-gdb", "tcp::1234,server,nowait", "-m", "2G", "-smp", "4", "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0,scsi=off", "-drive", "file=" + file + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-redir", "tcp:8080::8080", "-redir", "tcp:2222::22", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-enable-kvm", "-cpu", "host,+x2apic", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}, extra...)
 	cmd := exec.Command("qemu-system-x86_64", args...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
