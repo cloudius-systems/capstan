@@ -1,5 +1,7 @@
 # Capstan
 
+[![Build Status](https://secure.travis-ci.org/cloudius-systems/capstan.png?branch=master)](http://travis-ci.org/cloudius-systems/capstan)
+
 Capstan is a tool for packing, shipping, and running applications in VMs - just
 like Docker but on top of a hypervisor!
 
