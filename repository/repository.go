@@ -25,6 +25,22 @@ func PushImage(image string) {
 	print(string(out))
 }
 
+func RemoveImage(image string) {
+	file := ImagePath(image)
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		fmt.Printf("%s: no such image\n", image)
+		return
+	}
+	fmt.Printf("Removing %s...\n", image)
+	cmd := exec.Command("rm", file)
+	out, err := cmd.Output()
+	if err != nil {
+		println(err.Error())
+		return
+	}
+	print(string(out))
+}
+
 func RepoPath() string {
 	home := os.Getenv("HOME")
 	return home + "/.capstan/repository/"

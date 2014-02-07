@@ -30,6 +30,13 @@ func main() {
 			},
 		},
 		{
+			Name:  "rmi",
+			Usage: "delete an image from an repository",
+			Action: func(c *cli.Context) {
+				repository.RemoveImage(c.Args().First())
+			},
+		},
+		{
 			Name:  "run",
 			Usage: "launch a VM",
 			Action: func(c *cli.Context) {
