@@ -9,12 +9,7 @@ To build an install Capstan you need Go installed on your machine.  You can
 then run:
 
 ```
-$ go get github.com/codegangsta/cli
-$ go get github.com/vaughan0/go-ini
-```
-
-```
-$ ./install
+$ go get -v && ./install
 ```
 
 to install Capstan to ``$GOPATH/bin`` of your machine.
