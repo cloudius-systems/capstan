@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 func PushImage(image string) {
@@ -42,12 +43,11 @@ func RemoveImage(image string) {
 }
 
 func RepoPath() string {
-	home := os.Getenv("HOME")
-	return home + "/.capstan/repository/"
+	return filepath.Join(os.Getenv("HOME"), "/.capstan/repository/")
 }
 
 func ImagePath(image string) string {
-	return RepoPath() + "/" + image
+	return filepath.Join(RepoPath(), image)
 }
 
 func ListImages() {

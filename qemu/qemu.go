@@ -18,6 +18,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 )
 
@@ -40,7 +41,7 @@ func BuildImage(image string) {
 		}
 	}
 	repo := repository.RepoPath()
-	cmd := exec.Command("cp", repo+"/"+base, repo+"/"+image)
+	cmd := exec.Command("cp", filepath.Join(repo, base), filepath.Join(repo, image))
 	_, err := cmd.Output()
 	if err != nil {
 		println(err.Error())
