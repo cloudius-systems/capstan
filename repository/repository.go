@@ -9,10 +9,23 @@ package repository
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
+
+func PullImage(image string) {
+	fmt.Printf("Pulling %s...\n", image)
+	gitUrl := fmt.Sprintf("https://github.com/%s", image)
+	cmd := exec.Command("git", "clone", gitUrl, filepath.Join(RepoPath(), image))
+	out, err := cmd.Output()
+	if err != nil {
+		println(err.Error())
+		return
+	}
+	print(string(out))
+}
 
 func PushImage(image string) {
 	fmt.Printf("Pushing %s...\n", image)
@@ -33,7 +46,7 @@ func RemoveImage(image string) {
 		return
 	}
 	fmt.Printf("Removing %s...\n", image)
-	cmd := exec.Command("rm", file)
+	cmd := exec.Command("rm", "-rf", filepath.Dir(file))
 	out, err := cmd.Output()
 	if err != nil {
 		println(err.Error())
@@ -47,16 +60,24 @@ func RepoPath() string {
 }
 
 func ImagePath(image string) string {
-	return filepath.Join(RepoPath(), image)
+	return filepath.Join(RepoPath(), image, filepath.Base(image))
 }
 
 func ListImages() {
 	repo := RepoPath()
-	cmd := exec.Command("ls", "-1", repo)
-	out, err := cmd.Output()
-	if err != nil {
-		println(err.Error())
-		return
+	namespaces, _ := ioutil.ReadDir(repo)
+	for _, n := range namespaces {
+		images, _ := ioutil.ReadDir(filepath.Join(repo, n.Name()))
+		nrImages := 0
+		for _, i := range images {
+			if i.IsDir() {
+				fmt.Println(n.Name() + "/" + i.Name())
+				nrImages++
+			}
+		}
+		// Image is directly at repository root with no namespace:
+		if nrImages == 0 && n.IsDir() {
+			fmt.Println(n.Name())
+		}
 	}
-	print(string(out))
 }

@@ -23,8 +23,6 @@ import (
 )
 
 func BuildImage(image string) {
-	fmt.Printf("Building %s...\n", image)
-
 	inifile, _ := ini.LoadFile("Capstanfile")
 	cmdline, ok := inifile.Get("config", "cmdline")
 	if !ok {
@@ -34,15 +32,23 @@ func BuildImage(image string) {
 	if !ok {
 		panic("'base' variable missing from 'config' section")
 	}
+	if _, err := os.Stat(repository.ImagePath(base)); os.IsNotExist(err) {
+		fmt.Printf("%s: no such base image\n", base)
+		return
+	}
 	for _, value := range inifile["manifest"] {
 		if _, err := os.Stat(value); os.IsNotExist(err) {
 			fmt.Printf("%s: no such file or directory\n", value)
 			return
 		}
 	}
-	repo := repository.RepoPath()
-	cmd := exec.Command("cp", filepath.Join(repo, base), filepath.Join(repo, image))
-	_, err := cmd.Output()
+	fmt.Printf("Building %s...\n", image)
+	err := os.MkdirAll(filepath.Dir(repository.ImagePath(image)), 0777)
+	if err != nil {
+		panic(err)
+	}
+	cmd := exec.Command("cp", repository.ImagePath(base), repository.ImagePath(image))
+	_, err = cmd.Output()
 	if err != nil {
 		println(err.Error())
 		return
