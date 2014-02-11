@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/nbd"
-	"github.com/cloudius-systems/capstan/repository"
+	"github.com/cloudius-systems/capstan"
 	"github.com/vaughan0/go-ini"
 	"io"
 	"io/ioutil"
@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-func BuildImage(image string) {
+func BuildImage(r *capstan.Repo, image string) {
 	inifile, _ := ini.LoadFile("Capstanfile")
 	cmdline, ok := inifile.Get("config", "cmdline")
 	if !ok {
@@ -32,7 +32,7 @@ func BuildImage(image string) {
 	if !ok {
 		panic("'base' variable missing from 'config' section")
 	}
-	if _, err := os.Stat(repository.ImagePath(base)); os.IsNotExist(err) {
+	if _, err := os.Stat(r.ImagePath(base)); os.IsNotExist(err) {
 		fmt.Printf("%s: no such base image\n", base)
 		return
 	}
@@ -43,23 +43,23 @@ func BuildImage(image string) {
 		}
 	}
 	fmt.Printf("Building %s...\n", image)
-	err := os.MkdirAll(filepath.Dir(repository.ImagePath(image)), 0777)
+	err := os.MkdirAll(filepath.Dir(r.ImagePath(image)), 0777)
 	if err != nil {
 		panic(err)
 	}
-	cmd := exec.Command("cp", repository.ImagePath(base), repository.ImagePath(image))
+	cmd := exec.Command("cp", r.ImagePath(base), r.ImagePath(image))
 	_, err = cmd.Output()
 	if err != nil {
 		println(err.Error())
 		return
 	}
-	SetArgs(image, "/tools/cpiod.so")
-	UploadFiles(image, inifile)
-	SetArgs(image, cmdline)
+	SetArgs(r, image, "/tools/cpiod.so")
+	UploadFiles(r, image, inifile)
+	SetArgs(r, image, cmdline)
 }
 
-func UploadFiles(image string, inifile ini.File) {
-	cmd := LaunchVM(image, "-redir", "tcp:10000::10000")
+func UploadFiles(r *capstan.Repo, image string, inifile ini.File) {
+	cmd := LaunchVM(r, image, "-redir", "tcp:10000::10000")
 	defer cmd.Process.Kill()
 
 	time.Sleep(1 * time.Second)
@@ -87,8 +87,8 @@ func UploadFiles(image string, inifile ini.File) {
 	cmd.Wait()
 }
 
-func SetArgs(image string, args string) {
-	file := repository.ImagePath(image)
+func SetArgs(r *capstan.Repo, image string, args string) {
+	file := r.ImagePath(image)
 	cmd := exec.Command("qemu-nbd", file)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -145,8 +145,8 @@ func SetArgs(image string, args string) {
 	cmd.Wait()
 }
 
-func LaunchVM(image string, extra ...string) *exec.Cmd {
-	file := repository.ImagePath(image)
+func LaunchVM(r *capstan.Repo, image string, extra ...string) *exec.Cmd {
+	file := r.ImagePath(image)
 	args := append([]string{"-vnc", ":1", "-gdb", "tcp::1234,server,nowait", "-m", "2G", "-smp", "4", "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0,scsi=off", "-drive", "file=" + file + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-redir", "tcp:8080::8080", "-redir", "tcp:2222::22", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-enable-kvm", "-cpu", "host,+x2apic", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}, extra...)
 	cmd := exec.Command("qemu-system-x86_64", args...)
 	stdout, err := cmd.StdoutPipe()

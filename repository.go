@@ -5,7 +5,7 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-package repository
+package capstan
 
 import (
 	"fmt"
@@ -15,10 +15,20 @@ import (
 	"path/filepath"
 )
 
-func PullImage(image string) {
+type Repo struct {
+	Path string
+}
+
+func NewRepo() *Repo {
+	return &Repo{
+		Path: filepath.Join(os.Getenv("HOME"), "/.capstan/repository/"),
+	}
+}
+
+func (r *Repo) PullImage(image string) {
 	fmt.Printf("Pulling %s...\n", image)
 	gitUrl := fmt.Sprintf("https://github.com/%s", image)
-	cmd := exec.Command("git", "clone", gitUrl, filepath.Join(RepoPath(), image))
+	cmd := exec.Command("git", "clone", gitUrl, filepath.Join(r.Path, image))
 	out, err := cmd.Output()
 	if err != nil {
 		println(err.Error())
@@ -27,10 +37,9 @@ func PullImage(image string) {
 	print(string(out))
 }
 
-func PushImage(image string) {
+func (r *Repo) PushImage(image string) {
 	fmt.Printf("Pushing %s...\n", image)
-	repo := RepoPath()
-	cmd := exec.Command("cp", image, repo)
+	cmd := exec.Command("cp", image, r.Path)
 	out, err := cmd.Output()
 	if err != nil {
 		println(err.Error())
@@ -39,8 +48,8 @@ func PushImage(image string) {
 	print(string(out))
 }
 
-func RemoveImage(image string) {
-	file := ImagePath(image)
+func (r *Repo) RemoveImage(image string) {
+	file := r.ImagePath(image)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		fmt.Printf("%s: no such image\n", image)
 		return
@@ -55,19 +64,14 @@ func RemoveImage(image string) {
 	print(string(out))
 }
 
-func RepoPath() string {
-	return filepath.Join(os.Getenv("HOME"), "/.capstan/repository/")
+func (r *Repo) ImagePath(image string) string {
+	return filepath.Join(r.Path, image, filepath.Base(image))
 }
 
-func ImagePath(image string) string {
-	return filepath.Join(RepoPath(), image, filepath.Base(image))
-}
-
-func ListImages() {
-	repo := RepoPath()
-	namespaces, _ := ioutil.ReadDir(repo)
+func (r *Repo) ListImages() {
+	namespaces, _ := ioutil.ReadDir(r.Path)
 	for _, n := range namespaces {
-		images, _ := ioutil.ReadDir(filepath.Join(repo, n.Name()))
+		images, _ := ioutil.ReadDir(filepath.Join(r.Path, n.Name()))
 		nrImages := 0
 		for _, i := range images {
 			if i.IsDir() {

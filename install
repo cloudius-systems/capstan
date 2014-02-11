@@ -2,4 +2,4 @@
 
 version=$(scripts/version)
 
-go install -ldflags "-X main.VERSION '$version'"
+go install -ldflags "-X main.VERSION '$version'" github.com/cloudius-systems/capstan/capstan

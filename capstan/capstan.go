@@ -7,7 +7,7 @@
 
 package main
 
-import "github.com/cloudius-systems/capstan/repository"
+import "github.com/cloudius-systems/capstan"
 import "github.com/cloudius-systems/capstan/qemu"
 import "github.com/codegangsta/cli"
 import "os"
@@ -17,6 +17,7 @@ var (
 )
 
 func main() {
+	repo := capstan.NewRepo()
 	app := cli.NewApp()
 	app.Name = "capstan"
 	app.Version = VERSION
@@ -26,28 +27,28 @@ func main() {
 			Name:  "push",
 			Usage: "push an image to a repository",
 			Action: func(c *cli.Context) {
-				repository.PushImage(c.Args().First())
+				repo.PushImage(c.Args().First())
 			},
 		},
 		{
 			Name:  "pull",
 			Usage: "pull an image to the repository",
 			Action: func(c *cli.Context) {
-				repository.PullImage(c.Args().First())
+				repo.PullImage(c.Args().First())
 			},
 		},
 		{
 			Name:  "rmi",
 			Usage: "delete an image from an repository",
 			Action: func(c *cli.Context) {
-				repository.RemoveImage(c.Args().First())
+				repo.RemoveImage(c.Args().First())
 			},
 		},
 		{
 			Name:  "run",
 			Usage: "launch a VM",
 			Action: func(c *cli.Context) {
-				cmd := qemu.LaunchVM(c.Args().First())
+				cmd := qemu.LaunchVM(repo, c.Args().First())
 				cmd.Wait()
 			},
 		},
@@ -55,14 +56,14 @@ func main() {
 			Name:  "build",
 			Usage: "build an image",
 			Action: func(c *cli.Context) {
-				qemu.BuildImage(c.Args().First())
+				qemu.BuildImage(repo, c.Args().First())
 			},
 		},
 		{
 			Name:  "images",
 			Usage: "list images",
 			Action: func(c *cli.Context) {
-				repository.ListImages()
+				repo.ListImages()
 			},
 		},
 	}
