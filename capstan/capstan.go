@@ -27,7 +27,14 @@ func main() {
 			Name:  "push",
 			Usage: "push an image to a repository",
 			Action: func(c *cli.Context) {
-				repo.PushImage(c.Args().First())
+				if len(c.Args()) != 2 {
+					println("usage: capstan push [image-name] [image-file]")
+					return
+				}
+				err := repo.PushImage(c.Args()[0], c.Args()[1])
+				if err != nil {
+					println(err.Error())
+				}
 			},
 		},
 		{

@@ -40,15 +40,22 @@ func (r *Repo) PullImage(image string) error {
 	return nil
 }
 
-func (r *Repo) PushImage(image string) {
-	fmt.Printf("Pushing %s...\n", image)
-	cmd := exec.Command("cp", image, r.Path)
-	out, err := cmd.Output()
-	if err != nil {
-		println(err.Error())
-		return
+func (r *Repo) PushImage(image string, file string) error {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return errors.New(fmt.Sprintf("%s: no such file", file))
 	}
-	print(string(out))
+	fmt.Printf("Pushing %s...\n", image)
+	cmd := exec.Command("mkdir", "-p", filepath.Dir(r.ImagePath(image)))
+	_, err := cmd.Output()
+	if err != nil {
+		return errors.New(fmt.Sprintf("%s: mkdir failed", filepath.Dir(r.ImagePath(image))))
+	}
+	cmd = exec.Command("cp", file, r.ImagePath(image))
+	_, err = cmd.Output()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *Repo) ImageExists(image string) bool {
