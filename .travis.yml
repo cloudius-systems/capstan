@@ -6,4 +6,6 @@ go:
   - tip
 
 install:
+  - go get github.com/codegangsta/cli
+  - go get github.com/vaughan0/go-ini
   - ./install
