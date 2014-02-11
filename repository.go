@@ -8,6 +8,7 @@
 package capstan
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -25,16 +26,18 @@ func NewRepo() *Repo {
 	}
 }
 
-func (r *Repo) PullImage(image string) {
+func (r *Repo) PullImage(image string) error {
+	if r.ImageExists(image) {
+		return errors.New(fmt.Sprintf("%s: image already exists", image))
+	}
 	fmt.Printf("Pulling %s...\n", image)
 	gitUrl := fmt.Sprintf("https://github.com/%s", image)
 	cmd := exec.Command("git", "clone", gitUrl, filepath.Join(r.Path, image))
-	out, err := cmd.Output()
+	_, err := cmd.Output()
 	if err != nil {
-		println(err.Error())
-		return
+		return errors.New(fmt.Sprintf("%s: no such remote image", image))
 	}
-	print(string(out))
+	return nil
 }
 
 func (r *Repo) PushImage(image string) {
@@ -48,12 +51,20 @@ func (r *Repo) PushImage(image string) {
 	print(string(out))
 }
 
-func (r *Repo) RemoveImage(image string) {
+func (r *Repo) ImageExists(image string) bool {
 	file := r.ImagePath(image)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func (r *Repo) RemoveImage(image string) {
+	if !r.ImageExists(image) {
 		fmt.Printf("%s: no such image\n", image)
 		return
 	}
+	file := r.ImagePath(image)
 	fmt.Printf("Removing %s...\n", image)
 	cmd := exec.Command("rm", "-rf", filepath.Dir(file))
 	out, err := cmd.Output()

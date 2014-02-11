@@ -34,7 +34,10 @@ func main() {
 			Name:  "pull",
 			Usage: "pull an image to the repository",
 			Action: func(c *cli.Context) {
-				repo.PullImage(c.Args().First())
+				err := repo.PullImage(c.Args().First())
+				if err != nil {
+					println(err.Error())
+				}
 			},
 		},
 		{
