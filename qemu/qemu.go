@@ -12,7 +12,6 @@ import (
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/nbd"
 	"github.com/cloudius-systems/capstan"
-	"github.com/vaughan0/go-ini"
 	"io"
 	"io/ioutil"
 	"net"
@@ -23,42 +22,33 @@ import (
 )
 
 func BuildImage(r *capstan.Repo, image string) {
-	inifile, _ := ini.LoadFile("Capstanfile")
-	cmdline, ok := inifile.Get("config", "cmdline")
-	if !ok {
-		panic("'cmdline' variable missing from 'config' section")
-	}
-	base, ok := inifile.Get("config", "base")
-	if !ok {
-		panic("'base' variable missing from 'config' section")
-	}
-	if _, err := os.Stat(r.ImagePath(base)); os.IsNotExist(err) {
-		fmt.Printf("%s: no such base image\n", base)
+	config, err := capstan.ReadConfig("Capstanfile")
+	if err != nil {
+		fmt.Printf("unable to parse Capstanfile\n")
 		return
 	}
-	for _, value := range inifile["manifest"] {
-		if _, err := os.Stat(value); os.IsNotExist(err) {
-			fmt.Printf("%s: no such file or directory\n", value)
-			return
-		}
+	err = config.Check(r)
+	if err != nil {
+		fmt.Printf(err.Error())
+		return
 	}
 	fmt.Printf("Building %s...\n", image)
-	err := os.MkdirAll(filepath.Dir(r.ImagePath(image)), 0777)
+	err = os.MkdirAll(filepath.Dir(r.ImagePath(image)), 0777)
 	if err != nil {
 		panic(err)
 	}
-	cmd := exec.Command("cp", r.ImagePath(base), r.ImagePath(image))
+	cmd := exec.Command("cp", r.ImagePath(config.Base), r.ImagePath(image))
 	_, err = cmd.Output()
 	if err != nil {
 		println(err.Error())
 		return
 	}
 	SetArgs(r, image, "/tools/cpiod.so")
-	UploadFiles(r, image, inifile)
-	SetArgs(r, image, cmdline)
+	UploadFiles(r, image, config)
+	SetArgs(r, image, config.Cmdline)
 }
 
-func UploadFiles(r *capstan.Repo, image string, inifile ini.File) {
+func UploadFiles(r *capstan.Repo, image string, config *capstan.Config) {
 	cmd := LaunchVM(r, image, "-redir", "tcp:10000::10000")
 	defer cmd.Process.Kill()
 
@@ -70,7 +60,7 @@ func UploadFiles(r *capstan.Repo, image string, inifile ini.File) {
 		return
 	}
 
-	for key, value := range inifile["manifest"] {
+	for key, value := range config.Files {
 		fi, err := os.Stat(value)
 		if err != nil {
 			fmt.Println(err)
