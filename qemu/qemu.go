@@ -21,31 +21,29 @@ import (
 	"time"
 )
 
-func BuildImage(r *capstan.Repo, image string) {
+func BuildImage(r *capstan.Repo, image string) error {
 	config, err := capstan.ReadConfig("Capstanfile")
 	if err != nil {
-		fmt.Printf("unable to parse Capstanfile\n")
-		return
+		return err
 	}
 	err = config.Check(r)
 	if err != nil {
-		fmt.Printf(err.Error())
-		return
+		return err
 	}
 	fmt.Printf("Building %s...\n", image)
 	err = os.MkdirAll(filepath.Dir(r.ImagePath(image)), 0777)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	cmd := exec.Command("cp", r.ImagePath(config.Base), r.ImagePath(image))
 	_, err = cmd.Output()
 	if err != nil {
-		println(err.Error())
-		return
+		return err
 	}
 	SetArgs(r, image, "/tools/cpiod.so")
 	UploadFiles(r, image, config)
 	SetArgs(r, image, config.Cmdline)
+	return nil
 }
 
 func UploadFiles(r *capstan.Repo, image string, config *capstan.Config) {

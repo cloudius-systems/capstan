@@ -66,7 +66,10 @@ func main() {
 			Name:  "build",
 			Usage: "build an image",
 			Action: func(c *cli.Context) {
-				qemu.BuildImage(repo, c.Args().First())
+				err := qemu.BuildImage(repo, c.Args().First())
+				if err != nil {
+					println(err.Error())
+				}
 			},
 		},
 		{
