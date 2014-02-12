@@ -22,6 +22,10 @@ $ go get -v && ./install
 
 This will install Capstan to ``$GOPATH/bin`` of your machine.
 
+## Documentation
+
+* [Capstanfile](Documentation/Capstanfile.md)
+
 ## Usage
 
 First, you need to push a VM image to your local Capstan repository:
