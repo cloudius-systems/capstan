@@ -47,7 +47,7 @@ func ReadConfig(filename string) (*Config, error) {
 
 func (config *Config) Check(r *Repo) error {
 	if _, err := os.Stat(r.ImagePath(config.Base)); os.IsNotExist(err) {
-		return errors.New(fmt.Sprintf("%s: no such base image", config.Base))
+		return r.PullImage(config.Base)
 	}
 	for _, value := range config.Files {
 		if _, err := os.Stat(value); os.IsNotExist(err) {
