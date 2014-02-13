@@ -41,6 +41,10 @@ func main() {
 			Name:  "pull",
 			Usage: "pull an image to the repository",
 			Action: func(c *cli.Context) {
+				if len(c.Args()) != 1 {
+					println("usage: capstan pull [image-name]")
+					return
+				}
 				err := repo.PullImage(c.Args().First())
 				if err != nil {
 					println(err.Error())
@@ -51,6 +55,10 @@ func main() {
 			Name:  "rmi",
 			Usage: "delete an image from an repository",
 			Action: func(c *cli.Context) {
+				if len(c.Args()) != 1 {
+					println("usage: capstan rmi [image-name]")
+					return
+				}
 				repo.RemoveImage(c.Args().First())
 			},
 		},
@@ -58,6 +66,10 @@ func main() {
 			Name:  "run",
 			Usage: "launch a VM",
 			Action: func(c *cli.Context) {
+				if len(c.Args()) != 1 {
+					println("usage: capstan run [image-name]")
+					return
+				}
 				cmd := qemu.LaunchVM(repo, c.Args().First())
 				cmd.Wait()
 			},
@@ -66,6 +78,10 @@ func main() {
 			Name:  "build",
 			Usage: "build an image",
 			Action: func(c *cli.Context) {
+				if len(c.Args()) != 1 {
+					println("usage: capstan build [image-name]")
+					return
+				}
 				err := qemu.BuildImage(repo, c.Args().First())
 				if err != nil {
 					println(err.Error())
