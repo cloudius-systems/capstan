@@ -47,11 +47,11 @@ func ReadConfig(filename string) (*Config, error) {
 
 func (config *Config) Check(r *Repo) error {
 	if _, err := os.Stat(r.ImagePath(config.Base)); os.IsNotExist(err) {
-		return errors.New(fmt.Sprintf("%s: no such base image\n", config.Base))
+		return errors.New(fmt.Sprintf("%s: no such base image", config.Base))
 	}
 	for _, value := range config.Files {
 		if _, err := os.Stat(value); os.IsNotExist(err) {
-			return errors.New(fmt.Sprintf("%s: no such file or directory\n", value))
+			return errors.New(fmt.Sprintf("%s: no such file or directory", value))
 		}
 	}
 	return nil
