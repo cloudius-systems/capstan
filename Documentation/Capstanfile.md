@@ -9,6 +9,8 @@ base: osv-base
 
 cmdline: /tools/hello.so
 
+build: make
+
 files:
   /tools/hello.so: hello.so
 ```
@@ -16,6 +18,8 @@ files:
 ``base`` specifies the base image that is amended with ``files``.
 
 ``cmdline`` is the startup command line passed to OSv.
+
+``build`` specifies an optional build command.
 
 ``files`` is a map of files that are amended to the base image.  The left side
 specifies the full path of the file as it will appear in the image and the

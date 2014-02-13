@@ -26,12 +26,19 @@ func BuildImage(r *capstan.Repo, image string) error {
 	if err != nil {
 		return err
 	}
-	err = config.Check(r)
+	fmt.Printf("Building %s...\n", image)
+	err = os.MkdirAll(filepath.Dir(r.ImagePath(image)), 0777)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Building %s...\n", image)
-	err = os.MkdirAll(filepath.Dir(r.ImagePath(image)), 0777)
+	if config.Build != "" {
+		cmd := exec.Command(config.Build)
+		_, err = cmd.Output()
+		if err != nil {
+			return err
+		}
+	}
+	err = config.Check(r)
 	if err != nil {
 		return err
 	}

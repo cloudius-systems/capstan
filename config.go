@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Base    string
 	Cmdline string
+	Build   string
 	Files   map[string]string
 }
 
@@ -27,6 +28,7 @@ func ReadConfig(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	build, _ := config.Get("build")
 	filesNode, err := yaml.Child(config.Root, "files")
 	if err != nil {
 		return nil, err
@@ -40,6 +42,7 @@ func ReadConfig(filename string) (*Config, error) {
 	result := &Config{
 		Base:    base,
 		Cmdline: cmdline,
+		Build:   build,
 		Files:   files,
 	}
 	return result, nil
