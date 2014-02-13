@@ -36,7 +36,7 @@ func (r *Repo) PullImage(image string) error {
 	}
 	fmt.Printf("Pulling %s...\n", image)
 	gitUrl := fmt.Sprintf("https://github.com/%s", image)
-	cmd := exec.Command("git", "clone", gitUrl, filepath.Join(r.Path, image))
+	cmd := exec.Command("git", "clone", "--depth", "1", gitUrl, filepath.Join(r.Path, image))
 	_, err := cmd.Output()
 	if err != nil {
 		return errors.New(fmt.Sprintf("%s: no such remote image", image))
