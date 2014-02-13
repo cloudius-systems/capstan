@@ -32,16 +32,39 @@ func NewRepo() *Repo {
 
 func (r *Repo) PullImage(image string) error {
 	if r.ImageExists(image) {
-		return errors.New(fmt.Sprintf("%s: image already exists", image))
+		return r.updateImage(image)
 	}
 	fmt.Printf("Pulling %s...\n", image)
 	gitUrl := fmt.Sprintf("https://github.com/%s", image)
-	cmd := exec.Command("git", "clone", "--depth", "1", gitUrl, filepath.Join(r.Path, image))
+	workTree := r.workTree(image)
+	cmd := exec.Command("git", "clone", "--depth", "1", gitUrl, workTree)
 	_, err := cmd.Output()
 	if err != nil {
-		return errors.New(fmt.Sprintf("%s: no such remote image", image))
+		return errors.New(fmt.Sprintf("%s: unable to pull remote image", image))
 	}
 	return nil
+}
+
+func (r *Repo) updateImage(image string) error {
+	fmt.Printf("Updating %s...\n", image)
+	workTree := r.workTree(image)
+	gitDir   := r.gitDir(image)
+	cmd := exec.Command("git", "--git-dir", gitDir, "--work-tree", workTree, "remote", "update")
+	_, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+	cmd = exec.Command("git", "--git-dir", gitDir, "--work-tree", workTree, "merge", "origin/master")
+	_, err = cmd.Output()
+	return err
+}
+
+func (r *Repo) gitDir(image string) string {
+	return filepath.Join(r.workTree(image), ".git")
+}
+
+func (r *Repo) workTree(image string) string {
+	return filepath.Join(r.Path, image)
 }
 
 func (r *Repo) PushImage(image string, file string) error {
