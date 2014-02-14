@@ -94,20 +94,15 @@ func (r *Repo) ImageExists(image string) bool {
 	return true
 }
 
-func (r *Repo) RemoveImage(image string) {
+func (r *Repo) RemoveImage(image string) error {
 	if !r.ImageExists(image) {
-		fmt.Printf("%s: no such image\n", image)
-		return
+		return errors.New(fmt.Sprintf("%s: no such image\n", image))
 	}
 	file := r.ImagePath(image)
 	fmt.Printf("Removing %s...\n", image)
 	cmd := exec.Command("rm", "-rf", filepath.Dir(file))
-	out, err := cmd.Output()
-	if err != nil {
-		println(err.Error())
-		return
-	}
-	print(string(out))
+	_, err := cmd.Output()
+	return err;
 }
 
 func (r *Repo) ImagePath(image string) string {

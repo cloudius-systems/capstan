@@ -59,7 +59,10 @@ func main() {
 					println("usage: capstan rmi [image-name]")
 					return
 				}
-				repo.RemoveImage(c.Args().First())
+				err := repo.RemoveImage(c.Args().First())
+				if err != nil {
+					println(err.Error())
+				}
 			},
 		},
 		{
