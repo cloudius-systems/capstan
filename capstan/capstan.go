@@ -79,6 +79,10 @@ func main() {
 					return
 				}
 				if !repo.ImageExists(image) {
+					if !capstan.ConfigExists("Capstanfile") {
+						fmt.Printf("%s: no such image\n", image)
+						return
+					}
 					err := qemu.BuildImage(repo, image)
 					if err != nil {
 						fmt.Println(err.Error())
