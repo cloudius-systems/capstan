@@ -89,7 +89,7 @@ func main() {
 						return
 					}
 				}
-				cmd := qemu.LaunchVM(repo, image)
+				cmd := qemu.LaunchVM(repo, true, image)
 				cmd.Wait()
 			},
 		},

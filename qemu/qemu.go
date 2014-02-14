@@ -56,7 +56,7 @@ func BuildImage(r *capstan.Repo, image string) error {
 }
 
 func UploadFiles(r *capstan.Repo, image string, config *capstan.Config) {
-	cmd := LaunchVM(r, image, "-redir", "tcp:10000::10000")
+	cmd := LaunchVM(r, false, image, "-redir", "tcp:10000::10000")
 	defer cmd.Process.Kill()
 
 	time.Sleep(1 * time.Second)
@@ -142,7 +142,7 @@ func SetArgs(r *capstan.Repo, image string, args string) {
 	cmd.Wait()
 }
 
-func LaunchVM(r *capstan.Repo, image string, extra ...string) *exec.Cmd {
+func LaunchVM(r *capstan.Repo, verbose bool, image string, extra ...string) *exec.Cmd {
 	file := r.ImagePath(image)
 	args := append([]string{"-vnc", ":1", "-gdb", "tcp::1234,server,nowait", "-m", "2G", "-smp", "4", "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0,scsi=off", "-drive", "file=" + file + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-redir", "tcp:8080::8080", "-redir", "tcp:2222::22", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-enable-kvm", "-cpu", "host,+x2apic", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}, extra...)
 	cmd := exec.Command("qemu-system-x86_64", args...)
@@ -158,7 +158,9 @@ func LaunchVM(r *capstan.Repo, image string, extra ...string) *exec.Cmd {
 	if err != nil {
 		fmt.Println(err)
 	}
-	go io.Copy(os.Stdout, stdout)
-	go io.Copy(os.Stderr, stderr)
+	if verbose {
+		go io.Copy(os.Stdout, stdout)
+		go io.Copy(os.Stderr, stderr)
+	}
 	return cmd
 }
