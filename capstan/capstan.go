@@ -7,6 +7,7 @@
 
 package main
 
+import "fmt"
 import "github.com/cloudius-systems/capstan"
 import "github.com/cloudius-systems/capstan/qemu"
 import "github.com/codegangsta/cli"
@@ -28,12 +29,12 @@ func main() {
 			Usage: "push an image to a repository",
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 2 {
-					println("usage: capstan push [image-name] [image-file]")
+					fmt.Println("usage: capstan push [image-name] [image-file]")
 					return
 				}
 				err := repo.PushImage(c.Args()[0], c.Args()[1])
 				if err != nil {
-					println(err.Error())
+					fmt.Println(err.Error())
 				}
 			},
 		},
@@ -42,12 +43,12 @@ func main() {
 			Usage: "pull an image to the repository",
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
-					println("usage: capstan pull [image-name]")
+					fmt.Println("usage: capstan pull [image-name]")
 					return
 				}
 				err := repo.PullImage(c.Args().First())
 				if err != nil {
-					println(err.Error())
+					fmt.Println(err.Error())
 				}
 			},
 		},
@@ -56,12 +57,12 @@ func main() {
 			Usage: "delete an image from an repository",
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
-					println("usage: capstan rmi [image-name]")
+					fmt.Println("usage: capstan rmi [image-name]")
 					return
 				}
 				err := repo.RemoveImage(c.Args().First())
 				if err != nil {
-					println(err.Error())
+					fmt.Println(err.Error())
 				}
 			},
 		},
@@ -74,13 +75,13 @@ func main() {
 					image = repo.DefaultImage()
 				}
 				if image == "" {
-					println("usage: capstan run [image-name]")
+					fmt.Println("usage: capstan run [image-name]")
 					return
 				}
 				if !repo.ImageExists(image) {
 					err := qemu.BuildImage(repo, image)
 					if err != nil {
-						println(err.Error())
+						fmt.Println(err.Error())
 						return
 					}
 				}
@@ -97,12 +98,12 @@ func main() {
 					image = repo.DefaultImage()
 				}
 				if image == "" {
-					println("usage: capstan build [image-name]")
+					fmt.Println("usage: capstan build [image-name]")
 					return
 				}
 				err := qemu.BuildImage(repo, image)
 				if err != nil {
-					println(err.Error())
+					fmt.Println(err.Error())
 				}
 			},
 		},
