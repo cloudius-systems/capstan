@@ -70,7 +70,15 @@ func main() {
 					println("usage: capstan run [image-name]")
 					return
 				}
-				cmd := qemu.LaunchVM(repo, c.Args().First())
+				image := c.Args().First()
+				if !repo.ImageExists(image) {
+					err := qemu.BuildImage(repo, image)
+					if err != nil {
+						println(err.Error())
+						return
+					}
+				}
+				cmd := qemu.LaunchVM(repo, image)
 				cmd.Wait()
 			},
 		},
