@@ -15,6 +15,11 @@ type Config struct {
 	Files   map[string]string
 }
 
+func ConfigExists(filename string) bool {
+	_, err := yaml.ReadFile(filename)
+	return err == nil
+}
+
 func ReadConfig(filename string) (*Config, error) {
 	config, err := yaml.ReadFile(filename)
 	if err != nil {

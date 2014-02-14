@@ -66,11 +66,14 @@ func main() {
 			Name:  "run",
 			Usage: "launch a VM",
 			Action: func(c *cli.Context) {
+				image := c.Args().First()
 				if len(c.Args()) != 1 {
+					image = repo.DefaultImage()
+				}
+				if image == "" {
 					println("usage: capstan run [image-name]")
 					return
 				}
-				image := c.Args().First()
 				if !repo.ImageExists(image) {
 					err := qemu.BuildImage(repo, image)
 					if err != nil {
@@ -86,11 +89,15 @@ func main() {
 			Name:  "build",
 			Usage: "build an image",
 			Action: func(c *cli.Context) {
+				image := c.Args().First()
 				if len(c.Args()) != 1 {
+					image = repo.DefaultImage()
+				}
+				if image == "" {
 					println("usage: capstan build [image-name]")
 					return
 				}
-				err := qemu.BuildImage(repo, c.Args().First())
+				err := qemu.BuildImage(repo, image)
 				if err != nil {
 					println(err.Error())
 				}

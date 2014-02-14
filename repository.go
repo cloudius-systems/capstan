@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 )
 
@@ -129,4 +130,16 @@ func (r *Repo) ListImages() {
 			fmt.Println(n.Name())
 		}
 	}
+}
+
+func (r *Repo) DefaultImage() string {
+	if !ConfigExists("Capstanfile") {
+		return ""
+	}
+	pwd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	image := path.Base(pwd)
+	return image
 }
