@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -32,7 +33,8 @@ func BuildImage(r *capstan.Repo, image string) error {
 		return err
 	}
 	if config.Build != "" {
-		cmd := exec.Command(config.Build)
+		args := strings.Fields(config.Build)
+		cmd := exec.Command(args[0], args[1:]...)
 		_, err = cmd.Output()
 		if err != nil {
 			return err
