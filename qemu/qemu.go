@@ -32,6 +32,9 @@ func BuildImage(r *capstan.Repo, image string) error {
 	if err != nil {
 		return err
 	}
+	if config.RpmBase != nil {
+		config.RpmBase.Download()
+	}
 	if config.Build != "" {
 		args := strings.Fields(config.Build)
 		cmd := exec.Command(args[0], args[1:]...)
@@ -50,9 +53,37 @@ func BuildImage(r *capstan.Repo, image string) error {
 		return err
 	}
 	SetArgs(r, image, "/tools/cpiod.so")
+	if config.RpmBase != nil {
+		UploadRPM(r, image, config)
+	}
 	UploadFiles(r, image, config)
 	SetArgs(r, image, config.Cmdline)
 	return nil
+}
+
+func UploadRPM(r *capstan.Repo, image string, config *capstan.Config) {
+	qemu := LaunchVM(r, false, image, "-redir", "tcp:10000::10000")
+	defer qemu.Process.Kill()
+
+	time.Sleep(1 * time.Second)
+
+	conn, err := net.Dial("tcp", "localhost:10000")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	cmd := exec.Command("rpm2cpio", config.RpmBase.Filename())
+	cmd.Stdout = conn
+	err = cmd.Start()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer cmd.Wait()
+
+	qemu.Wait()
+	conn.Close()
 }
 
 func UploadFiles(r *capstan.Repo, image string, config *capstan.Config) {

@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	Base    string
+	RpmBase *RpmPackage
 	Cmdline string
 	Build   string
 	Files   map[string]string
@@ -33,6 +34,28 @@ func ParseConfig(config *yaml.File) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	var rpm *RpmPackage = nil
+	rpmBaseNode, err := yaml.Child(config.Root, "rpm-base")
+	if err != nil {
+		return nil, err
+	}
+	if rpmBaseNode != nil {
+		rpmBaseMap := rpmBaseNode.(yaml.Map)
+		scalar := rpmBaseMap["name"].(yaml.Scalar)
+		name := strings.TrimSpace(scalar.String())
+		scalar = rpmBaseMap["version"].(yaml.Scalar)
+		version := strings.TrimSpace(scalar.String())
+		scalar = rpmBaseMap["release"].(yaml.Scalar)
+		release := strings.TrimSpace(scalar.String())
+		scalar = rpmBaseMap["arch"].(yaml.Scalar)
+		arch := strings.TrimSpace(scalar.String())
+		rpm = &RpmPackage{
+			Name:    name,
+			Version: version,
+			Release: release,
+			Arch:    arch,
+		}
+	}
 	cmdline, err := config.Get("cmdline")
 	if err != nil {
 		return nil, err
@@ -52,6 +75,7 @@ func ParseConfig(config *yaml.File) (*Config, error) {
 	}
 	result := &Config{
 		Base:    base,
+		RpmBase: rpm,
 		Cmdline: cmdline,
 		Build:   build,
 		Files:   files,
