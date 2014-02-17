@@ -39,10 +39,12 @@ func ReadConfig(filename string) (*Config, error) {
 		return nil, err
 	}
 	files := make(map[string]string)
-	filesMap := filesNode.(yaml.Map)
-	for key, value := range filesMap {
-		scalar := value.(yaml.Scalar)
-		files[key] = strings.TrimSpace(scalar.String())
+	if filesNode != nil {
+		filesMap := filesNode.(yaml.Map)
+		for key, value := range filesMap {
+			scalar := value.(yaml.Scalar)
+			files[key] = strings.TrimSpace(scalar.String())
+		}
 	}
 	result := &Config{
 		Base:    base,
