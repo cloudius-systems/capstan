@@ -5,26 +5,19 @@
 Capstan is a tool for packing, shipping, and running applications in VMs - just
 like Docker but on top of a hypervisor!
 
-## Prerequisite
-Install Golang http://golang.org/doc/install#install
-
 ## Installation
 
+You need a working Go environment installed. See [Go install
+instructions](http://golang.org/doc/install.html) for how to do that.
+
+To install Capstan, type:
+
 ```
-$ cd $GOPATH/src
+$ go get github.com/cloudius-systems/capstan/capstan
 ```
 
-Clone capstan under $GOPATH/src, and then:
-```
-$ cd capstan
-$ go get -v && ./install
-```
-
-This will install Capstan to ``$GOPATH/bin`` of your machine.
-
-## Documentation
-
-* [Capstanfile](Documentation/Capstanfile.md)
+This installs a ``capstan`` executable to your Go workspace so make sure your
+``PATH`` environment variable includes ``$GOPATH/bin``.
 
 ## Usage
 
@@ -45,6 +38,10 @@ To print a list of images in your repository, do:
 ```
 $ capstan images
 ```
+
+## Documentation
+
+* [Capstanfile](Documentation/Capstanfile.md)
 
 ## License
 
