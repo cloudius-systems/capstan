@@ -25,6 +25,10 @@ func ReadConfig(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	return ParseConfig(config)
+}
+
+func ParseConfig(config *yaml.File) (*Config, error) {
 	base, err := config.Get("base")
 	if err != nil {
 		return nil, err
