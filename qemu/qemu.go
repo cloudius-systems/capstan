@@ -104,12 +104,12 @@ func UploadFiles(r *capstan.Repo, image string, config *capstan.Config) {
 			fmt.Println(err)
 			return
 		}
-		cpio.WritePadded(conn, cpio.ToWireFormat(key, fi.Size()))
+		cpio.WritePadded(conn, cpio.ToWireFormat(key, cpio.C_ISREG, fi.Size()))
 		b, err := ioutil.ReadFile(value)
 		cpio.WritePadded(conn, b)
 	}
 
-	cpio.WritePadded(conn, cpio.ToWireFormat("TRAILER!!!", 0))
+	cpio.WritePadded(conn, cpio.ToWireFormat("TRAILER!!!", 0, 0))
 
 	conn.Close()
 	cmd.Wait()

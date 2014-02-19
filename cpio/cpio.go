@@ -12,6 +12,10 @@ import (
 	"net"
 )
 
+const (
+	C_ISREG = 0100000
+)
+
 func WritePadded(c net.Conn, data []byte) {
 	c.Write(data)
 	partial := len(data) % 4
@@ -21,11 +25,11 @@ func WritePadded(c net.Conn, data []byte) {
 	}
 }
 
-func ToWireFormat(filename string, filesize int64) []byte {
+func ToWireFormat(filename string, mode uint64, filesize int64) []byte {
 	hdr := fmt.Sprintf("%s%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%s\u0000",
 		"070701",        // magic
 		0,               // inode
-		0,               // mode
+		mode,            // mode
 		0,               // uid
 		0,               // gid
 		0,               // nlink
