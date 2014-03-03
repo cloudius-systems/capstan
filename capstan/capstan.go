@@ -69,6 +69,9 @@ func main() {
 		{
 			Name:  "run",
 			Usage: "launch a VM",
+			Flags: []cli.Flag{
+				cli.BoolFlag{"v", "verbose mode"},
+			},
 			Action: func(c *cli.Context) {
 				image := c.Args().First()
 				if len(c.Args()) != 1 {
@@ -83,7 +86,7 @@ func main() {
 						fmt.Printf("%s: no such image\n", image)
 						return
 					}
-					err := qemu.BuildImage(repo, image)
+					err := qemu.BuildImage(repo, image, c.Bool("v"))
 					if err != nil {
 						fmt.Println(err.Error())
 						return
@@ -96,6 +99,9 @@ func main() {
 		{
 			Name:  "build",
 			Usage: "build an image",
+			Flags: []cli.Flag{
+				cli.BoolFlag{"v", "verbose mode"},
+			},
 			Action: func(c *cli.Context) {
 				image := c.Args().First()
 				if len(c.Args()) != 1 {
@@ -105,7 +111,7 @@ func main() {
 					fmt.Println("usage: capstan build [image-name]")
 					return
 				}
-				err := qemu.BuildImage(repo, image)
+				err := qemu.BuildImage(repo, image, c.Bool("v"))
 				if err != nil {
 					fmt.Println(err.Error())
 				}

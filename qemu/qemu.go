@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-func BuildImage(r *capstan.Repo, image string) error {
+func BuildImage(r *capstan.Repo, image string, verbose bool) error {
 	config, err := capstan.ReadConfig("Capstanfile")
 	if err != nil {
 		return err
@@ -54,15 +54,15 @@ func BuildImage(r *capstan.Repo, image string) error {
 	}
 	SetArgs(r, image, "/tools/cpiod.so")
 	if config.RpmBase != nil {
-		UploadRPM(r, image, config)
+		UploadRPM(r, image, config, verbose)
 	}
-	UploadFiles(r, image, config)
+	UploadFiles(r, image, config, verbose)
 	SetArgs(r, image, config.Cmdline)
 	return nil
 }
 
-func UploadRPM(r *capstan.Repo, image string, config *capstan.Config) {
-	qemu := LaunchVM(r, false, image, "-redir", "tcp:10000::10000")
+func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bool) {
+	qemu := LaunchVM(r, verbose, image, "-redir", "tcp:10000::10000")
 	defer qemu.Process.Kill()
 
 	time.Sleep(1 * time.Second)
@@ -86,8 +86,8 @@ func UploadRPM(r *capstan.Repo, image string, config *capstan.Config) {
 	conn.Close()
 }
 
-func UploadFiles(r *capstan.Repo, image string, config *capstan.Config) {
-	cmd := LaunchVM(r, false, image, "-redir", "tcp:10000::10000")
+func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose bool) {
+	cmd := LaunchVM(r, verbose, image, "-redir", "tcp:10000::10000")
 	defer cmd.Process.Kill()
 
 	time.Sleep(1 * time.Second)
