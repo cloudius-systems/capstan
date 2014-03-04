@@ -52,12 +52,18 @@ func BuildImage(r *capstan.Repo, image string, verbose bool) error {
 	if err != nil {
 		return err
 	}
-	SetArgs(r, image, "/tools/cpiod.so")
+	err = SetArgs(r, image, "/tools/cpiod.so")
+	if err != nil {
+		return err
+	}
 	if config.RpmBase != nil {
 		UploadRPM(r, image, config, verbose)
 	}
 	UploadFiles(r, image, config, verbose)
-	SetArgs(r, image, config.Cmdline)
+	err = SetArgs(r, image, config.Cmdline)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -115,29 +121,27 @@ func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose 
 	cmd.Wait()
 }
 
-func SetArgs(r *capstan.Repo, image string, args string) {
+func SetArgs(r *capstan.Repo, image string, args string) error {
 	file := r.ImagePath(image)
 	cmd := exec.Command("qemu-nbd", file)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 	err = cmd.Start()
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	go io.Copy(os.Stdout, stdout)
 	go io.Copy(os.Stderr, stderr)
 	time.Sleep(1 * time.Second)
 	conn, err := net.Dial("tcp", "localhost:10809")
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	nbd.NbdHandshake(conn)
 
@@ -171,6 +175,8 @@ func SetArgs(r *capstan.Repo, image string, args string) {
 
 	conn.Close()
 	cmd.Wait()
+
+	return nil
 }
 
 func LaunchVM(r *capstan.Repo, verbose bool, image string, extra ...string) *exec.Cmd {
