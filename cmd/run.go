@@ -11,8 +11,11 @@ import (
 	"fmt"
 	"github.com/cloudius-systems/capstan"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
+	"github.com/cloudius-systems/capstan/hypervisor/vbox"
 	"github.com/cloudius-systems/capstan/image"
 	"os"
+	"os/exec"
+	"path/filepath"
 )
 
 type RunConfig struct {
@@ -22,9 +25,6 @@ type RunConfig struct {
 }
 
 func Run(repo *capstan.Repo, config *RunConfig) error {
-	if config.Hypervisor != "kvm" {
-		return fmt.Errorf("%s: is not a supported hypervisor", config.Hypervisor)
-	}
 	var path string
 	file, err := os.Open(config.ImageName)
 	if err == nil {
@@ -47,10 +47,22 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		}
 		path = repo.ImagePath(config.ImageName)
 	}
-	cmd, err := qemu.LaunchVM(true, path)
+	var cmd *exec.Cmd
+	switch config.Hypervisor {
+	case "kvm":
+		cmd, err = qemu.LaunchVM(true, path)
+	case "vbox":
+		config := &vbox.VMConfig{
+			Name:  "osv",
+			Dir:   filepath.Join(os.Getenv("HOME"), "VirtualBox VMs"),
+			Image: path,
+		}
+		cmd, err = vbox.LaunchVM(config)
+	default:
+		err = fmt.Errorf("%s: is not a supported hypervisor", config.Hypervisor)
+	}
 	if err != nil {
 		return err
 	}
-	cmd.Wait()
-	return nil
+	return cmd.Wait()
 }
