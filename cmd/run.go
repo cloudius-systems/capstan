@@ -14,10 +14,9 @@ type RunConfig struct {
 	Verbose    bool
 }
 
-func Run(repo *capstan.Repo, config *RunConfig) {
+func Run(repo *capstan.Repo, config *RunConfig) error {
 	if config.Hypervisor != "kvm" {
-		fmt.Printf("%s: is not a supported hypervisor\n", config.Hypervisor)
-		return
+		return fmt.Errorf("%s: is not a supported hypervisor", config.Hypervisor)
 	}
 	var path string
 	file, err := os.Open(config.ImageName)
@@ -26,24 +25,22 @@ func Run(repo *capstan.Repo, config *RunConfig) {
 		format := image.Probe(file)
 		if format == image.Unknown {
 			file.Close()
-			fmt.Printf("%s: image format not recognized, unable to run it.\n", path)
-			return
+			return fmt.Errorf("%s: image format not recognized, unable to run it.", path)
 		}
 		file.Close()
 	} else {
 		if !repo.ImageExists(config.ImageName) {
 			if !capstan.ConfigExists("Capstanfile") {
-				fmt.Printf("%s: no such image\n", config.ImageName)
-				return
+				return fmt.Errorf("%s: no such image", config.ImageName)
 			}
 			err := qemu.BuildImage(repo, config.ImageName, config.Verbose)
 			if err != nil {
-				fmt.Println(err.Error())
-				return
+				return err
 			}
 		}
 		path = repo.ImagePath(config.ImageName)
 	}
 	cmd := qemu.LaunchVM(true, path)
 	cmd.Wait()
+	return nil
 }

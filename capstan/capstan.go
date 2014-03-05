@@ -101,7 +101,10 @@ func main() {
 					Hypervisor: hypervisor,
 					Verbose:    c.Bool("v"),
 				}
-				cmd.Run(repo, config)
+				err := cmd.Run(repo, config)
+				if err != nil {
+					fmt.Println(err.Error())
+				}
 			},
 		},
 		{
