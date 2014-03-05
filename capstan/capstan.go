@@ -10,7 +10,7 @@ package main
 import "fmt"
 import "github.com/cloudius-systems/capstan"
 import "github.com/cloudius-systems/capstan/cmd"
-import "github.com/cloudius-systems/capstan/qemu"
+import "github.com/cloudius-systems/capstan/hypervisor/qemu"
 import "github.com/codegangsta/cli"
 import "os"
 

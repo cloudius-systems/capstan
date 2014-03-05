@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 	"github.com/cloudius-systems/capstan"
+	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/image"
-	"github.com/cloudius-systems/capstan/qemu"
 	"os"
 )
 
