@@ -9,11 +9,16 @@ import (
 )
 
 type RunConfig struct {
-	ImageName string
-	Verbose   bool
+	ImageName  string
+	Hypervisor string
+	Verbose    bool
 }
 
 func Run(repo *capstan.Repo, config *RunConfig) {
+	if config.Hypervisor != "kvm" {
+		fmt.Printf("%s: is not a supported hypervisor\n", config.Hypervisor)
+		return
+	}
 	var path string
 	file, err := os.Open(config.ImageName)
 	if err == nil {

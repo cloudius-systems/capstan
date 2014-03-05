@@ -83,6 +83,7 @@ func main() {
 			Name:  "run",
 			Usage: "launch a VM",
 			Flags: []cli.Flag{
+				cli.StringFlag{"p", "kvm", "hypervisor"},
 				cli.BoolFlag{"v", "verbose mode"},
 			},
 			Action: func(c *cli.Context) {
@@ -94,9 +95,11 @@ func main() {
 					fmt.Println("usage: capstan run [image-name]")
 					return
 				}
+				hypervisor := c.String("p")
 				config := &cmd.RunConfig{
-					ImageName: image,
-					Verbose:   c.Bool("v"),
+					ImageName:  image,
+					Hypervisor: hypervisor,
+					Verbose:    c.Bool("v"),
 				}
 				cmd.Run(repo, config)
 			},
