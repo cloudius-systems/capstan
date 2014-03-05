@@ -26,6 +26,18 @@ func main() {
 	app.Usage = "pack, ship, and run applications in light-weight VMs"
 	app.Commands = []cli.Command{
 		{
+			Name:  "info",
+			Usage: "show disk image information",
+			Action: func(c *cli.Context) {
+				if len(c.Args()) != 1 {
+					fmt.Println("usage: capstan info [image-file]")
+					return
+				}
+				image := c.Args()[0]
+				cmd.Info(image)
+			},
+		},
+		{
 			Name:  "push",
 			Usage: "push an image to a repository",
 			Action: func(c *cli.Context) {
