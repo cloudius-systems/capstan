@@ -9,7 +9,7 @@ const (
 	QCOW2_MAGIC = ('Q' << 24) | ('F' << 16) | ('I' << 8) | 0xfb
 )
 
-type VdiHeader struct {
+type Header struct {
 	Magic                 uint32
 	Version               uint32
 	BackingFileOffset     uint64
@@ -25,19 +25,19 @@ type VdiHeader struct {
 	SnapshotsOffset       uint64
 }
 
-func VdiReadHeader(f *os.File) (*VdiHeader, error) {
-	var header VdiHeader
+func Probe(f *os.File) bool {
+	header, err := readHeader(f)
+	if err != nil {
+		return false
+	}
+	return header.Magic == QCOW2_MAGIC
+}
+
+func readHeader(f *os.File) (*Header, error) {
+	var header Header
 	err := binary.Read(f, binary.BigEndian, &header)
 	if err != nil {
 		return nil, err
 	}
 	return &header, nil
-}
-
-func Probe(f *os.File) bool {
-	header, err := VdiReadHeader(f)
-	if err != nil {
-		return false
-	}
-	return header.Magic == QCOW2_MAGIC
 }

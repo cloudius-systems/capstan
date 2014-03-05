@@ -9,7 +9,7 @@ const (
 	VDI_SIGNATURE = 0xbeda107f
 )
 
-type VdiHeader struct {
+type Header struct {
 	Text            [0x40]byte
 	Signature       uint32
 	Version         uint32
@@ -36,19 +36,19 @@ type VdiHeader struct {
 	Unused2         [7]uint64
 }
 
-func VdiReadHeader(f *os.File) (*VdiHeader, error) {
-	var header VdiHeader
+func Probe(f *os.File) bool {
+	header, err := readHeader(f)
+	if err != nil {
+		return false
+	}
+	return header.Signature == VDI_SIGNATURE
+}
+
+func readHeader(f *os.File) (*Header, error) {
+	var header Header
 	err := binary.Read(f, binary.LittleEndian, &header)
 	if err != nil {
 		return nil, err
 	}
 	return &header, nil
-}
-
-func Probe(f *os.File) bool {
-	header, err := VdiReadHeader(f)
-	if err != nil {
-		return false
-	}
-	return header.Signature == VDI_SIGNATURE
 }
