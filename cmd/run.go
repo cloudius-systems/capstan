@@ -18,6 +18,7 @@ func Run(repo *capstan.Repo, verbose bool, image string) {
 			return
 		}
 	}
-	cmd := qemu.LaunchVM(repo, true, image)
+	file := repo.ImagePath(image)
+	cmd := qemu.LaunchVM(true, file)
 	cmd.Wait()
 }
