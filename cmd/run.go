@@ -8,11 +8,16 @@ import (
 	"os"
 )
 
-func Run(repo *capstan.Repo, verbose bool, imageName string) {
+type RunConfig struct {
+	ImageName string
+	Verbose   bool
+}
+
+func Run(repo *capstan.Repo, config *RunConfig) {
 	var path string
-	file, err := os.Open(imageName)
+	file, err := os.Open(config.ImageName)
 	if err == nil {
-		path = imageName
+		path = config.ImageName
 		format := image.Probe(file)
 		if format == image.Unknown {
 			file.Close()
@@ -21,18 +26,18 @@ func Run(repo *capstan.Repo, verbose bool, imageName string) {
 		}
 		file.Close()
 	} else {
-		if !repo.ImageExists(imageName) {
+		if !repo.ImageExists(config.ImageName) {
 			if !capstan.ConfigExists("Capstanfile") {
-				fmt.Printf("%s: no such image\n", imageName)
+				fmt.Printf("%s: no such image\n", config.ImageName)
 				return
 			}
-			err := qemu.BuildImage(repo, imageName, verbose)
+			err := qemu.BuildImage(repo, config.ImageName, config.Verbose)
 			if err != nil {
 				fmt.Println(err.Error())
 				return
 			}
 		}
-		path = repo.ImagePath(imageName)
+		path = repo.ImagePath(config.ImageName)
 	}
 	cmd := qemu.LaunchVM(true, path)
 	cmd.Wait()

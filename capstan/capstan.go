@@ -94,7 +94,11 @@ func main() {
 					fmt.Println("usage: capstan run [image-name]")
 					return
 				}
-				cmd.Run(repo, c.Bool("v"), image)
+				config := &cmd.RunConfig{
+					ImageName: image,
+					Verbose:   c.Bool("v"),
+				}
+				cmd.Run(repo, config)
 			},
 		},
 		{
