@@ -69,7 +69,11 @@ func BuildImage(r *capstan.Repo, image string, verbose bool) error {
 
 func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bool) {
 	file := r.ImagePath(image)
-	qemu := LaunchVM(verbose, file, "-redir", "tcp:10000::10000")
+	qemu, err := LaunchVM(verbose, file, "-redir", "tcp:10000::10000")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	defer qemu.Process.Kill()
 
 	time.Sleep(1 * time.Second)
@@ -95,7 +99,11 @@ func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bo
 
 func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose bool) {
 	file := r.ImagePath(image)
-	cmd := LaunchVM(verbose, file, "-redir", "tcp:10000::10000")
+	cmd, err := LaunchVM(verbose, file, "-redir", "tcp:10000::10000")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	defer cmd.Process.Kill()
 
 	time.Sleep(1 * time.Second)
@@ -181,24 +189,24 @@ func SetArgs(r *capstan.Repo, image string, args string) error {
 	return nil
 }
 
-func LaunchVM(verbose bool, file string, extra ...string) *exec.Cmd {
+func LaunchVM(verbose bool, file string, extra ...string) (*exec.Cmd, error) {
 	args := append([]string{"-vnc", ":1", "-gdb", "tcp::1234,server,nowait", "-m", "2G", "-smp", "4", "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0,scsi=off", "-drive", "file=" + file + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-redir", "tcp:8080::8080", "-redir", "tcp:2222::22", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-enable-kvm", "-cpu", "host,+x2apic", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}, extra...)
 	cmd := exec.Command("qemu-system-x86_64", args...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 	err = cmd.Start()
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 	if verbose {
 		go io.Copy(os.Stdout, stdout)
 		go io.Copy(os.Stderr, stderr)
 	}
-	return cmd
+	return cmd, nil
 }

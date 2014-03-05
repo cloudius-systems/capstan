@@ -40,7 +40,10 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		}
 		path = repo.ImagePath(config.ImageName)
 	}
-	cmd := qemu.LaunchVM(true, path)
+	cmd, err := qemu.LaunchVM(true, path)
+	if err != nil {
+		return err
+	}
 	cmd.Wait()
 	return nil
 }
