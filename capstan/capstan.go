@@ -9,6 +9,7 @@ package main
 
 import "fmt"
 import "github.com/cloudius-systems/capstan"
+import "github.com/cloudius-systems/capstan/cmd"
 import "github.com/cloudius-systems/capstan/qemu"
 import "github.com/codegangsta/cli"
 import "os"
@@ -81,19 +82,7 @@ func main() {
 					fmt.Println("usage: capstan run [image-name]")
 					return
 				}
-				if !repo.ImageExists(image) {
-					if !capstan.ConfigExists("Capstanfile") {
-						fmt.Printf("%s: no such image\n", image)
-						return
-					}
-					err := qemu.BuildImage(repo, image, c.Bool("v"))
-					if err != nil {
-						fmt.Println(err.Error())
-						return
-					}
-				}
-				cmd := qemu.LaunchVM(repo, true, image)
-				cmd.Wait()
+				cmd.Run(repo, c.Bool("v"), image)
 			},
 		},
 		{
