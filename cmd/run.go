@@ -52,6 +52,9 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	case "kvm":
 		cmd, err = qemu.LaunchVM(true, path)
 	case "vbox":
+		if format != image.VDI {
+			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
+		}
 		config := &vbox.VMConfig{
 			Name:  "osv",
 			Dir:   filepath.Join(os.Getenv("HOME"), "VirtualBox VMs"),
