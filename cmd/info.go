@@ -22,6 +22,8 @@ func Info(path string) error {
 		fmt.Printf("%s: VDI\n", path)
 	case image.QCOW2:
 		fmt.Printf("%s: QCOW2\n", path)
+	case image.VMDK:
+		fmt.Printf("%s: VMDK\n", path)
 	default:
 		fmt.Printf("%s: not a runnable image\n", path)
 	}
