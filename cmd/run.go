@@ -26,16 +26,7 @@ type RunConfig struct {
 
 func Run(repo *capstan.Repo, config *RunConfig) error {
 	var path string
-	file, err := os.Open(config.ImageName)
-	if err == nil {
-		path = config.ImageName
-		format := image.Probe(file)
-		if format == image.Unknown {
-			file.Close()
-			return fmt.Errorf("%s: image format not recognized, unable to run it.", path)
-		}
-		file.Close()
-	} else {
+	if _, err := os.Stat(config.ImageName); os.IsNotExist(err) {
 		if !repo.ImageExists(config.ImageName) {
 			if !capstan.ConfigExists("Capstanfile") {
 				return fmt.Errorf("%s: no such image", config.ImageName)
@@ -46,6 +37,15 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			}
 		}
 		path = repo.ImagePath(config.ImageName)
+	} else {
+		path = config.ImageName
+	}
+	format, err := image.Probe(path)
+	if err != nil {
+		return err
+	}
+	if format == image.Unknown {
+		return fmt.Errorf("%s: image format not recognized, unable to run it.", path)
 	}
 	var cmd *exec.Cmd
 	switch config.Hypervisor {

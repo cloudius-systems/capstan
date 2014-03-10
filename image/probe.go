@@ -21,14 +21,19 @@ const (
 	Unknown
 )
 
-func Probe(f *os.File) ImageFormat {
+func Probe(path string) (ImageFormat, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return Unknown, err
+	}
+	defer f.Close()
 	f.Seek(0, os.SEEK_SET)
 	if qcow2.Probe(f) {
-		return QCOW2
+		return QCOW2, nil
 	}
 	f.Seek(0, os.SEEK_SET)
 	if vdi.Probe(f) {
-		return VDI
+		return VDI, nil
 	}
-	return Unknown
+	return Unknown, nil
 }

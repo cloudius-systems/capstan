@@ -10,16 +10,13 @@ package cmd
 import (
 	"fmt"
 	"github.com/cloudius-systems/capstan/image"
-	"os"
 )
 
 func Info(path string) error {
-	f, err := os.Open(path)
+	format, err := image.Probe(path)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-	format := image.Probe(f)
 	switch format {
 	case image.VDI:
 		fmt.Printf("%s: VDI\n", path)
