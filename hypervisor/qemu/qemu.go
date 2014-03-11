@@ -22,6 +22,11 @@ import (
 	"time"
 )
 
+type VMConfig struct {
+	Image   string
+	Verbose bool
+}
+
 func BuildImage(r *capstan.Repo, image string, verbose bool) error {
 	config, err := capstan.ReadConfig("Capstanfile")
 	if err != nil {
@@ -69,7 +74,11 @@ func BuildImage(r *capstan.Repo, image string, verbose bool) error {
 
 func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bool) {
 	file := r.ImagePath(image)
-	qemu, err := LaunchVM(verbose, file, "-redir", "tcp:10000::10000")
+	vmconfig := &VMConfig{
+		Image:   file,
+		Verbose: verbose,
+	}
+	qemu, err := LaunchVM(vmconfig, "-redir", "tcp:10000::10000")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -99,7 +108,11 @@ func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bo
 
 func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose bool) {
 	file := r.ImagePath(image)
-	cmd, err := LaunchVM(verbose, file, "-redir", "tcp:10000::10000")
+	vmconfig := &VMConfig{
+		Image:   file,
+		Verbose: verbose,
+	}
+	cmd, err := LaunchVM(vmconfig, "-redir", "tcp:10000::10000")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -189,8 +202,8 @@ func SetArgs(r *capstan.Repo, image string, args string) error {
 	return nil
 }
 
-func LaunchVM(verbose bool, file string, extra ...string) (*exec.Cmd, error) {
-	args := append([]string{"-vnc", ":1", "-gdb", "tcp::1234,server,nowait", "-m", "2G", "-smp", "4", "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0,scsi=off", "-drive", "file=" + file + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-redir", "tcp:8080::8080", "-redir", "tcp:2222::22", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-enable-kvm", "-cpu", "host,+x2apic", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}, extra...)
+func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
+	args := append(c.vmArguments(), extra...)
 	cmd := exec.Command("qemu-system-x86_64", args...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -204,9 +217,13 @@ func LaunchVM(verbose bool, file string, extra ...string) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	if verbose {
+	if c.Verbose {
 		go io.Copy(os.Stdout, stdout)
 		go io.Copy(os.Stderr, stderr)
 	}
 	return cmd, nil
+}
+
+func (c *VMConfig) vmArguments() []string {
+	return []string{"-vnc", ":1", "-gdb", "tcp::1234,server,nowait", "-m", "2G", "-smp", "4", "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0,scsi=off", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-redir", "tcp:8080::8080", "-redir", "tcp:2222::22", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-enable-kvm", "-cpu", "host,+x2apic", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}
 }
