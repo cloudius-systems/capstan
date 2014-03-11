@@ -51,8 +51,9 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	switch config.Hypervisor {
 	case "kvm":
 		config := &qemu.VMConfig{
-			Image:   path,
-			Verbose: true,
+			Image:     path,
+			Verbose:   true,
+			Redirects: []string{},
 		}
 		cmd, err = qemu.LaunchVM(config)
 	case "vbox":
