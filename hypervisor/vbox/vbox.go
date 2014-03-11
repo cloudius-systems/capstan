@@ -14,6 +14,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -24,32 +26,22 @@ type VMConfig struct {
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
-	VBoxManage("createvm", "--name", c.Name, "-ostype", "Linux26_64")
-	VBoxManage("registervm", filepath.Join(c.Dir, c.Name, fmt.Sprintf("%s.vbox", c.Name)))
-	cmd := exec.Command("cp", c.Image, c.storagePath())
-	err := cmd.Start()
+	exists, err := vmExists(c.Name)
 	if err != nil {
 		return nil, err
 	}
-	err = cmd.Wait()
-	if err != nil {
-		return nil, err
+	if !exists {
+		err := vmCreate(c)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cmd := exec.Command("cp", c.Image, c.storagePath())
+		if err := cmd.Run(); err != nil {
+			return nil, err
+		}
 	}
-	VBoxManage("storagectl", c.Name, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI")
-	VBoxManage("storageattach", c.Name, "--storagectl", "SATA", "--port", "0", "--type", "hdd", "--medium", c.storagePath())
-	err = VBoxManage("modifyvm", c.Name, "--nic1", "hostonly", "--nictype1", "virtio", "--hostonlyadapter1", "vboxnet0")
-	if err != nil {
-		return nil, err
-	}
-	err = VBoxManage("modifyvm", c.Name, "--hpet", "on")
-	if err != nil {
-		return nil, err
-	}
-	err = VBoxManage("modifyvm", c.Name, "--uart1", "0x3f8", "4", "--uartmode1", "server", c.sockPath())
-	if err != nil {
-		return nil, err
-	}
-	cmd, err = VBoxHeadless("--startvm", c.Name)
+	cmd, err := VBoxHeadless("--startvm", c.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -61,6 +53,73 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	go io.Copy(conn, os.Stdin)
 	go io.Copy(os.Stdout, conn)
 	return cmd, nil
+}
+
+func vmExists(vmName string) (bool, error) {
+	vms, err := vmList()
+	if err != nil {
+		return false, err
+	}
+	for _, vm := range vms {
+		if vm == vmName {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func vmList() ([]string, error) {
+	cmd := exec.Command("VBoxManage", "list", "vms")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	vms := make([]string, 0)
+	lines := strings.Split(string(out), "\n")
+	r, _ := regexp.Compile("\"(.*)\"")
+	for _, line := range lines {
+		vm := r.FindStringSubmatch(line)
+		if len(vm) > 0 {
+			vms = append(vms, vm[1])
+		}
+	}
+	return vms, nil
+}
+
+func vmCreate(c *VMConfig) error {
+	err := VBoxManage("createvm", "--name", c.Name, "-ostype", "Linux26_64")
+	if err != nil {
+		return err
+	}
+	err = VBoxManage("registervm", filepath.Join(c.Dir, c.Name, fmt.Sprintf("%s.vbox", c.Name)))
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command("cp", c.Image, c.storagePath())
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	err = VBoxManage("storagectl", c.Name, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI")
+	if err != nil {
+		return err
+	}
+	err = VBoxManage("storageattach", c.Name, "--storagectl", "SATA", "--port", "0", "--type", "hdd", "--medium", c.storagePath())
+	if err != nil {
+		return err
+	}
+	err = VBoxManage("modifyvm", c.Name, "--nic1", "hostonly", "--nictype1", "virtio", "--hostonlyadapter1", "vboxnet0")
+	if err != nil {
+		return err
+	}
+	err = VBoxManage("modifyvm", c.Name, "--hpet", "on")
+	if err != nil {
+		return err
+	}
+	err = VBoxManage("modifyvm", c.Name, "--uart1", "0x3f8", "4", "--uartmode1", "server", c.sockPath())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func VBoxManage(args ...string) error {
