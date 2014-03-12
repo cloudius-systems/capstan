@@ -119,6 +119,10 @@ func vmCreate(c *VMConfig) error {
 	if err != nil {
 		return err
 	}
+	err = VBoxManage("modifyvm", c.Name, "--memory",  "1024")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
