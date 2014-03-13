@@ -22,6 +22,7 @@ type RunConfig struct {
 	ImageName  string
 	Hypervisor string
 	Verbose    bool
+	Memory     string
 }
 
 func Run(repo *capstan.Repo, config *RunConfig) error {
@@ -47,12 +48,17 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	if format == image.Unknown {
 		return fmt.Errorf("%s: image format not recognized, unable to run it.", path)
 	}
+	size, err := capstan.ParseMemSize(config.Memory)
+	if err != nil {
+		return err
+	}
 	var cmd *exec.Cmd
 	switch config.Hypervisor {
 	case "kvm":
 		config := &qemu.VMConfig{
 			Image:     path,
 			Verbose:   true,
+			Memory:    size,
 			Redirects: []string{},
 		}
 		cmd, err = qemu.LaunchVM(config)
@@ -61,9 +67,10 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
 		config := &vbox.VMConfig{
-			Name:  "osv",
-			Dir:   filepath.Join(os.Getenv("HOME"), "VirtualBox VMs"),
-			Image: path,
+			Name:   "osv",
+			Dir:    filepath.Join(os.Getenv("HOME"), "VirtualBox VMs"),
+			Image:  path,
+			Memory: size,
 		}
 		cmd, err = vbox.LaunchVM(config)
 	default:

@@ -9,9 +9,9 @@ package qemu
 
 import (
 	"fmt"
+	"github.com/cloudius-systems/capstan"
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/nbd"
-	"github.com/cloudius-systems/capstan"
 	"io"
 	"io/ioutil"
 	"net"
@@ -19,6 +19,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -26,6 +27,7 @@ import (
 type VMConfig struct {
 	Image     string
 	Verbose   bool
+	Memory    int64
 	Redirects []string
 }
 
@@ -79,6 +81,7 @@ func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bo
 	vmconfig := &VMConfig{
 		Image:     file,
 		Verbose:   verbose,
+		Memory:    64,
 		Redirects: []string{"tcp:10000::10000"},
 	}
 	qemu, err := LaunchVM(vmconfig)
@@ -114,6 +117,7 @@ func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose 
 	vmconfig := &VMConfig{
 		Image:     file,
 		Verbose:   verbose,
+		Memory:    64,
 		Redirects: []string{"tcp:10000::10000"},
 	}
 	cmd, err := LaunchVM(vmconfig)
@@ -233,7 +237,7 @@ func (c *VMConfig) vmArguments() []string {
 	for _, redirect := range c.Redirects {
 		redirects = append(redirects, "-redir", redirect)
 	}
-	args := []string{"-vnc", ":1", "-gdb", "tcp::1234,server,nowait", "-m", "2G", "-smp", "4", "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}
+	args := []string{"-vnc", ":1", "-gdb", "tcp::1234,server,nowait", "-m", strconv.FormatInt(c.Memory, 10), "-smp", "4", "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}
 	args = append(args, redirects...)
 	if runtime.GOOS == "linux" {
 		args = append(args, "-enable-kvm", "-cpu", "host,+x2apic")

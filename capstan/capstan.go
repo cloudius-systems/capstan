@@ -84,6 +84,7 @@ func main() {
 			Usage: "launch a VM",
 			Flags: []cli.Flag{
 				cli.StringFlag{"p", "kvm", "hypervisor"},
+				cli.StringFlag{"m", "1G", "memory size"},
 				cli.BoolFlag{"v", "verbose mode"},
 			},
 			Action: func(c *cli.Context) {
@@ -100,6 +101,7 @@ func main() {
 					ImageName:  image,
 					Hypervisor: hypervisor,
 					Verbose:    c.Bool("v"),
+					Memory:     c.String("m"),
 				}
 				err := cmd.Run(repo, config)
 				if err != nil {

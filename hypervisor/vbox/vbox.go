@@ -15,14 +15,16 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
 
 type VMConfig struct {
-	Name  string
-	Dir   string
-	Image string
+	Name   string
+	Dir    string
+	Image  string
+	Memory int64
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
@@ -119,7 +121,7 @@ func vmCreate(c *VMConfig) error {
 	if err != nil {
 		return err
 	}
-	err = VBoxManage("modifyvm", c.Name, "--memory",  "1024")
+	err = VBoxManage("modifyvm", c.Name, "--memory", strconv.FormatInt(c.Memory, 10))
 	if err != nil {
 		return err
 	}
