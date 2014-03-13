@@ -17,10 +17,8 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -30,51 +28,6 @@ type VMConfig struct {
 	Memory    int64
 	Cpus      int
 	Redirects []string
-}
-
-func BuildImage(r *capstan.Repo, image string, verbose bool) error {
-	config, err := capstan.ReadConfig("Capstanfile")
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Building %s...\n", image)
-	err = os.MkdirAll(filepath.Dir(r.ImagePath(image)), 0777)
-	if err != nil {
-		return err
-	}
-	if config.RpmBase != nil {
-		config.RpmBase.Download()
-	}
-	if config.Build != "" {
-		args := strings.Fields(config.Build)
-		cmd := exec.Command(args[0], args[1:]...)
-		_, err = cmd.Output()
-		if err != nil {
-			return err
-		}
-	}
-	err = config.Check(r)
-	if err != nil {
-		return err
-	}
-	cmd := exec.Command("cp", r.ImagePath(config.Base), r.ImagePath(image))
-	_, err = cmd.Output()
-	if err != nil {
-		return err
-	}
-	err = SetArgs(r, image, "/tools/cpiod.so")
-	if err != nil {
-		return err
-	}
-	if config.RpmBase != nil {
-		UploadRPM(r, image, config, verbose)
-	}
-	UploadFiles(r, image, config, verbose)
-	err = SetArgs(r, image, config.Cmdline)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bool) {

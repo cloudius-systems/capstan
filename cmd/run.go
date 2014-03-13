@@ -33,7 +33,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			if !capstan.ConfigExists("Capstanfile") {
 				return fmt.Errorf("%s: no such image", config.ImageName)
 			}
-			err := qemu.BuildImage(repo, config.ImageName, config.Verbose)
+			err := Build(repo, config.ImageName, config.Verbose)
 			if err != nil {
 				return err
 			}

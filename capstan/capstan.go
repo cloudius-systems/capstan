@@ -10,7 +10,6 @@ package main
 import "fmt"
 import "github.com/cloudius-systems/capstan"
 import "github.com/cloudius-systems/capstan/cmd"
-import "github.com/cloudius-systems/capstan/hypervisor/qemu"
 import "github.com/codegangsta/cli"
 import "os"
 
@@ -126,7 +125,7 @@ func main() {
 					fmt.Println("usage: capstan build [image-name]")
 					return
 				}
-				err := qemu.BuildImage(repo, image, c.Bool("v"))
+				err := cmd.Build(repo, image, c.Bool("v"))
 				if err != nil {
 					fmt.Println(err.Error())
 				}
