@@ -130,19 +130,21 @@ func SetArgs(r *capstan.Repo, image string, args string) error {
 		Conn:   conn,
 		Handle: 0,
 	}
-	session.Handshake()
+	if err := session.Handshake(); err != nil {
+		return err
+	}
 
 	data := append([]byte(args), make([]byte, 512-len(args))...)
 
-	session.Write(512, data)
-	session.Recv()
-
-	session.Flush()
-	session.Recv()
-
-	session.Disconnect()
-	session.Recv()
-
+	if err := session.Write(512, data); err != nil {
+		return err
+	}
+	if err := session.Flush(); err != nil {
+		return err
+	}
+	if err := session.Disconnect(); err != nil {
+		return err
+	}
 	conn.Close()
 	cmd.Wait()
 
