@@ -26,6 +26,11 @@ const (
 	NBD_CMD_TRIM  = 4
 )
 
+type NbdSession struct {
+	Conn   net.Conn
+	Handle uint64
+}
+
 type NbdRequest struct {
 	Magic  uint32
 	Type   uint32
@@ -51,16 +56,51 @@ func (msg *NbdRequest) ToWireFormat() []byte {
 	return b
 }
 
-func NbdHandshake(c net.Conn) {
+func (session *NbdSession) Handshake() {
 	nbd_magic := make([]byte, len("NBDMAGIC"))
-	c.Read(nbd_magic)
+	session.Conn.Read(nbd_magic)
 	if string(nbd_magic) != "NBDMAGIC" {
 		fmt.Println("NBD magic missing!")
 	}
-	c.Read(make([]byte, 8+8+4))
-	c.Read(make([]byte, 124))
+	session.Conn.Read(make([]byte, 8+8+4))
+	session.Conn.Read(make([]byte, 124))
+	session.Handle += 1
 }
 
-func NbdRecv(c net.Conn) {
-	c.Read(make([]byte, 4+4+8))
+func (session *NbdSession) Write(from uint64, data []byte) {
+	req := &NbdRequest{
+		Magic:  NBD_REQUEST_MAGIC,
+		Type:   NBD_CMD_WRITE,
+		Handle: session.Handle,
+		From:   512,
+		Len:    uint32(len(data)),
+	}
+	session.Conn.Write(append(req.ToWireFormat(), data...))
+}
+
+func (session *NbdSession) Flush() {
+	req := &NbdRequest{
+		Magic:  NBD_REQUEST_MAGIC,
+		Type:   NBD_CMD_FLUSH,
+		Handle: session.Handle,
+		From:   0,
+		Len:    0,
+	}
+	session.Conn.Write(req.ToWireFormat())
+}
+
+func (session *NbdSession) Disconnect() {
+	req := &NbdRequest{
+		Magic:  NBD_REQUEST_MAGIC,
+		Type:   NBD_CMD_DISC,
+		Handle: session.Handle,
+		From:   0,
+		Len:    0,
+	}
+	session.Conn.Write(req.ToWireFormat())
+}
+
+func (session *NbdSession) Recv() {
+	session.Conn.Read(make([]byte, 4+4+8))
+	session.Handle += 1
 }

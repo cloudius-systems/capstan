@@ -120,39 +120,28 @@ func SetArgs(r *capstan.Repo, image string, args string) error {
 	go io.Copy(os.Stdout, stdout)
 	go io.Copy(os.Stderr, stderr)
 	time.Sleep(1 * time.Second)
+
 	conn, err := net.Dial("tcp", "localhost:10809")
 	if err != nil {
 		return err
 	}
-	nbd.NbdHandshake(conn)
+
+	session := &nbd.NbdSession{
+		Conn:   conn,
+		Handle: 0,
+	}
+	session.Handshake()
 
 	data := append([]byte(args), make([]byte, 512-len(args))...)
-	req := &nbd.NbdRequest{}
-	req.Magic = nbd.NBD_REQUEST_MAGIC
-	req.Type = nbd.NBD_CMD_WRITE
-	req.Handle = 1 // running sequence number!
-	req.From = 512
-	req.Len = 512
-	conn.Write(append(req.ToWireFormat(), data...))
-	nbd.NbdRecv(conn)
 
-	req = &nbd.NbdRequest{}
-	req.Magic = nbd.NBD_REQUEST_MAGIC
-	req.Type = nbd.NBD_CMD_FLUSH
-	req.Handle = 2 // running sequence number!
-	req.From = 0
-	req.Len = 0
-	conn.Write(req.ToWireFormat())
-	nbd.NbdRecv(conn)
+	session.Write(512, data)
+	session.Recv()
 
-	req = &nbd.NbdRequest{}
-	req.Magic = nbd.NBD_REQUEST_MAGIC
-	req.Type = nbd.NBD_CMD_DISC
-	req.Handle = 3 // running sequence number!
-	req.From = 0
-	req.Len = 0
-	conn.Write(req.ToWireFormat())
-	nbd.NbdRecv(conn)
+	session.Flush()
+	session.Recv()
+
+	session.Disconnect()
+	session.Recv()
 
 	conn.Close()
 	cmd.Wait()
