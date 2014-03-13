@@ -8,7 +8,6 @@
 package qemu
 
 import (
-	"fmt"
 	"github.com/cloudius-systems/capstan"
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/nbd"
@@ -30,7 +29,7 @@ type VMConfig struct {
 	Redirects []string
 }
 
-func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bool) {
+func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bool) error {
 	file := r.ImagePath(image)
 	vmconfig := &VMConfig{
 		Image:     file,
@@ -40,8 +39,7 @@ func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bo
 	}
 	qemu, err := LaunchVM(vmconfig)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	defer qemu.Process.Kill()
 
@@ -49,24 +47,25 @@ func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bo
 
 	conn, err := net.Dial("tcp", "localhost:10000")
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 
 	cmd := exec.Command("rpm2cpio", config.RpmBase.Filename())
 	cmd.Stdout = conn
 	err = cmd.Start()
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	defer cmd.Wait()
 
-	qemu.Wait()
+	err = qemu.Wait()
+
 	conn.Close()
+
+	return err
 }
 
-func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose bool) {
+func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose bool) error {
 	file := r.ImagePath(image)
 	vmconfig := &VMConfig{
 		Image:     file,
@@ -76,8 +75,7 @@ func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose 
 	}
 	cmd, err := LaunchVM(vmconfig)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	defer cmd.Process.Kill()
 
@@ -85,15 +83,13 @@ func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose 
 
 	conn, err := net.Dial("tcp", "localhost:10000")
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 
 	for key, value := range config.Files {
 		fi, err := os.Stat(value)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return err
 		}
 		cpio.WritePadded(conn, cpio.ToWireFormat(key, cpio.C_ISREG, fi.Size()))
 		b, err := ioutil.ReadFile(value)
@@ -103,7 +99,7 @@ func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose 
 	cpio.WritePadded(conn, cpio.ToWireFormat("TRAILER!!!", 0, 0))
 
 	conn.Close()
-	cmd.Wait()
+	return cmd.Wait()
 }
 
 func SetArgs(r *capstan.Repo, image string, args string) error {

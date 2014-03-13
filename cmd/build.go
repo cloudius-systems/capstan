@@ -52,9 +52,15 @@ func Build(r *capstan.Repo, image string, verbose bool) error {
 		return err
 	}
 	if config.RpmBase != nil {
-		qemu.UploadRPM(r, image, config, verbose)
+		err = qemu.UploadRPM(r, image, config, verbose)
+		if err != nil {
+			return err
+		}
 	}
-	qemu.UploadFiles(r, image, config, verbose)
+	err = qemu.UploadFiles(r, image, config, verbose)
+	if err != nil {
+		return err
+	}
 	err = qemu.SetArgs(r, image, config.Cmdline)
 	if err != nil {
 		return err
