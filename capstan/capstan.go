@@ -85,6 +85,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{"p", "kvm", "hypervisor"},
 				cli.StringFlag{"m", "1G", "memory size"},
+				cli.IntFlag{"c", 2, "number of CPUs"},
 				cli.BoolFlag{"v", "verbose mode"},
 			},
 			Action: func(c *cli.Context) {
@@ -102,6 +103,7 @@ func main() {
 					Hypervisor: hypervisor,
 					Verbose:    c.Bool("v"),
 					Memory:     c.String("m"),
+					Cpus:       c.Int("c"),
 				}
 				err := cmd.Run(repo, config)
 				if err != nil {

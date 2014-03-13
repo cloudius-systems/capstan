@@ -23,6 +23,7 @@ type RunConfig struct {
 	Hypervisor string
 	Verbose    bool
 	Memory     string
+	Cpus       int
 }
 
 func Run(repo *capstan.Repo, config *RunConfig) error {
@@ -59,6 +60,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			Image:     path,
 			Verbose:   true,
 			Memory:    size,
+			Cpus:      config.Cpus,
 			Redirects: []string{},
 		}
 		cmd, err = qemu.LaunchVM(config)
@@ -71,6 +73,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			Dir:    filepath.Join(os.Getenv("HOME"), "VirtualBox VMs"),
 			Image:  path,
 			Memory: size,
+			Cpus:   config.Cpus,
 		}
 		cmd, err = vbox.LaunchVM(config)
 	default:

@@ -25,6 +25,7 @@ type VMConfig struct {
 	Dir    string
 	Image  string
 	Memory int64
+	Cpus   int
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
@@ -121,6 +122,10 @@ func vmCreate(c *VMConfig) error {
 		return err
 	}
 	err = VBoxManage("modifyvm", c.Name, "--memory", strconv.FormatInt(c.Memory, 10))
+	if err != nil {
+		return err
+	}
+	err = VBoxManage("modifyvm", c.Name, "--cpus", strconv.Itoa(c.Cpus))
 	if err != nil {
 		return err
 	}
