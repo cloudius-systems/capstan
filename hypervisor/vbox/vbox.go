@@ -32,16 +32,15 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !exists {
-		err := vmCreate(c)
+	if exists {
+		err := vmDelete(c)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		cmd := exec.Command("cp", c.Image, c.storagePath())
-		if err := cmd.Run(); err != nil {
-			return nil, err
-		}
+	}
+	err = vmCreate(c)
+	if err != nil {
+		return nil, err
 	}
 	cmd, err := VBoxHeadless("--startvm", c.Name)
 	if err != nil {
@@ -126,6 +125,10 @@ func vmCreate(c *VMConfig) error {
 		return err
 	}
 	return nil
+}
+
+func vmDelete(c *VMConfig) error {
+	return VBoxManage("unregistervm", c.Name, "--delete")
 }
 
 func VBoxManage(args ...string) error {
