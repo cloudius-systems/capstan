@@ -7,11 +7,13 @@
 
 package main
 
-import "fmt"
-import "github.com/cloudius-systems/capstan"
-import "github.com/cloudius-systems/capstan/cmd"
-import "github.com/codegangsta/cli"
-import "os"
+import (
+	"fmt"
+	"github.com/cloudius-systems/capstan"
+	"github.com/cloudius-systems/capstan/cmd"
+	"github.com/codegangsta/cli"
+	"os"
+)
 
 var (
 	VERSION string
