@@ -29,16 +29,16 @@ type RunConfig struct {
 func Run(repo *capstan.Repo, config *RunConfig) error {
 	var path string
 	if _, err := os.Stat(config.ImageName); os.IsNotExist(err) {
-		if !repo.ImageExists(config.ImageName) {
+		if !repo.ImageExists(config.Hypervisor, config.ImageName) {
 			if !capstan.ConfigExists("Capstanfile") {
 				return fmt.Errorf("%s: no such image", config.ImageName)
 			}
-			err := Build(repo, config.ImageName, config.Verbose)
+			err := Build(repo, config.Hypervisor, config.ImageName, config.Verbose)
 			if err != nil {
 				return err
 			}
 		}
-		path = repo.ImagePath(config.ImageName)
+		path = repo.ImagePath(config.Hypervisor, config.ImageName)
 	} else {
 		path = config.ImageName
 	}

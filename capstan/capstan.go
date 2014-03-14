@@ -116,6 +116,7 @@ func main() {
 			Name:  "build",
 			Usage: "build an image",
 			Flags: []cli.Flag{
+				cli.StringFlag{"p", "qemu", "hypervisor"},
 				cli.BoolFlag{"v", "verbose mode"},
 			},
 			Action: func(c *cli.Context) {
@@ -127,7 +128,8 @@ func main() {
 					fmt.Println("usage: capstan build [image-name]")
 					return
 				}
-				err := cmd.Build(repo, image, c.Bool("v"))
+				hypervisor := c.String("p")
+				err := cmd.Build(repo, hypervisor, image, c.Bool("v"))
 				if err != nil {
 					fmt.Println(err.Error())
 				}

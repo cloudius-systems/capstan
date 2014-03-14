@@ -10,6 +10,7 @@ package capstan
 import (
 	"errors"
 	"fmt"
+	"github.com/cloudius-systems/capstan/image"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -32,12 +33,12 @@ func NewRepo() *Repo {
 }
 
 func (r *Repo) PullImage(image string) error {
-	if r.ImageExists(image) {
+	workTree := r.workTree(image)
+	if _, err := os.Stat(workTree); os.IsExist(err) {
 		return r.updateImage(image)
 	}
 	fmt.Printf("Pulling %s...\n", image)
 	gitUrl := fmt.Sprintf("https://github.com/%s", image)
-	workTree := r.workTree(image)
 	cmd := exec.Command("git", "clone", "--depth", "1", gitUrl, workTree)
 	_, err := cmd.Output()
 	if err != nil {
@@ -68,17 +69,32 @@ func (r *Repo) workTree(image string) string {
 	return filepath.Join(r.Path, image)
 }
 
-func (r *Repo) PushImage(image string, file string) error {
+func (r *Repo) PushImage(imageName string, file string) error {
+	format, err := image.Probe(file)
+	if err != nil {
+		return err
+	}
+	var hypervisor string
+	switch format {
+	case image.VDI:
+		hypervisor = "vbox"
+	case image.QCOW2:
+		hypervisor = "qemu"
+	case image.VMDK:
+		hypervisor = "vmware"
+	default:
+		return fmt.Errorf("%s: unsupported image format", file)
+	}
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return errors.New(fmt.Sprintf("%s: no such file", file))
 	}
-	fmt.Printf("Pushing %s...\n", image)
-	cmd := exec.Command("mkdir", "-p", filepath.Dir(r.ImagePath(image)))
-	_, err := cmd.Output()
+	fmt.Printf("Pushing %s...\n", imageName)
+	cmd := exec.Command("mkdir", "-p", filepath.Dir(r.ImagePath(hypervisor, imageName)))
+	_, err = cmd.Output()
 	if err != nil {
-		return errors.New(fmt.Sprintf("%s: mkdir failed", filepath.Dir(r.ImagePath(image))))
+		return errors.New(fmt.Sprintf("%s: mkdir failed", filepath.Dir(r.ImagePath(hypervisor, imageName))))
 	}
-	cmd = exec.Command("cp", file, r.ImagePath(image))
+	cmd = exec.Command("cp", file, r.ImagePath(hypervisor, imageName))
 	_, err = cmd.Output()
 	if err != nil {
 		return err
@@ -86,8 +102,8 @@ func (r *Repo) PushImage(image string, file string) error {
 	return nil
 }
 
-func (r *Repo) ImageExists(image string) bool {
-	file := r.ImagePath(image)
+func (r *Repo) ImageExists(hypervisor, image string) bool {
+	file := r.ImagePath(hypervisor, image)
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return false
 	}
@@ -95,18 +111,18 @@ func (r *Repo) ImageExists(image string) bool {
 }
 
 func (r *Repo) RemoveImage(image string) error {
-	if !r.ImageExists(image) {
+	path := filepath.Join(r.Path, image)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return errors.New(fmt.Sprintf("%s: no such image\n", image))
 	}
-	file := r.ImagePath(image)
 	fmt.Printf("Removing %s...\n", image)
-	cmd := exec.Command("rm", "-rf", filepath.Dir(file))
+	cmd := exec.Command("rm", "-rf", filepath.Dir(path))
 	_, err := cmd.Output()
 	return err;
 }
 
-func (r *Repo) ImagePath(image string) string {
-	return filepath.Join(r.Path, image, filepath.Base(image))
+func (r *Repo) ImagePath(hypervisor string, image string) string {
+	return filepath.Join(r.Path, image, fmt.Sprintf("%s.%s", filepath.Base(image), hypervisor))
 }
 
 func (r *Repo) ListImages() {

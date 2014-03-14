@@ -17,13 +17,13 @@ import (
 	"strings"
 )
 
-func Build(r *capstan.Repo, image string, verbose bool) error {
+func Build(r *capstan.Repo, hypervisor string, image string, verbose bool) error {
 	config, err := capstan.ReadConfig("Capstanfile")
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Building %s...\n", image)
-	err = os.MkdirAll(filepath.Dir(r.ImagePath(image)), 0777)
+	err = os.MkdirAll(filepath.Dir(r.ImagePath(hypervisor, image)), 0777)
 	if err != nil {
 		return err
 	}
@@ -38,30 +38,30 @@ func Build(r *capstan.Repo, image string, verbose bool) error {
 			return err
 		}
 	}
-	err = config.Check(r)
+	err = config.Check(r, hypervisor)
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("cp", r.ImagePath(config.Base), r.ImagePath(image))
+	cmd := exec.Command("cp", r.ImagePath(hypervisor, config.Base), r.ImagePath(hypervisor, image))
 	_, err = cmd.Output()
 	if err != nil {
 		return err
 	}
-	err = qemu.SetArgs(r, image, "/tools/cpiod.so")
+	err = qemu.SetArgs(r, hypervisor, image, "/tools/cpiod.so")
 	if err != nil {
 		return err
 	}
 	if config.RpmBase != nil {
-		err = qemu.UploadRPM(r, image, config, verbose)
+		err = qemu.UploadRPM(r, hypervisor, image, config, verbose)
 		if err != nil {
 			return err
 		}
 	}
-	err = qemu.UploadFiles(r, image, config, verbose)
+	err = qemu.UploadFiles(r, hypervisor, image, config, verbose)
 	if err != nil {
 		return err
 	}
-	err = qemu.SetArgs(r, image, config.Cmdline)
+	err = qemu.SetArgs(r, hypervisor, image, config.Cmdline)
 	if err != nil {
 		return err
 	}

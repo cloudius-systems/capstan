@@ -29,8 +29,8 @@ type VMConfig struct {
 	Redirects []string
 }
 
-func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bool) error {
-	file := r.ImagePath(image)
+func UploadRPM(r *capstan.Repo, hypervisor string, image string, config *capstan.Config, verbose bool) error {
+	file := r.ImagePath(hypervisor, image)
 	vmconfig := &VMConfig{
 		Image:     file,
 		Verbose:   verbose,
@@ -65,8 +65,8 @@ func UploadRPM(r *capstan.Repo, image string, config *capstan.Config, verbose bo
 	return err
 }
 
-func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose bool) error {
-	file := r.ImagePath(image)
+func UploadFiles(r *capstan.Repo, hypervisor string, image string, config *capstan.Config, verbose bool) error {
+	file := r.ImagePath(hypervisor, image)
 	vmconfig := &VMConfig{
 		Image:     file,
 		Verbose:   verbose,
@@ -102,8 +102,8 @@ func UploadFiles(r *capstan.Repo, image string, config *capstan.Config, verbose 
 	return cmd.Wait()
 }
 
-func SetArgs(r *capstan.Repo, image string, args string) error {
-	file := r.ImagePath(image)
+func SetArgs(r *capstan.Repo, hypervisor, image string, args string) error {
+	file := r.ImagePath(hypervisor, image)
 	cmd := exec.Command("qemu-nbd", file)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
