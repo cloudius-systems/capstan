@@ -16,14 +16,19 @@ import (
 	"testing"
 )
 
-func capstan(command []string) *exec.Cmd {
-	name, _ := ioutil.TempDir("", "capstan-root")
+func capstan(command []string, root string) *exec.Cmd {
 	c := exec.Command("capstan", command...)
-	c.Env = append(os.Environ(), fmt.Sprintf("CAPSTAN_ROOT=%s", name))
+	c.Env = append(os.Environ(), fmt.Sprintf("CAPSTAN_ROOT=%s", root))
 	return c
 }
 
 func TestCommandErrors(t *testing.T) {
+	root, err := ioutil.TempDir("", "capstan-root")
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+	defer os.RemoveAll(root)
+
 	m := map[string]string{
 		"build foo": "open Capstanfile: no such file or directory\n",
 		"build":     "usage: capstan build [image-name]\n",
@@ -35,7 +40,7 @@ func TestCommandErrors(t *testing.T) {
 		"run":       "usage: capstan run [image-name]\n",
 	}
 	for key, value := range m {
-		cmd := capstan(strings.Fields(key))
+		cmd := capstan(strings.Fields(key), root)
 		out, err := cmd.Output()
 		if err != nil {
 			t.Errorf("capstan: %v", err)
@@ -43,5 +48,38 @@ func TestCommandErrors(t *testing.T) {
 		if g, e := string(out), value; g != e {
 			t.Errorf("capstan: want %q, got %q", e, g)
 		}
+	}
+}
+
+func TestPushCommand(t *testing.T) {
+	root, err := ioutil.TempDir("", "capstan-root")
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+	defer os.RemoveAll(root)
+
+	cmd := exec.Command("qemu-img", "create", "-f", "qcow2", "example.qcow2", "128M")
+	out, err := cmd.Output()
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+
+	cmd = capstan([]string{"push", "example", "example.qcow2"}, root)
+	out, err = cmd.Output()
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+	if g, e := string(out), "Pushing example...\n"; g != e {
+		t.Errorf("capstan: want %q, got %q", e, g)
+	}
+
+	cmd = capstan([]string{"images"}, root)
+	out, err = cmd.Output()
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+	if g, e := string(out), "example\n"; g != e {
+		t.Errorf("capstan: want %q, got %q", e, g)
+
 	}
 }
