@@ -84,7 +84,7 @@ func main() {
 			Name:  "run",
 			Usage: "launch a VM",
 			Flags: []cli.Flag{
-				cli.StringFlag{"p", "kvm", "hypervisor"},
+				cli.StringFlag{"p", "qemu", "hypervisor"},
 				cli.StringFlag{"m", "1G", "memory size"},
 				cli.IntFlag{"c", 2, "number of CPUs"},
 				cli.BoolFlag{"v", "verbose mode"},

@@ -55,7 +55,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	}
 	var cmd *exec.Cmd
 	switch config.Hypervisor {
-	case "kvm":
+	case "qemu":
 		config := &qemu.VMConfig{
 			Image:     path,
 			Verbose:   true,
