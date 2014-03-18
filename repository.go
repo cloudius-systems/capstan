@@ -116,7 +116,7 @@ func (r *Repo) RemoveImage(image string) error {
 		return errors.New(fmt.Sprintf("%s: no such image\n", image))
 	}
 	fmt.Printf("Removing %s...\n", image)
-	cmd := exec.Command("rm", "-rf", filepath.Dir(path))
+	cmd := exec.Command("rm", "-rf", path)
 	_, err := cmd.Output()
 	return err;
 }
