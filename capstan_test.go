@@ -83,3 +83,65 @@ func TestPushCommand(t *testing.T) {
 
 	}
 }
+
+func TestRmiCommand(t *testing.T) {
+	root, err := ioutil.TempDir("", "capstan-root")
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+	defer os.RemoveAll(root)
+
+	cmd := exec.Command("qemu-img", "create", "-f", "qcow2", "example.qcow2", "128M")
+	out, err := cmd.Output()
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+
+	cmd = capstan([]string{"push", "example1", "example.qcow2"}, root)
+	out, err = cmd.Output()
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+	if g, e := string(out), "Pushing example1...\n"; g != e {
+		t.Errorf("capstan: want %q, got %q", e, g)
+	}
+
+	cmd = capstan([]string{"push", "example2", "example.qcow2"}, root)
+	out, err = cmd.Output()
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+	if g, e := string(out), "Pushing example2...\n"; g != e {
+		t.Errorf("capstan: want %q, got %q", e, g)
+	}
+
+	cmd = capstan([]string{"images"}, root)
+	out, err = cmd.Output()
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+	if g, e := string(out), "example1\nexample2\n"; g != e {
+		t.Errorf("capstan: want %q, got %q", e, g)
+
+	}
+
+	cmd = capstan([]string{"rmi", "example1"}, root)
+	out, err = cmd.Output()
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+	if g, e := string(out), "Removing example1...\n"; g != e {
+		t.Errorf("capstan: want %q, got %q", e, g)
+
+	}
+
+	cmd = capstan([]string{"images"}, root)
+	out, err = cmd.Output()
+	if err != nil {
+		t.Errorf("capstan: %v", err)
+	}
+	if g, e := string(out), "example2\n"; g != e {
+		t.Errorf("capstan: want %q, got %q", e, g)
+
+	}
+}
