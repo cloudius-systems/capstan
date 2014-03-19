@@ -88,16 +88,18 @@ func main() {
 				cli.StringFlag{"m", "1G", "memory size"},
 				cli.IntFlag{"c", 2, "number of CPUs"},
 				cli.BoolFlag{"v", "verbose mode"},
+				cli.StringSliceFlag{"f", new(cli.StringSlice), "port forwarding rules"},
 			},
 			Action: func(c *cli.Context) {
 				image := c.Args().First()
 				hypervisor := c.String("p")
 				config := &cmd.RunConfig{
-					ImageName:  image,
-					Hypervisor: hypervisor,
-					Verbose:    c.Bool("v"),
-					Memory:     c.String("m"),
-					Cpus:       c.Int("c"),
+					ImageName:        image,
+					Hypervisor:       hypervisor,
+					Verbose:          c.Bool("v"),
+					Memory:           c.String("m"),
+					Cpus:             c.Int("c"),
+					PortForwardRules: c.StringSlice("f"),
 				}
 				err := cmd.Run(repo, config)
 				if err != nil {
