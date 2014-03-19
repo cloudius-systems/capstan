@@ -36,7 +36,7 @@ func TestCommandErrors(t *testing.T) {
 		"push":      "usage: capstan push [image-name] [image-file]\n",
 		"push foo":  "usage: capstan push [image-name] [image-file]\n",
 		"rmi":       "usage: capstan rmi [image-name]\n",
-		"run foo":   "stat foo: no such file or directory\n",
+		"run foo":   "foo: no such image\n",
 		"run":       "No Capstanfile found, unable to run.\n",
 	}
 	for key, value := range m {
