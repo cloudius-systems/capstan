@@ -33,8 +33,9 @@ func Build(r *capstan.Repo, hypervisor string, image string, verbose bool) error
 	if config.Build != "" {
 		args := strings.Fields(config.Build)
 		cmd := exec.Command(args[0], args[1:]...)
-		_, err = cmd.Output()
+		out, err := cmd.CombinedOutput()
 		if err != nil {
+			fmt.Println(string(out))
 			return err
 		}
 	}
