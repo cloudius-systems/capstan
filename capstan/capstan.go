@@ -91,13 +91,6 @@ func main() {
 			},
 			Action: func(c *cli.Context) {
 				image := c.Args().First()
-				if len(c.Args()) != 1 {
-					image = repo.DefaultImage()
-				}
-				if image == "" {
-					fmt.Println("usage: capstan run [image-name]")
-					return
-				}
 				hypervisor := c.String("p")
 				config := &cmd.RunConfig{
 					ImageName:  image,
