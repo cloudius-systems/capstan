@@ -156,21 +156,12 @@ func SetArgs(r *capstan.Repo, hypervisor, image string, args string) error {
 func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	args := append(c.vmArguments(), extra...)
 	cmd := exec.Command("qemu-system-x86_64", args...)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return nil, err
-	}
-	err = cmd.Start()
-	if err != nil {
-		return nil, err
-	}
 	if c.Verbose {
-		go io.Copy(os.Stdout, stdout)
-		go io.Copy(os.Stderr, stderr)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+	if err := cmd.Start(); err != nil {
+		return nil, err
 	}
 	return cmd, nil
 }
