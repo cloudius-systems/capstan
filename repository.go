@@ -40,8 +40,9 @@ func (r *Repo) PullImage(image string) error {
 	fmt.Printf("Pulling %s...\n", image)
 	gitUrl := fmt.Sprintf("https://github.com/%s", image)
 	cmd := exec.Command("git", "clone", "--depth", "1", gitUrl, workTree)
-	_, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Println(string(out))
 		return errors.New(fmt.Sprintf("%s: unable to pull remote image", image))
 	}
 	return nil
@@ -52,13 +53,18 @@ func (r *Repo) updateImage(image string) error {
 	workTree := r.workTree(image)
 	gitDir   := r.gitDir(image)
 	cmd := exec.Command("git", "--git-dir", gitDir, "--work-tree", workTree, "remote", "update")
-	_, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Println(string(out))
 		return err
 	}
 	cmd = exec.Command("git", "--git-dir", gitDir, "--work-tree", workTree, "merge", "origin/master")
-	_, err = cmd.Output()
-	return err
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(string(out))
+		return err
+	}
+	return nil
 }
 
 func (r *Repo) gitDir(image string) string {
