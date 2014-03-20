@@ -34,10 +34,19 @@ func NewRepo() *Repo {
 
 func (r *Repo) PullImage(image string) error {
 	workTree := r.workTree(image)
-	if _, err := os.Stat(workTree); os.IsExist(err) {
-		return r.updateImage(image)
+	_, err := os.Stat(workTree)
+	if os.IsNotExist(err) {
+		return r.cloneImage(image)
 	}
+	if err != nil {
+		return err
+	}
+	return r.updateImage(image)
+}
+
+func (r *Repo) cloneImage(image string) error {
 	fmt.Printf("Pulling %s...\n", image)
+	workTree := r.workTree(image)
 	gitUrl := fmt.Sprintf("https://github.com/%s", image)
 	cmd := exec.Command("git", "clone", "--depth", "1", gitUrl, workTree)
 	out, err := cmd.CombinedOutput()
