@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/cloudius-systems/capstan"
 	"github.com/cloudius-systems/capstan/cpio"
+	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/nbd"
 	"io"
 	"io/ioutil"
@@ -19,25 +20,24 @@ import (
 	"os/exec"
 	"runtime"
 	"strconv"
-	"strings"
 	"time"
 )
 
 type VMConfig struct {
-	Image            string
-	Verbose          bool
-	Memory           int64
-	Cpus             int
-	PortForwardRules []string
+	Image    string
+	Verbose  bool
+	Memory   int64
+	Cpus     int
+	NatRules []nat.Rule
 }
 
 func UploadRPM(r *capstan.Repo, hypervisor string, image string, config *capstan.Config, verbose bool) error {
 	file := r.ImagePath(hypervisor, image)
 	vmconfig := &VMConfig{
-		Image:            file,
-		Verbose:          verbose,
-		Memory:           64,
-		PortForwardRules: []string{"10000:10000"},
+		Image:    file,
+		Verbose:  verbose,
+		Memory:   64,
+		NatRules: []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 	}
 	qemu, err := LaunchVM(vmconfig)
 	if err != nil {
@@ -70,10 +70,10 @@ func UploadRPM(r *capstan.Repo, hypervisor string, image string, config *capstan
 func UploadFiles(r *capstan.Repo, hypervisor string, image string, config *capstan.Config, verbose bool) error {
 	file := r.ImagePath(hypervisor, image)
 	vmconfig := &VMConfig{
-		Image:            file,
-		Verbose:          verbose,
-		Memory:           64,
-		PortForwardRules: []string{"10000:10000"},
+		Image:    file,
+		Verbose:  verbose,
+		Memory:   64,
+		NatRules: []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 	}
 	cmd, err := LaunchVM(vmconfig)
 	if err != nil {
@@ -168,7 +168,7 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 
 func (c *VMConfig) vmArguments() []string {
 	args := []string{"-vnc", ":1", "-gdb", "tcp::1234,server,nowait", "-m", strconv.FormatInt(c.Memory, 10), "-smp", strconv.Itoa(c.Cpus), "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}
-	redirects := toQemuRedirects(c.PortForwardRules)
+	redirects := toQemuRedirects(c.NatRules)
 	args = append(args, redirects...)
 	if runtime.GOOS == "linux" {
 		args = append(args, "-enable-kvm", "-cpu", "host,+x2apic")
@@ -176,10 +176,10 @@ func (c *VMConfig) vmArguments() []string {
 	return args
 }
 
-func toQemuRedirects(portForwardRules []string) []string {
+func toQemuRedirects(natRules []nat.Rule) []string {
 	redirects := make([]string, 0)
-	for _, portForward := range portForwardRules {
-		redirect := fmt.Sprintf("tcp:%s", strings.Replace(portForward, ":", "::", -1))
+	for _, portForward := range natRules {
+		redirect := fmt.Sprintf("tcp:%s::%s", portForward.HostPort, portForward.GuestPort)
 		redirects = append(redirects, "-redir", redirect)
 	}
 	return redirects

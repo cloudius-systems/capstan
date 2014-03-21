@@ -13,18 +13,19 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
 	"github.com/cloudius-systems/capstan/image"
+	"github.com/cloudius-systems/capstan/nat"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
 
 type RunConfig struct {
-	ImageName        string
-	Hypervisor       string
-	Verbose          bool
-	Memory           string
-	Cpus             int
-	PortForwardRules []string
+	ImageName  string
+	Hypervisor string
+	Verbose    bool
+	Memory     string
+	Cpus       int
+	NatRules   []nat.Rule
 }
 
 func Run(repo *capstan.Repo, config *RunConfig) error {
@@ -69,11 +70,11 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	switch config.Hypervisor {
 	case "qemu":
 		config := &qemu.VMConfig{
-			Image:            path,
-			Verbose:          true,
-			Memory:           size,
-			Cpus:             config.Cpus,
-			PortForwardRules: config.PortForwardRules,
+			Image:    path,
+			Verbose:  true,
+			Memory:   size,
+			Cpus:     config.Cpus,
+			NatRules: config.NatRules,
 		}
 		cmd, err = qemu.LaunchVM(config)
 	case "vbox":

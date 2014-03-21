@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/cloudius-systems/capstan"
 	"github.com/cloudius-systems/capstan/cmd"
+	"github.com/cloudius-systems/capstan/nat"
 	"github.com/codegangsta/cli"
 	"os"
 )
@@ -94,12 +95,12 @@ func main() {
 				image := c.Args().First()
 				hypervisor := c.String("p")
 				config := &cmd.RunConfig{
-					ImageName:        image,
-					Hypervisor:       hypervisor,
-					Verbose:          c.Bool("v"),
-					Memory:           c.String("m"),
-					Cpus:             c.Int("c"),
-					PortForwardRules: c.StringSlice("f"),
+					ImageName:  image,
+					Hypervisor: hypervisor,
+					Verbose:    c.Bool("v"),
+					Memory:     c.String("m"),
+					Cpus:       c.Int("c"),
+					NatRules:   nat.Parse(c.StringSlice("f")),
 				}
 				err := cmd.Run(repo, config)
 				if err != nil {
