@@ -9,6 +9,7 @@ package vbox
 
 import (
 	"fmt"
+	"github.com/cloudius-systems/capstan/nat"
 	"io"
 	"net"
 	"os"
@@ -21,11 +22,12 @@ import (
 )
 
 type VMConfig struct {
-	Name   string
-	Dir    string
-	Image  string
-	Memory int64
-	Cpus   int
+	Name     string
+	Dir      string
+	Image    string
+	Memory   int64
+	Cpus     int
+	NatRules []nat.Rule
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
@@ -109,7 +111,11 @@ func vmCreate(c *VMConfig) error {
 	if err != nil {
 		return err
 	}
-	err = VBoxManage("modifyvm", c.Name, "--nic1", "hostonly", "--nictype1", "virtio", "--hostonlyadapter1", "vboxnet0")
+	err = VBoxManage("modifyvm", c.Name, "--nic1", "nat", "--nictype1", "virtio", "--hostonlyadapter1", "vboxnet0")
+	if err != nil {
+		return err
+	}
+	err = vmSetupNAT(c)
 	if err != nil {
 		return err
 	}
@@ -128,6 +134,17 @@ func vmCreate(c *VMConfig) error {
 	err = VBoxManage("modifyvm", c.Name, "--cpus", strconv.Itoa(c.Cpus))
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func vmSetupNAT(c *VMConfig) error {
+	for _, rule := range c.NatRules {
+		natRule := fmt.Sprintf("guest%s,tcp,,%s,,%s", rule.GuestPort, rule.HostPort, rule.GuestPort)
+		err := VBoxManage("modifyvm", c.Name, "--natpf1", natRule)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

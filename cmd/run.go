@@ -82,11 +82,12 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
 		config := &vbox.VMConfig{
-			Name:   "osv",
-			Dir:    filepath.Join(os.Getenv("HOME"), "VirtualBox VMs"),
-			Image:  path,
-			Memory: size,
-			Cpus:   config.Cpus,
+			Name:     "osv",
+			Dir:      filepath.Join(os.Getenv("HOME"), "VirtualBox VMs"),
+			Image:    path,
+			Memory:   size,
+			Cpus:     config.Cpus,
+			NatRules: config.NatRules,
 		}
 		cmd, err = vbox.LaunchVM(config)
 	default:
