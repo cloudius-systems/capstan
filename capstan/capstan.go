@@ -92,11 +92,9 @@ func main() {
 				cli.StringSliceFlag{"f", new(cli.StringSlice), "port forwarding rules"},
 			},
 			Action: func(c *cli.Context) {
-				image := c.Args().First()
-				hypervisor := c.String("p")
 				config := &cmd.RunConfig{
-					ImageName:  image,
-					Hypervisor: hypervisor,
+					ImageName:  c.Args().First(),
+					Hypervisor: c.String("p"),
 					Verbose:    c.Bool("v"),
 					Memory:     c.String("m"),
 					Cpus:       c.Int("c"),
