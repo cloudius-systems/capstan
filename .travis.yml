@@ -11,7 +11,4 @@ before_install:
   - export PATH=/home/travis/gopath/bin:$PATH
 
 install:
-  - go get github.com/codegangsta/cli
-  - go get github.com/kylelemons/go-gypsy/yaml
-  - go get github.com/kylelemons/goat
   - ./install

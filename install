@@ -1,5 +1,7 @@
 #!/bin/sh
 
+package=github.com/cloudius-systems/capstan/capstan
 version=$(scripts/version)
 
-go install -ldflags "-X main.VERSION '$version'" github.com/cloudius-systems/capstan/capstan
+go get $package
+go install -ldflags "-X main.VERSION '$version'" $package
