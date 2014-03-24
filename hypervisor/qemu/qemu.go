@@ -160,6 +160,7 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
+	cmd.Stdin = os.Stdin
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
