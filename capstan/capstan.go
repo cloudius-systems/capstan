@@ -136,6 +136,17 @@ func main() {
 				repo.ListImages()
 			},
 		},
+		{
+			Name:  "search",
+			Usage: "search a remote images",
+			Action: func(c *cli.Context) {
+				image := ""
+				if len(c.Args()) > 0 {
+					image = c.Args()[0]
+				}
+				capstan.ListImagesRemote(image)
+			},
+		},
 	}
 	app.Run(os.Args)
 }
