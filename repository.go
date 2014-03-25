@@ -25,7 +25,7 @@ type Repo struct {
 func NewRepo() *Repo {
 	root := os.Getenv("CAPSTAN_ROOT")
 	if root == "" {
-		root = filepath.Join(os.Getenv("HOME"), "/.capstan/repository/") 
+		root = filepath.Join(os.Getenv("HOME"), "/.capstan/repository/")
 	}
 	return &Repo{
 		Path: root,
@@ -33,6 +33,9 @@ func NewRepo() *Repo {
 }
 
 func (r *Repo) PullImage(image string) error {
+	if IsRemoteImage(image) {
+		return r.DownloadImage(image)
+	}
 	workTree := r.workTree(image)
 	_, err := os.Stat(workTree)
 	if os.IsNotExist(err) {
@@ -60,7 +63,7 @@ func (r *Repo) cloneImage(image string) error {
 func (r *Repo) updateImage(image string) error {
 	fmt.Printf("Updating %s...\n", image)
 	workTree := r.workTree(image)
-	gitDir   := r.gitDir(image)
+	gitDir := r.gitDir(image)
 	cmd := exec.Command("git", "--git-dir", gitDir, "--work-tree", workTree, "remote", "update")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -133,7 +136,7 @@ func (r *Repo) RemoveImage(image string) error {
 	fmt.Printf("Removing %s...\n", image)
 	cmd := exec.Command("rm", "-rf", path)
 	_, err := cmd.Output()
-	return err;
+	return err
 }
 
 func (r *Repo) ImagePath(hypervisor string, image string) string {
@@ -141,13 +144,19 @@ func (r *Repo) ImagePath(hypervisor string, image string) string {
 }
 
 func (r *Repo) ListImages() {
+	fmt.Println(FileInfoHeader())
 	namespaces, _ := ioutil.ReadDir(r.Path)
 	for _, n := range namespaces {
 		images, _ := ioutil.ReadDir(filepath.Join(r.Path, n.Name()))
 		nrImages := 0
 		for _, i := range images {
 			if i.IsDir() {
-				fmt.Println(n.Name() + "/" + i.Name())
+				info := MakeFileInfo(r.Path, n.Name(), i.Name())
+				if info == nil {
+					fmt.Println(n.Name() + "/" + i.Name())
+				} else {
+					fmt.Println(info.String())
+				}
 				nrImages++
 			}
 		}
