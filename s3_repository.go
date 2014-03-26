@@ -10,7 +10,6 @@ package capstan
 import (
 	"bytes"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"github.com/kylelemons/go-gypsy/yaml"
 	"io"
@@ -144,6 +143,7 @@ func (r *Repo) DownloadFile(name string) error {
 		return err
 	}
 	defer output.Close()
+	fmt.Printf("Fetching %s...", name)
 	resp, err := http.Get(bucket_url + name)
 	if err != nil {
 		return err
@@ -160,13 +160,18 @@ func (r *Repo) DownloadFile(name string) error {
 
 func (r *Repo) DownloadImage(path string) error {
 	parts := strings.Split(path, "/")
-	if len(parts) < 2 {
-		errors.New(fmt.Sprintf("%s: wrong name format", path))
+	if len(parts) < 2 {		
+		return fmt.Errorf("%s: wrong name format", path)
 	}
 	q := QueryRemote()
+	var err error
 	for _, content := range q.ContentsList {
-		if strings.HasPrefix(content.Key+"/", path) && content.Size > 0 {
-			r.DownloadFile(content.Key)
+		if strings.HasPrefix(content.Key, path+"/") && content.Size > 0 {
+			os.MkdirAll(filepath.Join(r.Path,path), os.ModePerm)
+			err = r.DownloadFile(content.Key)
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 	return nil
@@ -175,7 +180,7 @@ func (r *Repo) DownloadImage(path string) error {
 func IsRemoteImage(name string) bool {
 	q := QueryRemote()
 	for _, content := range q.ContentsList {
-		if content.Key == name+"/" {
+		if strings.HasPrefix(content.Key, name+"/") {
 			return true
 		}
 	}
