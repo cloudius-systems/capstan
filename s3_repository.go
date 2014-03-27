@@ -151,7 +151,6 @@ func (r *Repo) DownloadFile(name string) error {
 	defer resp.Body.Close()
 	n, err := io.Copy(output, resp.Body)
 	if err != nil {
-		fmt.Println("Error while downloading", bucket_url+name, "-", err)
 		return err
 	}
 	fmt.Println(n, "bytes downloaded.")
@@ -164,13 +163,12 @@ func (r *Repo) DownloadImage(path string) error {
 		return fmt.Errorf("%s: wrong name format", path)
 	}
 	q := QueryRemote()
-	var err error
 	for _, content := range q.ContentsList {
 		if strings.HasPrefix(content.Key, path+"/") && content.Size > 0 {
 			os.MkdirAll(filepath.Join(r.Path,path), os.ModePerm)
-			err = r.DownloadFile(content.Key)
+			err := r.DownloadFile(content.Key)
 			if err != nil {
-				fmt.Println(err)
+				return err
 			}
 		}
 	}
