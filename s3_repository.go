@@ -8,7 +8,6 @@
 package capstan
 
 import (
-	"bytes"
 	"encoding/xml"
 	"fmt"
 	"github.com/kylelemons/go-gypsy/yaml"
@@ -17,15 +16,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 )
 
 const time_layout = "2006-01-02T15:04:05"
 const bucket_url = "http://cpastan01.amnon.osv.s3.amazonaws.com/"
-
-var headerWidth = []int{15, 30, 15, 15, 0, 0}
 
 type FileInfo struct {
 	namespace   string
@@ -50,28 +46,12 @@ type FilesInfo struct {
 	images []FileInfo
 }
 
-func strWidth(str string, width int) string {
-	return fmt.Sprintf("%-"+strconv.Itoa(width)+"s", str)
-}
-
-func FileInfoFmt(vals []string) string {
-	var buffer bytes.Buffer
-	for i := 0; i < len(vals); i++ {
-		if headerWidth[i] > 0 {
-			buffer.WriteString(strWidth(vals[i], headerWidth[i]))
-		}
-	}
-	return buffer.String()
-}
-
 func FileInfoHeader() string {
-	vals := []string{"Name", "Description", "Version", "Created", "Hypervisor", "Extension"}
-	return FileInfoFmt(vals)
+	return fmt.Sprintf("%-15s %-30s %-15s %-15s", "Name", "Description", "Version", "Created")
 }
 
 func (f *FileInfo) String() string {
-	vals := []string{f.namespace + "/" + f.name, f.description, f.version, f.created.Format(time_layout)}
-	return FileInfoFmt(vals)
+	return fmt.Sprintf("%-15s %-30s %-15s %-15s", f.namespace+"/"+f.name, f.description, f.version, f.created.Format(time_layout))
 }
 
 func yamlToInfo(ns, name string, mp yaml.Node) *FileInfo {
