@@ -8,7 +8,8 @@ like Docker but on top of a hypervisor!
 ## Installation
 
 You need a working Go environment installed. See [Go install
-instructions](http://golang.org/doc/install.html) for how to do that.
+instructions](http://golang.org/doc/install.html) for how to do that. Go
+version 1.1 or later is required.
 
 To install Capstan, type:
 
