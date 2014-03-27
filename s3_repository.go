@@ -118,7 +118,7 @@ func ListImagesRemote(search string) {
 }
 
 func (r *Repo) DownloadFile(name string) error {
-	output, err := os.Create(filepath.Join(r.Path, name))
+	output, err := os.Create(filepath.Join(r.Path, strings.TrimSuffix(name,".gz")))
 	if err != nil {
 		return err
 	}
