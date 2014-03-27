@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"errors"
 )
 
 func Build(r *capstan.Repo, hypervisor string, image string, verbose bool) error {
@@ -39,7 +40,7 @@ func Build(r *capstan.Repo, hypervisor string, image string, verbose bool) error
 			return err
 		}
 	}
-	err = config.Check(r, hypervisor)
+	err = checkConfig(config, r, hypervisor)
 	if err != nil {
 		return err
 	}
@@ -65,6 +66,21 @@ func Build(r *capstan.Repo, hypervisor string, image string, verbose bool) error
 	err = qemu.SetArgs(r, hypervisor, image, config.Cmdline)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func checkConfig(config *capstan.Config, r *capstan.Repo, hypervisor string) error {
+	if _, err := os.Stat(r.ImagePath(hypervisor, config.Base)); os.IsNotExist(err) {
+		err := Pull(r, config.Base)
+		if err != nil {
+			return err
+		}
+	}
+	for _, value := range config.Files {
+		if _, err := os.Stat(value); os.IsNotExist(err) {
+			return errors.New(fmt.Sprintf("%s: no such file or directory", value))
+		}
 	}
 	return nil
 }

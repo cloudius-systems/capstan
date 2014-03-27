@@ -8,10 +8,7 @@
 package capstan
 
 import (
-	"errors"
-	"fmt"
 	"github.com/kylelemons/go-gypsy/yaml"
-	"os"
 	"strings"
 )
 
@@ -88,16 +85,4 @@ func ParseConfig(config *yaml.File) (*Config, error) {
 		Files:   files,
 	}
 	return result, nil
-}
-
-func (config *Config) Check(r *Repo, hypervisor string) error {
-	if _, err := os.Stat(r.ImagePath(hypervisor, config.Base)); os.IsNotExist(err) {
-		return r.PullImage(config.Base)
-	}
-	for _, value := range config.Files {
-		if _, err := os.Stat(value); os.IsNotExist(err) {
-			return errors.New(fmt.Sprintf("%s: no such file or directory", value))
-		}
-	}
-	return nil
 }
