@@ -61,7 +61,7 @@ func main() {
 					fmt.Println("usage: capstan pull [image-name]")
 					return
 				}
-				err := repo.PullImage(c.Args().First())
+				err := cmd.Pull(repo, c.Args().First())
 				if err != nil {
 					fmt.Println(err.Error())
 				}
