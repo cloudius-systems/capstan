@@ -57,6 +57,7 @@ func TestPushCommand(t *testing.T) {
 		t.Errorf("capstan: %v", err)
 	}
 	defer os.RemoveAll(root)
+	defer os.Remove("example.qcow2")
 
 	cmd := exec.Command("qemu-img", "create", "-f", "qcow2", "example.qcow2", "128M")
 	out, err := cmd.Output()
@@ -91,6 +92,7 @@ func TestRmiCommand(t *testing.T) {
 		t.Errorf("capstan: %v", err)
 	}
 	defer os.RemoveAll(root)
+	defer os.Remove("example.qcow2")
 
 	cmd := exec.Command("qemu-img", "create", "-f", "qcow2", "example.qcow2", "128M")
 	out, err := cmd.Output()
