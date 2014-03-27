@@ -21,7 +21,7 @@ import (
 )
 
 const time_layout = "2006-01-02T15:04:05"
-const bucket_url = "http://cpastan01.amnon.osv.s3.amazonaws.com/"
+const bucket_url = "http://osv.capstan.s3.amazonaws.com/"
 
 type FileInfo struct {
 	namespace   string
