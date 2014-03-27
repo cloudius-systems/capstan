@@ -139,13 +139,13 @@ func (r *Repo) DownloadFile(name string) error {
 
 func (r *Repo) DownloadImage(path string) error {
 	parts := strings.Split(path, "/")
-	if len(parts) < 2 {		
+	if len(parts) < 2 {
 		return fmt.Errorf("%s: wrong name format", path)
 	}
 	q := QueryRemote()
 	for _, content := range q.ContentsList {
 		if strings.HasPrefix(content.Key, path+"/") && content.Size > 0 {
-			os.MkdirAll(filepath.Join(r.Path,path), os.ModePerm)
+			os.MkdirAll(filepath.Join(r.Path, path), os.ModePerm)
 			err := r.DownloadFile(content.Key)
 			if err != nil {
 				return err
