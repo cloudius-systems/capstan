@@ -47,11 +47,11 @@ type FilesInfo struct {
 }
 
 func FileInfoHeader() string {
-	return fmt.Sprintf("%-15s %-30s %-15s %-15s", "Name", "Description", "Version", "Created")
+	return fmt.Sprintf("%-20s %-30s %-15s %-15s", "Name", "Description", "Version", "Created")
 }
 
 func (f *FileInfo) String() string {
-	return fmt.Sprintf("%-15s %-30s %-15s %-15s", f.namespace+"/"+f.name, f.description, f.version, f.created.Format(time_layout))
+	return fmt.Sprintf("%-20s %-30s %-15s %-15s", f.namespace+"/"+f.name, f.description, f.version, f.created.Format(time_layout))
 }
 
 func yamlToInfo(ns, name string, mp yaml.Node) *FileInfo {
