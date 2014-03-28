@@ -58,7 +58,10 @@ func yamlToInfo(ns, name string, mp yaml.Node) *FileInfo {
 	if mp == nil {
 		return nil
 	}
-	m := mp.(yaml.Map)
+	m, ok := mp.(yaml.Map)
+	if !ok {
+		return nil
+	}
 	y2s := func(key string) string {
 		return m[key].(yaml.Scalar).String()
 	}
