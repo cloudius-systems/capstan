@@ -22,12 +22,15 @@ import (
 
 const time_layout = "2006-01-02T15:04:05"
 const bucket_url = "http://osv.capstan.s3.amazonaws.com/"
-
+const output_format = "%-25s %-30s %-15s %-20s %-15s"
 type FileInfo struct {
 	namespace   string
 	name        string
 	description string
 	version     string
+	osvversion  string
+	capstanversion string
+	makecmd     string
 	created     time.Time
 }
 
@@ -47,11 +50,11 @@ type FilesInfo struct {
 }
 
 func FileInfoHeader() string {
-	return fmt.Sprintf("%-20s %-30s %-15s %-15s", "Name", "Description", "Version", "Created")
+	return fmt.Sprintf(output_format, "Name", "Description", "Version", "OSv", "Created")
 }
 
 func (f *FileInfo) String() string {
-	return fmt.Sprintf("%-20s %-30s %-15s %-15s", f.namespace+"/"+f.name, f.description, f.version, f.created.Format(time_layout))
+	return fmt.Sprintf(output_format, f.namespace+"/"+f.name, f.description, f.version, f.osvversion, f.created.Format(time_layout))
 }
 
 func yamlToInfo(ns, name string, mp yaml.Node) *FileInfo {
@@ -63,11 +66,16 @@ func yamlToInfo(ns, name string, mp yaml.Node) *FileInfo {
 		return nil
 	}
 	y2s := func(key string) string {
+		if m[key] == nil {
+			return ""
+		}
 		return m[key].(yaml.Scalar).String()
 	}
 
 	tm, _ := time.Parse(time_layout, strings.TrimSpace(y2s("created")))
-	return &FileInfo{namespace: ns, name: name, version: y2s("version"), created: tm, description: y2s("description")}
+	return &FileInfo{namespace: ns, name: name, version: y2s("version"),
+		created: tm, description: y2s("description"), osvversion: y2s("osvversion"), 
+		capstanversion: y2s("capstanversion"), makecmd: y2s("makecmd")}
 }
 
 func MakeFileInfo(path, ns, name string) *FileInfo {
