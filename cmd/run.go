@@ -36,7 +36,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			if repo.ImageExists(config.Hypervisor, config.ImageName) {
 				path = repo.ImagePath(config.Hypervisor, config.ImageName)
 			} else if capstan.IsRemoteImage(config.ImageName) {
-				err := Pull(repo, config.ImageName)
+				err := Pull(repo, config.Hypervisor, config.ImageName)
 				if err != nil {
 					return err
 				}

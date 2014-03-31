@@ -56,12 +56,15 @@ func main() {
 		{
 			Name:  "pull",
 			Usage: "pull an image to the repository",
+			Flags: []cli.Flag{
+				cli.StringFlag{"p", "qemu", "hypervisor"},
+			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
 					fmt.Println("usage: capstan pull [image-name]")
 					return
 				}
-				err := cmd.Pull(repo, c.Args().First())
+				err := cmd.Pull(repo, c.String("p"), c.Args().First())
 				if err != nil {
 					fmt.Println(err.Error())
 				}

@@ -72,7 +72,7 @@ func Build(r *capstan.Repo, hypervisor string, image string, verbose bool) error
 
 func checkConfig(config *capstan.Config, r *capstan.Repo, hypervisor string) error {
 	if _, err := os.Stat(r.ImagePath(hypervisor, config.Base)); os.IsNotExist(err) {
-		err := Pull(r, config.Base)
+		err := Pull(r, hypervisor, config.Base)
 		if err != nil {
 			return err
 		}

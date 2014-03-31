@@ -11,9 +11,9 @@ import (
 	"github.com/cloudius-systems/capstan"
 )
 
-func Pull(r *capstan.Repo, image string) error {
+func Pull(r *capstan.Repo, hypervisor string, image string) error {
 	if capstan.IsRemoteImage(image) {
-		return r.DownloadImage(image)
+		return r.DownloadImage(hypervisor, image)
 	}
 	return r.PullImage(image)
 }
