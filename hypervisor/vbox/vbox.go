@@ -111,7 +111,7 @@ func vmCreate(c *VMConfig) error {
 	if err != nil {
 		return err
 	}
-	err = VBoxManage("modifyvm", c.Name, "--nic1", "nat", "--nictype1", "virtio", "--hostonlyadapter1", "vboxnet0")
+	err = VBoxManage("modifyvm", c.Name, "--nic1", "nat", "--nictype1", "virtio")
 	if err != nil {
 		return err
 	}
