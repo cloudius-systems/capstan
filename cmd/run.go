@@ -19,6 +19,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"time"
+	"runtime"
 )
 
 type RunConfig struct {
@@ -92,9 +93,15 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		if format != image.VDI && format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
+		var homepath string
+		if runtime.GOOS == "windows" {
+			homepath = filepath.Join(os.Getenv("HOMEDRIVE"), os.Getenv("HOMEPATH"))
+		} else {
+			homepath = os.Getenv("HOME")
+		}
 		config := &vbox.VMConfig{
 			Name:     "osv",
-			Dir:      filepath.Join(os.Getenv("HOME"), "VirtualBox VMs"),
+			Dir:      filepath.Join(homepath, "VirtualBox VMs"),
 			Image:    path,
 			Memory:   size,
 			Cpus:     config.Cpus,
