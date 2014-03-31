@@ -145,7 +145,11 @@ func (r *Repo) DownloadImage(hypervisor string, path string) error {
 	if len(parts) < 2 {
 		return fmt.Errorf("%s: wrong name format", path)
 	}
-	err := r.DownloadFile(fmt.Sprintf("%s/index.yaml", path))
+	err := os.MkdirAll(filepath.Join(r.Path, path), os.ModePerm)
+	if err != nil {
+		return err
+	}
+	err = r.DownloadFile(fmt.Sprintf("%s/index.yaml", path))
 	if err != nil {
 		return err
 	}
