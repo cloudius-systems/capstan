@@ -14,7 +14,6 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
 	"github.com/cloudius-systems/capstan/image"
 	"github.com/cloudius-systems/capstan/nat"
-	"github.com/kylelemons/goat/termios"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -74,15 +73,8 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	if err != nil {
 		return err
 	}
-	tio, err := termios.NewTermSettings(0)
-	if err != nil {
-		return err
-	}
-	err = tio.Raw()
-	if err != nil {
-		return err
-	}
-	defer tio.Reset()
+	tio, err := capstan.RawTerm()
+	defer capstan.ResetTerm(tio)
 	var cmd *exec.Cmd
 	switch config.Hypervisor {
 	case "qemu":
