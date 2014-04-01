@@ -129,7 +129,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	if err != nil {
 		return err
 	}
-	if err != nil {
+	if cmd != nil {
 		return cmd.Wait()
 	} else {
 		return nil
