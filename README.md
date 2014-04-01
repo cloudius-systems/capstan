@@ -2,8 +2,15 @@
 
 [![Build Status](https://secure.travis-ci.org/cloudius-systems/capstan.png?branch=master)](http://travis-ci.org/cloudius-systems/capstan)
 
-Capstan is a tool for packing, shipping, and running applications in VMs - just
-like Docker but on top of a hypervisor!
+Capstan is a tool for rapidly building and running your application on OSv.
+Capstan is as simple and fast as using Docker for creating containers, but the
+result is a complete virtual machine image that will run on any hypervisor with
+OSv support.
+
+## Features
+
+* Linux, OS X, and Windows support
+* QEMU/KVM VirtualBox, and Google Compute Engine support
 
 ## Installation
 
@@ -22,19 +29,19 @@ This installs a ``capstan`` executable to your Go workspace so make sure your
 
 ## Usage
 
-First, you need to push a VM image to your local Capstan repository:
+To run OSv, type:
 
 ```
-$ capstan push <image>
+$ capstan run cloudius/osv
 ```
 
-You can then launch the image in a VM with:
+To show a list of available remote images, type:
 
 ```
-$ capstan run <image>
+$ capstan search
 ```
 
-To print a list of images in your repository, do:
+To show a list of locally installed images, type:
 
 ```
 $ capstan images
@@ -43,6 +50,12 @@ $ capstan images
 ## Documentation
 
 * [Capstanfile](Documentation/Capstanfile.md)
+
+## Examples
+
+* [Running native Linux apps on OSv](https://github.com/cloudius-systems/capstan-example)
+* [Running Java on OSv](https://github.com/penberg/capstan-example-java)
+* [Running Clojure on OSv](https://github.com/tzach/capstan-example-clojure)
 
 ## License
 
