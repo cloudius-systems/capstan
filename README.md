@@ -18,6 +18,18 @@ You need a working Go environment installed. See [Go install
 instructions](http://golang.org/doc/install.html) for how to do that. Go
 version 1.1 or later is required.
 
+You also need QEMU installed. On Fedora:
+
+```
+$ sudo yum install qemu-system-x86
+```
+
+On OS X:
+
+```
+$ brew install qemu
+```
+
 To install Capstan, type:
 
 ```
