@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -50,7 +51,9 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 		return nil, err
 	}
 	time.Sleep(1 * time.Second)
-	conn, err := net.Dial("unix", c.sockPath())
+
+	var conn net.Conn
+	conn, err = Connect(c.sockPath())
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +102,13 @@ func vmCreate(c *VMConfig) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("cp", c.Image, c.storagePath())
+	// TODO: Use native GO function to copy
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd.exe", "/c", "copy", c.Image, c.storagePath())
+	} else {
+		cmd = exec.Command("cp", c.Image, c.storagePath())
+	}
 	if err := cmd.Run(); err != nil {
 		return err
 	}
@@ -173,7 +182,11 @@ func VBoxHeadless(args ...string) (*exec.Cmd, error) {
 }
 
 func (c *VMConfig) sockPath() string {
-	return filepath.Join(c.Dir, c.Name, fmt.Sprintf("%s.sock", c.Name))
+	if runtime.GOOS == "windows" {
+		return "\\\\.\\pipe\\" + c.Name
+	} else {
+		return filepath.Join(c.Dir, c.Name, fmt.Sprintf("%s.sock", c.Name))
+	}
 }
 
 func (c *VMConfig) storagePath() string {
