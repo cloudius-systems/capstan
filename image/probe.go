@@ -11,6 +11,7 @@ import (
 	"github.com/cloudius-systems/capstan/image/qcow2"
 	"github.com/cloudius-systems/capstan/image/vdi"
 	"github.com/cloudius-systems/capstan/image/vmdk"
+	"github.com/cloudius-systems/capstan/image/gce"
 	"os"
 )
 
@@ -20,6 +21,7 @@ const (
 	QCOW2 ImageFormat = iota
 	VDI
 	VMDK
+	GCE
 	Unknown
 )
 
@@ -40,6 +42,10 @@ func Probe(path string) (ImageFormat, error) {
 	f.Seek(0, os.SEEK_SET)
 	if vmdk.Probe(f) {
 		return VMDK, nil
+	}
+	f.Seek(0, os.SEEK_SET)
+	if gce.Probe(f) {
+		return GCE, nil
 	}
 	return Unknown, nil
 }
