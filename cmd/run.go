@@ -12,11 +12,13 @@ import (
 	"github.com/cloudius-systems/capstan"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
+	"github.com/cloudius-systems/capstan/hypervisor/gce"
 	"github.com/cloudius-systems/capstan/image"
 	"github.com/cloudius-systems/capstan/nat"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 )
 
 type RunConfig struct {
@@ -73,8 +75,6 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	if err != nil {
 		return err
 	}
-	tio, err := capstan.RawTerm()
-	defer capstan.ResetTerm(tio)
 	var cmd *exec.Cmd
 	switch config.Hypervisor {
 	case "qemu":
@@ -85,6 +85,8 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			Cpus:     config.Cpus,
 			NatRules: config.NatRules,
 		}
+		tio, _ := capstan.RawTerm()
+		defer capstan.ResetTerm(tio)
 		cmd, err = qemu.LaunchVM(config)
 	case "vbox":
 		if format != image.VDI && format != image.VMDK {
@@ -98,12 +100,31 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			Cpus:     config.Cpus,
 			NatRules: config.NatRules,
 		}
+		tio, _ := capstan.RawTerm()
+		defer capstan.ResetTerm(tio)
 		cmd, err = vbox.LaunchVM(config)
+	case "gce":
+		id := fmt.Sprintf("%v", time.Now().Unix())
+		bucket := "osvimg"
+		config := &gce.VMConfig{
+			Name:		"osv-capstan-" + id,
+			Image:		"osv-capstan-" + id,
+			Network:	"default",
+			MachineType:	"n1-standard-1",
+			Zone:		"us-central1-a",
+			CloudStoragePath: "gs://" + bucket + "/osv-capstan-" + id + ".tar.gz",
+			Tarball:	  path,
+		}
+		cmd, err = gce.LaunchVM(config)
 	default:
 		err = fmt.Errorf("%s: is not a supported hypervisor", config.Hypervisor)
 	}
 	if err != nil {
 		return err
 	}
-	return cmd.Wait()
+	if err != nil {
+		return cmd.Wait()
+	} else {
+		return nil
+	}
 }
