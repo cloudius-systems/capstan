@@ -99,14 +99,16 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		} else {
 			homepath = os.Getenv("HOME")
 		}
+		id := "i"+ fmt.Sprintf("%v", time.Now().Unix())
 		config := &vbox.VMConfig{
-			Name:     "osv",
-			Dir:      filepath.Join(homepath, "VirtualBox VMs"),
+			Name:	  id,
+			Dir:      filepath.Join(homepath, ".capstan/instances/vbox"),
 			Image:    path,
 			Memory:   size,
 			Cpus:     config.Cpus,
 			NatRules: config.NatRules,
 		}
+		fmt.Printf("Created instance: %s\n", id);
 		tio, _ := capstan.RawTerm()
 		defer capstan.ResetTerm(tio)
 		cmd, err = vbox.LaunchVM(config)
