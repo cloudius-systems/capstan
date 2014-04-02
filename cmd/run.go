@@ -79,16 +79,22 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	var cmd *exec.Cmd
 	switch config.Hypervisor {
 	case "qemu":
+		id := "i"+ fmt.Sprintf("%v", time.Now().Unix())
 		config := &qemu.VMConfig{
+			Name:	  id,
 			Image:    path,
 			Verbose:  true,
 			Memory:   size,
 			Cpus:     config.Cpus,
 			NatRules: config.NatRules,
+			BackingFile: true,
+			InstanceDir: filepath.Join(os.Getenv("HOME"), ".capstan/instances/qemu", id),
 		}
+		fmt.Printf("Created instance: %s\n", id);
 		tio, _ := capstan.RawTerm()
 		defer capstan.ResetTerm(tio)
 		cmd, err = qemu.LaunchVM(config)
+		defer qemu.DeleteVM(config)
 	case "vbox":
 		if format != image.VDI && format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
