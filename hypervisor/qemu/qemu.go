@@ -21,6 +21,7 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+	"path/filepath"
 )
 
 type VMConfig struct {
@@ -29,6 +30,7 @@ type VMConfig struct {
 	Memory   int64
 	Cpus     int
 	NatRules []nat.Rule
+	BackingFile bool
 }
 
 func UploadRPM(r *capstan.Repo, hypervisor string, image string, config *capstan.Config, verbose bool) error {
@@ -38,6 +40,7 @@ func UploadRPM(r *capstan.Repo, hypervisor string, image string, config *capstan
 		Verbose:  verbose,
 		Memory:   64,
 		NatRules: []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
+		BackingFile: false,
 	}
 	qemu, err := LaunchVM(vmconfig)
 	if err != nil {
@@ -74,6 +77,7 @@ func UploadFiles(r *capstan.Repo, hypervisor string, image string, config *capst
 		Verbose:  verbose,
 		Memory:   64,
 		NatRules: []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
+		BackingFile: false,
 	}
 	cmd, err := LaunchVM(vmconfig)
 	if err != nil {
@@ -154,6 +158,30 @@ func SetArgs(r *capstan.Repo, hypervisor, image string, args string) error {
 }
 
 func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
+	if c.BackingFile {
+		id := "i"+ fmt.Sprintf("%v", time.Now().Unix())
+		instanceDir := filepath.Join(os.Getenv("HOME"), ".capstan/instances/qemu", id)
+		cmd := exec.Command("mkdir", "-p", instanceDir)
+		_, err := cmd.Output()
+		if err != nil {
+			fmt.Printf("mkdir failed: %s", instanceDir);
+			return nil, err
+		}
+
+		backingFile := "backing_file=" + c.Image
+		newDisk := instanceDir + "/disk.qcow2"
+		cmd = exec.Command("qemu-img", "create", "-f", "qcow2", "-o", backingFile, newDisk)
+		_, err = cmd.Output()
+		if err != nil {
+			fmt.Printf("qemu-img failed: %s", newDisk);
+			return nil, err
+		}
+
+		c.Image = newDisk
+		fmt.Printf("Created instance: %s\n", id);
+	}
+	tio, _ := capstan.RawTerm()
+	defer capstan.ResetTerm(tio)
 	args := append(c.vmArguments(), extra...)
 	cmd := exec.Command("qemu-system-x86_64", args...)
 	if c.Verbose {
@@ -168,7 +196,7 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 }
 
 func (c *VMConfig) vmArguments() []string {
-	args := []string{"-vnc", ":1", "-gdb", "tcp::1234,server,nowait", "-m", strconv.FormatInt(c.Memory, 10), "-smp", strconv.Itoa(c.Cpus), "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}
+	args := []string{"-display", "none","-m", strconv.FormatInt(c.Memory, 10), "-smp", strconv.Itoa(c.Cpus), "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}
 	redirects := toQemuRedirects(c.NatRules)
 	args = append(args, redirects...)
 	if runtime.GOOS == "linux" {
