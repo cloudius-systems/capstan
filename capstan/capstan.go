@@ -12,6 +12,7 @@ import (
 	"github.com/cloudius-systems/capstan"
 	"github.com/cloudius-systems/capstan/cmd"
 	"github.com/cloudius-systems/capstan/nat"
+	"github.com/cloudius-systems/capstan/hypervisor"
 	"github.com/codegangsta/cli"
 	"os"
 )
@@ -57,7 +58,7 @@ func main() {
 			Name:  "pull",
 			Usage: "pull an image to the repository",
 			Flags: []cli.Flag{
-				cli.StringFlag{"p", "qemu", "hypervisor"},
+				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
 			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
@@ -88,7 +89,7 @@ func main() {
 			Name:  "run",
 			Usage: "launch a VM",
 			Flags: []cli.Flag{
-				cli.StringFlag{"p", "qemu", "hypervisor"},
+				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
 				cli.StringFlag{"m", "1G", "memory size"},
 				cli.IntFlag{"c", 2, "number of CPUs"},
 				cli.BoolFlag{"v", "verbose mode"},
@@ -113,7 +114,7 @@ func main() {
 			Name:  "build",
 			Usage: "build an image",
 			Flags: []cli.Flag{
-				cli.StringFlag{"p", "qemu", "hypervisor"},
+				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
 				cli.BoolFlag{"v", "verbose mode"},
 			},
 			Action: func(c *cli.Context) {
