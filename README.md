@@ -9,6 +9,7 @@ OSv support.
 
 ## Features
 
+* Run multiple VMs of an image as copy-on-write
 * Linux, OS X, and Windows support
 * Hypervisors:
     * QEMU/KVM
