@@ -85,9 +85,8 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			Memory:   size,
 			Cpus:     config.Cpus,
 			NatRules: config.NatRules,
+			BackingFile: true,
 		}
-		tio, _ := capstan.RawTerm()
-		defer capstan.ResetTerm(tio)
 		cmd, err = qemu.LaunchVM(config)
 	case "vbox":
 		if format != image.VDI && format != image.VMDK {
