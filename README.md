@@ -10,7 +10,11 @@ OSv support.
 ## Features
 
 * Linux, OS X, and Windows support
-* QEMU/KVM VirtualBox, and Google Compute Engine support
+* Hypervisors:
+    * QEMU/KVM
+    * VirtualBox
+* Cloud providers:
+    * Google Compute Engine
 
 ## Installation
 
