@@ -55,10 +55,16 @@ $ ./install
 
 ## Usage
 
-To run OSv, type:
+To run OSv on default hypervisor which is QEMU/KVM, type:
 
 ```
 $ capstan run cloudius/osv
+```
+
+To run OSv on VirtualBox, type:
+
+```
+$ capstan run -p vbox cloudius/osv
 ```
 
 To show a list of available remote images, type:
