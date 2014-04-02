@@ -50,10 +50,15 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	time.Sleep(1 * time.Second)
 
 	var conn net.Conn
-	conn, err = Connect(c.sockPath())
+	for i:= 0; i < 5; i++ {
+		conn, err = Connect(c.sockPath())
+		if err == nil {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 	if err != nil {
 		return nil, err
 	}
