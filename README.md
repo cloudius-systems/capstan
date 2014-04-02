@@ -44,6 +44,15 @@ $ go get github.com/cloudius-systems/capstan/capstan
 This installs a ``capstan`` executable to your Go workspace so make sure your
 ``PATH`` environment variable includes ``$GOPATH/bin``.
 
+## Updating
+
+To update capstan to the latest version execute the following commands:
+```sh
+$ cd $GOPATH/src/github.com/cloudius-systems/capstan
+$ git pull
+$ ./install
+```
+
 ## Usage
 
 To run OSv, type:
