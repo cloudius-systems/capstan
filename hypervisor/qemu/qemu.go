@@ -24,11 +24,14 @@ import (
 )
 
 type VMConfig struct {
+	Name	 string
 	Image    string
 	Verbose  bool
 	Memory   int64
 	Cpus     int
 	NatRules []nat.Rule
+	BackingFile bool
+	InstanceDir string
 }
 
 func UploadRPM(r *capstan.Repo, hypervisor string, image string, config *capstan.Config, verbose bool) error {
@@ -38,6 +41,7 @@ func UploadRPM(r *capstan.Repo, hypervisor string, image string, config *capstan
 		Verbose:  verbose,
 		Memory:   64,
 		NatRules: []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
+		BackingFile: false,
 	}
 	qemu, err := LaunchVM(vmconfig)
 	if err != nil {
@@ -74,6 +78,7 @@ func UploadFiles(r *capstan.Repo, hypervisor string, image string, config *capst
 		Verbose:  verbose,
 		Memory:   64,
 		NatRules: []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
+		BackingFile: false,
 	}
 	cmd, err := LaunchVM(vmconfig)
 	if err != nil {
@@ -153,7 +158,41 @@ func SetArgs(r *capstan.Repo, hypervisor, image string, args string) error {
 	return nil
 }
 
+func DeleteVM(c *VMConfig) {
+	cmd := exec.Command("rm", "-f", c.Image)
+	_, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("rm failed: %s", c.Image);
+	}
+
+	cmd = exec.Command("rmdir", c.InstanceDir)
+	_, err = cmd.Output()
+	if err != nil {
+		fmt.Printf("rmdir failed: %s", c.InstanceDir);
+	}
+}
+
 func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
+	if c.BackingFile {
+		dir := c.InstanceDir
+		cmd := exec.Command("mkdir", "-p", dir)
+		_, err := cmd.Output()
+		if err != nil {
+			fmt.Printf("mkdir failed: %s", dir);
+			return nil, err
+		}
+
+		backingFile := "backing_file=" + c.Image
+		newDisk := dir + "/disk.qcow2"
+		cmd = exec.Command("qemu-img", "create", "-f", "qcow2", "-o", backingFile, newDisk)
+		_, err = cmd.Output()
+		if err != nil {
+			fmt.Printf("qemu-img failed: %s", newDisk);
+			return nil, err
+		}
+
+		c.Image = newDisk
+	}
 	args := append(c.vmArguments(), extra...)
 	cmd := exec.Command("qemu-system-x86_64", args...)
 	if c.Verbose {

@@ -94,7 +94,7 @@ func vmList() ([]string, error) {
 }
 
 func vmCreate(c *VMConfig) error {
-	err := VBoxManage("createvm", "--name", c.Name, "-ostype", "Linux26_64")
+	err := VBoxManage("createvm", "--name", c.Name, "--basefolder", c.Dir, "-ostype", "Linux26_64")
 	if err != nil {
 		return err
 	}
@@ -102,14 +102,8 @@ func vmCreate(c *VMConfig) error {
 	if err != nil {
 		return err
 	}
-	// TODO: Use native GO function to copy
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cmd.exe", "/c", "copy", c.Image, c.storagePath())
-	} else {
-		cmd = exec.Command("cp", c.Image, c.storagePath())
-	}
-	if err := cmd.Run(); err != nil {
+	err = VBoxManage("clonehd", c.Image, c.storagePath())
+	if err != nil {
 		return err
 	}
 	err = VBoxManage("storagectl", c.Name, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI")
@@ -190,5 +184,5 @@ func (c *VMConfig) sockPath() string {
 }
 
 func (c *VMConfig) storagePath() string {
-	return filepath.Join(c.Dir, c.Name, fmt.Sprintf("%s.vdi", c.Name))
+	return filepath.Join(c.Dir, c.Name, "disk.vdi")
 }
