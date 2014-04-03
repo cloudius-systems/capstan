@@ -119,6 +119,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		tio, _ := capstan.RawTerm()
 		defer capstan.ResetTerm(tio)
 		cmd, err = vbox.LaunchVM(config)
+		defer vbox.DeleteVM(config)
 	case "gce":
 		id := fmt.Sprintf("%v", time.Now().Unix())
 		bucket := "osvimg"
@@ -153,6 +154,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		tio, _ := capstan.RawTerm()
 		defer capstan.ResetTerm(tio)
 		cmd, err = vmw.LaunchVM(config)
+		defer vmw.DeleteVM(config)
 	default:
 		err = fmt.Errorf("%s: is not a supported hypervisor", config.Hypervisor)
 	}

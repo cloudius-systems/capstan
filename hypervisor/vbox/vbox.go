@@ -37,7 +37,7 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 		return nil, err
 	}
 	if exists {
-		err := vmDelete(c)
+		err := DeleteVM(c)
 		if err != nil {
 			return nil, err
 		}
@@ -157,7 +157,7 @@ func vmSetupNAT(c *VMConfig) error {
 	return nil
 }
 
-func vmDelete(c *VMConfig) error {
+func DeleteVM(c *VMConfig) error {
 	return VBoxManage("unregistervm", c.Name, "--delete")
 }
 
