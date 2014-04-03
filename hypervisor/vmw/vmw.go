@@ -94,6 +94,11 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	return nil, nil
 }
 
+func DeleteVM(c *VMConfig) error {
+	_, err := vmxRun("-T", "ws", "deleteVM", c.VMXFile)
+	return err
+}
+
 func (c *VMConfig) sockPath() string {
 	return filepath.Join(c.Dir, "osv.sock")
 }
