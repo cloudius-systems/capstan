@@ -21,6 +21,7 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+	"path/filepath"
 )
 
 type VMConfig struct {
@@ -182,7 +183,12 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 			return nil, err
 		}
 
-		backingFile := "backing_file=" + c.Image
+		image, err := filepath.Abs(c.Image)
+		if err != nil {
+			fmt.Printf("Failed to open image %s\n", c.Image)
+			return nil, err
+		}
+		backingFile := "backing_file=" + image
 		newDisk := dir + "/disk.qcow2"
 		cmd = exec.Command("qemu-img", "create", "-f", "qcow2", "-o", backingFile, newDisk)
 		_, err = cmd.Output()
