@@ -13,6 +13,7 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
 	"github.com/cloudius-systems/capstan/hypervisor/gce"
+	"github.com/cloudius-systems/capstan/hypervisor/vmw"
 	"github.com/cloudius-systems/capstan/image"
 	"github.com/cloudius-systems/capstan/nat"
 	"os"
@@ -131,6 +132,27 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			Tarball:	  path,
 		}
 		cmd, err = gce.LaunchVM(config)
+	case "vmw":
+		id := "i" + fmt.Sprintf("%v", time.Now().Unix())
+		if format != image.VMDK {
+			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
+		}
+		dir := filepath.Join(os.Getenv("HOME"), ".capstan/instances/vmw", id)
+		config := &vmw.VMConfig{
+			Name:     id,
+			Dir:      dir,
+			Image:    filepath.Join(dir, "osv.vmdk"),
+			Memory:   size,
+			Cpus:     config.Cpus,
+			NatRules: config.NatRules,
+			VMXFile:  filepath.Join(dir, "osv.vmx"),
+			InstanceDir: dir,
+			OriginalVMDK: path,
+		}
+		fmt.Printf("Created instance: %s\n", id);
+		tio, _ := capstan.RawTerm()
+		defer capstan.ResetTerm(tio)
+		cmd, err = vmw.LaunchVM(config)
 	default:
 		err = fmt.Errorf("%s: is not a supported hypervisor", config.Hypervisor)
 	}
