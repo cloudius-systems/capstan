@@ -56,7 +56,7 @@ func main() {
 		},
 		{
 			Name:  "pull",
-			Usage: "pull an image to the repository",
+			Usage: "pull an image from a repository",
 			Flags: []cli.Flag{
 				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
 			},
@@ -73,7 +73,7 @@ func main() {
 		},
 		{
 			Name:  "rmi",
-			Usage: "delete an image from an repository",
+			Usage: "delete an image from a repository",
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
 					fmt.Println("usage: capstan rmi [image-name]")
