@@ -119,6 +119,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		tio, _ := capstan.RawTerm()
 		defer capstan.ResetTerm(tio)
 		cmd, err = vbox.LaunchVM(config)
+		defer vbox.DeleteVM(config)
 	case "gce":
 		id := fmt.Sprintf("%v", time.Now().Unix())
 		bucket := "osvimg"
