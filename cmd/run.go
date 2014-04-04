@@ -138,7 +138,13 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		if format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
-		dir := filepath.Join(os.Getenv("HOME"), ".capstan/instances/vmw", id)
+		var homepath string
+		if runtime.GOOS == "windows" {
+			homepath = filepath.Join(os.Getenv("HOMEDRIVE"), os.Getenv("HOMEPATH"))
+		} else {
+			homepath = os.Getenv("HOME")
+		}
+		dir := filepath.Join(homepath, ".capstan/instances/vmw", id)
 		config := &vmw.VMConfig{
 			Name:     id,
 			Dir:      dir,

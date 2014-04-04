@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"time"
 )
 
 type VMConfig struct {
@@ -43,10 +44,6 @@ func vmxRun(args ...string) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = cmd.Wait()
-	if err != nil {
-		return cmd, fmt.Errorf("vmrun %s", args)
-	}
 	return cmd, nil
 }
 
@@ -57,16 +54,20 @@ func doRead(done chan bool, conn net.Conn) {
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	dir := c.InstanceDir
-	cmd := exec.Command("mkdir", "-p", dir)
-	_, err := cmd.Output()
+	err := os.MkdirAll(dir, 0777)
 	if err != nil {
 		fmt.Printf("mkdir failed: %s", dir)
 		return nil, err
 	}
-	cmd = exec.Command("cp", c.OriginalVMDK, c.Image)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd.exe", "/c", "copy", c.OriginalVMDK, c.Image)
+	} else {
+		cmd = exec.Command("cp", c.OriginalVMDK, c.Image)
+	}
 	_, err = cmd.Output()
 	if err != nil {
-		fmt.Printf("cp failed: %s", dir)
+		fmt.Printf("cp failed: %s", c.OriginalVMDK)
 		return nil, err
 	}
 	err = vmCreateVMXFile(c)
@@ -76,31 +77,52 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	}
 	cmd, err = vmxRun("-T", "ws", "start", c.VMXFile, "nogui")
 	if err != nil {
-		return cmd, err
+		return nil, err
 	}
 
-	conn, err := net.Dial("unix", c.sockPath())
+	var conn net.Conn
+	for i:= 0; i < 5; i++ {
+		conn, err = Connect(c.sockPath())
+		if err == nil {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 	if err != nil {
 		fmt.Println("err socket")
-		return cmd, err
+		return nil, err
 	}
 
 	done := make(chan bool)
 	go io.Copy(conn, os.Stdin)
 	go doRead(done, conn)
+
 	// Wait until the serial connection is disconnected
 	<-done
 
-	return nil, nil
+	return cmd, nil
 }
 
 func DeleteVM(c *VMConfig) error {
-	_, err := vmxRun("-T", "ws", "deleteVM", c.VMXFile)
-	return err
+	cmd, err := vmxRun("-T", "ws", "deleteVM", c.VMXFile)
+	if err != nil {
+		fmt.Printf("Failed to delete VM", c.VMXFile)
+		return err
+	}
+	err = cmd.Wait()
+	if err != nil {
+		fmt.Printf("Failed to delete VM", c.VMXFile)
+		return err
+	}
+	return nil
 }
 
 func (c *VMConfig) sockPath() string {
-	return filepath.Join(c.Dir, "osv.sock")
+	if runtime.GOOS == "windows" {
+		return `\\.\pipe\` + c.Name
+	} else {
+		return filepath.Join(c.Dir, "osv.sock")
+	}
 }
 
 var vmx string =
@@ -129,7 +151,6 @@ ethernet0.addressType = "generated"
 
 serial0.present = "TRUE"
 serial0.fileType = "pipe"
-serial0.fileName = "osv.sock"
 serial0.yieldOnMsrRead = "TRUE"
 serial0.startConnected = "TRUE"
 
@@ -160,12 +181,19 @@ func vmCreateVMXFile(c *VMConfig) error {
 	defer file.Close()
 	writer := bufio.NewWriter(file)
 	writer.WriteString(vmx)
-	str := "displayName = " + "\"" + c.Name + "\"" + "\n"
+
+	str := "displayName = " + `"` + c.Name + `"` + "\n"
 	writer.WriteString(str)
-	str = "memsize = " + "\"" + strconv.FormatInt(c.Memory, 10) + "\"" + "\n"
+
+	str = "memsize = " + `"` + strconv.FormatInt(c.Memory, 10) + `"` + "\n"
 	writer.WriteString(str)
-	str = "numvcpus = " + "\"" + strconv.Itoa(c.Cpus) + "\"" + "\n"
+
+	str = "numvcpus = " + `"` + strconv.Itoa(c.Cpus) + `"` + "\n"
 	writer.WriteString(str)
+
+	str = "serial0.fileName = " + `"` + c.sockPath() + `"`
+	writer.WriteString(str)
+
 	writer.Flush()
 	return nil
 }
