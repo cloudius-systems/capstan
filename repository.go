@@ -52,12 +52,12 @@ func (r *Repo) PushImage(imageName string, file string) error {
 		return errors.New(fmt.Sprintf("%s: no such file", file))
 	}
 	fmt.Printf("Pushing %s...\n", imageName)
-	cmd := exec.Command("mkdir", "-p", filepath.Dir(r.ImagePath(hypervisor, imageName)))
-	_, err = cmd.Output()
+	dir := filepath.Dir(r.ImagePath(hypervisor, imageName))
+	err = os.MkdirAll(dir, 0775)
 	if err != nil {
-		return errors.New(fmt.Sprintf("%s: mkdir failed", filepath.Dir(r.ImagePath(hypervisor, imageName))))
+		return errors.New(fmt.Sprintf("%s: mkdir failed", dir))
 	}
-	cmd = exec.Command("cp", file, r.ImagePath(hypervisor, imageName))
+	cmd := exec.Command("cp", file, r.ImagePath(hypervisor, imageName))
 	_, err = cmd.Output()
 	if err != nil {
 		return err
