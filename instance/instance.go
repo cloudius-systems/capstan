@@ -8,23 +8,16 @@
 package instance
 
 import (
+	"github.com/cloudius-systems/capstan/util"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
-	"runtime"
 )
 
 func ListInstances() error {
 	header := fmt.Sprintf("%-20s %-10s %-10s %-15s", "Name", "Platform", "Status", "Image")
 	fmt.Println(header)
-	var homepath string
-	if runtime.GOOS == "windows" {
-		homepath = filepath.Join(os.Getenv("HOMEDRIVE"), os.Getenv("HOMEPATH"))
-	} else {
-		homepath = os.Getenv("HOME")
-	}
-	rootDir := filepath.Join(homepath, ".capstan", "instances")
+	rootDir := filepath.Join(util.HomePath(), ".capstan", "instances")
 	platforms, _ := ioutil.ReadDir(rootDir)
 	for _, platform := range platforms {
 		if platform.IsDir() {

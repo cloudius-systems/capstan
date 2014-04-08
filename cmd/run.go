@@ -16,11 +16,11 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor/vmw"
 	"github.com/cloudius-systems/capstan/image"
 	"github.com/cloudius-systems/capstan/nat"
+	"github.com/cloudius-systems/capstan/util"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
-	"runtime"
 )
 
 type RunConfig struct {
@@ -100,16 +100,10 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		if format != image.VDI && format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
-		var homepath string
-		if runtime.GOOS == "windows" {
-			homepath = filepath.Join(os.Getenv("HOMEDRIVE"), os.Getenv("HOMEPATH"))
-		} else {
-			homepath = os.Getenv("HOME")
-		}
 		id := "i"+ fmt.Sprintf("%v", time.Now().Unix())
 		config := &vbox.VMConfig{
 			Name:	  id,
-			Dir:      filepath.Join(homepath, ".capstan/instances/vbox"),
+			Dir:      filepath.Join(util.HomePath(), ".capstan/instances/vbox"),
 			Image:    path,
 			Memory:   size,
 			Cpus:     config.Cpus,
@@ -138,13 +132,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		if format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
-		var homepath string
-		if runtime.GOOS == "windows" {
-			homepath = filepath.Join(os.Getenv("HOMEDRIVE"), os.Getenv("HOMEPATH"))
-		} else {
-			homepath = os.Getenv("HOME")
-		}
-		dir := filepath.Join(homepath, ".capstan/instances/vmw", id)
+		dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", id)
 		config := &vmw.VMConfig{
 			Name:     id,
 			Dir:      dir,
