@@ -87,7 +87,7 @@ func main() {
 		},
 		{
 			Name:  "run",
-			Usage: "launch a VM",
+			Usage: "launch a VM. You may pass the image name as the first argument.",
 			Flags: []cli.Flag{
 				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
 				cli.StringFlag{"m", "1G", "memory size"},
