@@ -10,6 +10,7 @@ package vbox
 import (
 	"fmt"
 	"github.com/cloudius-systems/capstan/nat"
+	"github.com/cloudius-systems/capstan/util"
 	"io"
 	"net"
 	"os"
@@ -53,7 +54,7 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 
 	var conn net.Conn
 	for i:= 0; i < 5; i++ {
-		conn, err = Connect(c.sockPath())
+		conn, err = util.Connect(c.sockPath())
 		if err == nil {
 			break
 		}

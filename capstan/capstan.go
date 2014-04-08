@@ -13,7 +13,6 @@ import (
 	"github.com/cloudius-systems/capstan/cmd"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/hypervisor"
-	"github.com/cloudius-systems/capstan/instance"
 	"github.com/codegangsta/cli"
 	"os"
 )
@@ -156,7 +155,7 @@ func main() {
 			Name:  "instances",
 			Usage: "list instances",
 			Action: func(c *cli.Context) {
-				instance.ListInstances()
+				cmd.Instances()
 			},
 		},
 		{

@@ -5,7 +5,7 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-package instance
+package cmd
 
 import (
 	"github.com/cloudius-systems/capstan/util"
@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 )
 
-func ListInstances() error {
+func Instances() error {
 	header := fmt.Sprintf("%-20s %-10s %-10s %-15s", "Name", "Platform", "Status", "Image")
 	fmt.Println(header)
 	rootDir := filepath.Join(util.HomePath(), ".capstan", "instances")

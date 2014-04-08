@@ -1,4 +1,4 @@
-// +build linux darwin
+// +build windows
 
 /*
  * Copyright (C) 2014 Cloudius Systems, Ltd.
@@ -7,12 +7,13 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-package vmw
+package util
 
 import (
 	"net"
+	"github.com/natefinch/npipe"
 )
 
 func Connect(path string) (net.Conn, error) {
-	return net.Dial("unix", path)
+	return npipe.Dial(path)
 }
