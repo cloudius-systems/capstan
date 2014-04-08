@@ -159,6 +159,18 @@ func main() {
 				instance.ListInstances()
 			},
 		},
+		{
+			Name:  "stop",
+			Usage: "stop an instance",
+			Action: func(c *cli.Context) {
+				if len(c.Args()) != 1 {
+					fmt.Println("usage: capstan info [instance_name]")
+					return
+				}
+				instance := c.Args()[0]
+				cmd.Stop(instance)
+			},
+		},
 	}
 	app.Run(os.Args)
 }
