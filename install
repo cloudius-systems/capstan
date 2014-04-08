@@ -1,6 +1,6 @@
 #!/bin/sh
 
-package=github.com/cloudius-systems/capstan/capstan
+package=github.com/cloudius-systems/capstan
 version=$(scripts/version)
 
 go get $package

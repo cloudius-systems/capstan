@@ -9,7 +9,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan"
+	"github.com/cloudius-systems/capstan/util"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"os"
 	"os/exec"
@@ -18,8 +18,8 @@ import (
 	"errors"
 )
 
-func Build(r *capstan.Repo, hypervisor string, image string, verbose bool) error {
-	config, err := capstan.ReadConfig("Capstanfile")
+func Build(r *util.Repo, hypervisor string, image string, verbose bool) error {
+	config, err := util.ReadConfig("Capstanfile")
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func Build(r *capstan.Repo, hypervisor string, image string, verbose bool) error
 	return nil
 }
 
-func checkConfig(config *capstan.Config, r *capstan.Repo, hypervisor string) error {
+func checkConfig(config *util.Config, r *util.Repo, hypervisor string) error {
 	if _, err := os.Stat(r.ImagePath(hypervisor, config.Base)); os.IsNotExist(err) {
 		err := Pull(r, hypervisor, config.Base)
 		if err != nil {
