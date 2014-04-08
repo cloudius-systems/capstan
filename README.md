@@ -14,6 +14,7 @@ OSv support.
 * Hypervisors:
     * QEMU/KVM
     * VirtualBox
+    * VMware Workstation and Fusion
 * Cloud providers:
     * Google Compute Engine
 
