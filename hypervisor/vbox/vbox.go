@@ -161,6 +161,10 @@ func DeleteVM(c *VMConfig) error {
 	return VBoxManage("unregistervm", c.Name, "--delete")
 }
 
+func StopVM(name string) error {
+	return VBoxManage("controlvm", name, "poweroff")
+}
+
 func VBoxManage(args ...string) error {
 	cmd := exec.Command("VBoxManage", args...)
 	err := cmd.Start()

@@ -11,6 +11,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/cloudius-systems/capstan/nat"
+	"github.com/cloudius-systems/capstan/util"
 	"io"
 	"net"
 	"os"
@@ -112,6 +113,24 @@ func DeleteVM(c *VMConfig) error {
 	err = cmd.Wait()
 	if err != nil {
 		fmt.Printf("Failed to delete VM", c.VMXFile)
+		return err
+	}
+	return nil
+}
+
+func StopVM(name string) error {
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", name)
+	c := &VMConfig{
+		VMXFile:  filepath.Join(dir, "osv.vmx"),
+	}
+	cmd, err := vmxRun("-T", "ws", "stop", c.VMXFile)
+	if err != nil {
+		fmt.Printf("Failed to stop VM", c.VMXFile)
+		return err
+	}
+	err = cmd.Wait()
+	if err != nil {
+		fmt.Printf("Failed to stop VM", c.VMXFile)
 		return err
 	}
 	return nil
