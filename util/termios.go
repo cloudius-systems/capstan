@@ -7,7 +7,7 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-package capstan
+package util
 
 import (
 	"github.com/kylelemons/goat/termios"

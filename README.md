@@ -38,7 +38,7 @@ $ brew install qemu
 To install Capstan, type:
 
 ```
-$ go get github.com/cloudius-systems/capstan/capstan
+$ go get github.com/cloudius-systems/capstan
 ```
 
 This installs a ``capstan`` executable to your Go workspace so make sure your

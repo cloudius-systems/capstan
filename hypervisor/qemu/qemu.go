@@ -9,7 +9,6 @@ package qemu
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan"
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/nbd"
@@ -38,7 +37,7 @@ type VMConfig struct {
 	Monitor	string
 }
 
-func UploadRPM(r *capstan.Repo, hypervisor string, image string, config *capstan.Config, verbose bool) error {
+func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool) error {
 	file := r.ImagePath(hypervisor, image)
 	vmconfig := &VMConfig{
 		Image:    file,
@@ -75,7 +74,7 @@ func UploadRPM(r *capstan.Repo, hypervisor string, image string, config *capstan
 	return err
 }
 
-func UploadFiles(r *capstan.Repo, hypervisor string, image string, config *capstan.Config, verbose bool) error {
+func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool) error {
 	file := r.ImagePath(hypervisor, image)
 	vmconfig := &VMConfig{
 		Image:    file,
@@ -113,7 +112,7 @@ func UploadFiles(r *capstan.Repo, hypervisor string, image string, config *capst
 	return cmd.Wait()
 }
 
-func SetArgs(r *capstan.Repo, hypervisor, image string, args string) error {
+func SetArgs(r *util.Repo, hypervisor, image string, args string) error {
 	file := r.ImagePath(hypervisor, image)
 	cmd := exec.Command("qemu-nbd", file)
 	stdout, err := cmd.StdoutPipe()

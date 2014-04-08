@@ -8,11 +8,11 @@
 package cmd
 
 import (
-	"github.com/cloudius-systems/capstan"
+	"github.com/cloudius-systems/capstan/util"
 )
 
-func Pull(r *capstan.Repo, hypervisor string, image string) error {
-	if capstan.IsRemoteImage(image) {
+func Pull(r *util.Repo, hypervisor string, image string) error {
+	if util.IsRemoteImage(image) {
 		return r.DownloadImage(hypervisor, image)
 	}
 	return r.PullImage(image)

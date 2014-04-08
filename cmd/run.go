@@ -9,7 +9,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
 	"github.com/cloudius-systems/capstan/hypervisor/gce"
@@ -31,13 +30,13 @@ type RunConfig struct {
 	NatRules   []nat.Rule
 }
 
-func Run(repo *capstan.Repo, config *RunConfig) error {
+func Run(repo *util.Repo, config *RunConfig) error {
 	var path string
 	if config.ImageName != "" {
 		if _, err := os.Stat(config.ImageName); os.IsNotExist(err) {
 			if repo.ImageExists(config.Hypervisor, config.ImageName) {
 				path = repo.ImagePath(config.Hypervisor, config.ImageName)
-			} else if capstan.IsRemoteImage(config.ImageName) {
+			} else if util.IsRemoteImage(config.ImageName) {
 				err := Pull(repo, config.Hypervisor, config.ImageName)
 				if err != nil {
 					return err
@@ -55,7 +54,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			return fmt.Errorf("No Capstanfile found, unable to run.")
 		}
 		if !repo.ImageExists(config.Hypervisor, config.ImageName) {
-			if !capstan.ConfigExists("Capstanfile") {
+			if !util.ConfigExists("Capstanfile") {
 				return fmt.Errorf("%s: no such image", config.ImageName)
 			}
 			err := Build(repo, config.Hypervisor, config.ImageName, config.Verbose)
@@ -72,7 +71,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	if format == image.Unknown {
 		return fmt.Errorf("%s: image format not recognized, unable to run it.", path)
 	}
-	size, err := capstan.ParseMemSize(config.Memory)
+	size, err := util.ParseMemSize(config.Memory)
 	if err != nil {
 		return err
 	}
@@ -93,8 +92,8 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			Monitor: filepath.Join(dir, "osv.monitor"),
 		}
 		fmt.Printf("Created instance: %s\n", id);
-		tio, _ := capstan.RawTerm()
-		defer capstan.ResetTerm(tio)
+		tio, _ := util.RawTerm()
+		defer util.ResetTerm(tio)
 		cmd, err = qemu.LaunchVM(config)
 		defer qemu.DeleteVM(config)
 	case "vbox":
@@ -111,8 +110,8 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			NatRules: config.NatRules,
 		}
 		fmt.Printf("Created instance: %s\n", id);
-		tio, _ := capstan.RawTerm()
-		defer capstan.ResetTerm(tio)
+		tio, _ := util.RawTerm()
+		defer util.ResetTerm(tio)
 		cmd, err = vbox.LaunchVM(config)
 		defer vbox.DeleteVM(config)
 	case "gce":
@@ -146,8 +145,8 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			OriginalVMDK: path,
 		}
 		fmt.Printf("Created instance: %s\n", id);
-		tio, _ := capstan.RawTerm()
-		defer capstan.ResetTerm(tio)
+		tio, _ := util.RawTerm()
+		defer util.ResetTerm(tio)
 		cmd, err = vmw.LaunchVM(config)
 		defer vmw.DeleteVM(config)
 	default:

@@ -9,10 +9,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan"
 	"github.com/cloudius-systems/capstan/cmd"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/hypervisor"
+	"github.com/cloudius-systems/capstan/util"
 	"github.com/codegangsta/cli"
 	"os"
 )
@@ -22,7 +22,7 @@ var (
 )
 
 func main() {
-	repo := capstan.NewRepo()
+	repo := util.NewRepo()
 	app := cli.NewApp()
 	app.Name = "capstan"
 	app.Version = VERSION
@@ -148,7 +148,7 @@ func main() {
 				if len(c.Args()) > 0 {
 					image = c.Args()[0]
 				}
-				capstan.ListImagesRemote(image)
+				util.ListImagesRemote(image)
 			},
 		},
 		{
