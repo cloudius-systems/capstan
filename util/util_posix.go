@@ -1,4 +1,4 @@
-// +build windows
+// +build linux darwin
 
 /*
  * Copyright (C) 2014 Cloudius Systems, Ltd.
@@ -7,13 +7,12 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-package vbox
+package util
 
 import (
 	"net"
-	"github.com/natefinch/npipe"
 )
 
 func Connect(path string) (net.Conn, error) {
-	return npipe.Dial(path)
+	return net.Dial("unix", path)
 }
