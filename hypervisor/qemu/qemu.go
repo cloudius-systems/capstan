@@ -13,8 +13,10 @@ import (
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/nbd"
+	"github.com/cloudius-systems/capstan/util"
 	"io"
 	"io/ioutil"
+	"bufio"
 	"net"
 	"os"
 	"os/exec"
@@ -172,6 +174,32 @@ func DeleteVM(c *VMConfig) {
 	if err != nil {
 		fmt.Printf("rmdir failed: %s", c.InstanceDir);
 	}
+}
+
+func StopVM(name string) error {
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/qemu", name)
+	c := &VMConfig{
+		Monitor:  filepath.Join(dir, "osv.monitor"),
+	}
+	conn, err := net.Dial("unix", c.Monitor)
+	if err != nil {
+		fmt.Println("Failed to stop instance: %s", name)
+		return err
+	}
+	writer := bufio.NewWriter(conn)
+
+	cmd := `{ "execute": "qmp_capabilities"}`
+	writer.WriteString(cmd)
+
+	cmd = `{ "execute": "system_powerdown" }`
+	writer.WriteString(cmd)
+
+	cmd = `{ "execute": "quit" }`
+	writer.WriteString(cmd)
+
+	writer.Flush()
+
+	return nil;
 }
 
 func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
