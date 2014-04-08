@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+	"os/exec"
 )
 
 func HomePath() string {
@@ -25,4 +26,14 @@ func HomePath() string {
 
 func ID() string {
 	return fmt.Sprintf("i%v", time.Now().Unix())
+}
+
+func CopyFile(src, dst string) *exec.Cmd {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd.exe", "/c", "copy", src, dst)
+	} else {
+		cmd = exec.Command("cp", src, dst)
+	}
+	return cmd
 }
