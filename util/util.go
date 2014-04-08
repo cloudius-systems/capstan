@@ -8,9 +8,11 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 )
 
 func HomePath() string {
@@ -19,4 +21,8 @@ func HomePath() string {
 	} else {
 		return os.Getenv("HOME")
 	}
+}
+
+func ID() string {
+	return fmt.Sprintf("i%v", time.Now().Unix())
 }

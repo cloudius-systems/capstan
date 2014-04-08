@@ -20,7 +20,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 )
 
 type RunConfig struct {
@@ -80,7 +79,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	var cmd *exec.Cmd
 	switch config.Hypervisor {
 	case "qemu":
-		id := "i"+ fmt.Sprintf("%v", time.Now().Unix())
+		id := util.ID()
 		config := &qemu.VMConfig{
 			Name:	  id,
 			Image:    path,
@@ -100,7 +99,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		if format != image.VDI && format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
-		id := "i"+ fmt.Sprintf("%v", time.Now().Unix())
+		id := util.ID()
 		config := &vbox.VMConfig{
 			Name:	  id,
 			Dir:      filepath.Join(util.HomePath(), ".capstan/instances/vbox"),
@@ -115,7 +114,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		cmd, err = vbox.LaunchVM(config)
 		defer vbox.DeleteVM(config)
 	case "gce":
-		id := fmt.Sprintf("%v", time.Now().Unix())
+		id := util.ID()
 		bucket := "osvimg"
 		config := &gce.VMConfig{
 			Name:		"osv-capstan-" + id,
@@ -128,7 +127,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 		}
 		cmd, err = gce.LaunchVM(config)
 	case "vmw":
-		id := "i" + fmt.Sprintf("%v", time.Now().Unix())
+		id := util.ID()
 		if format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
