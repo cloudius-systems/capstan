@@ -80,6 +80,7 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 	switch config.Hypervisor {
 	case "qemu":
 		id := util.ID()
+		dir := filepath.Join(os.Getenv("HOME"), ".capstan/instances/qemu", id)
 		config := &qemu.VMConfig{
 			Name:	  id,
 			Image:    path,
@@ -88,7 +89,8 @@ func Run(repo *capstan.Repo, config *RunConfig) error {
 			Cpus:     config.Cpus,
 			NatRules: config.NatRules,
 			BackingFile: true,
-			InstanceDir: filepath.Join(os.Getenv("HOME"), ".capstan/instances/qemu", id),
+			InstanceDir: dir,
+			Monitor: filepath.Join(dir, "osv.monitor"),
 		}
 		fmt.Printf("Created instance: %s\n", id);
 		tio, _ := capstan.RawTerm()

@@ -33,6 +33,7 @@ type VMConfig struct {
 	NatRules []nat.Rule
 	BackingFile bool
 	InstanceDir string
+	Monitor	string
 }
 
 func UploadRPM(r *capstan.Repo, hypervisor string, image string, config *capstan.Config, verbose bool) error {
@@ -160,10 +161,10 @@ func SetArgs(r *capstan.Repo, hypervisor, image string, args string) error {
 }
 
 func DeleteVM(c *VMConfig) {
-	cmd := exec.Command("rm", "-f", c.Image)
+	cmd := exec.Command("rm", "-f", c.Image, " ", c.Monitor)
 	_, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("rm failed: %s", c.Image);
+		fmt.Printf("rm failed: %s, %s", c.Image, c.Monitor);
 	}
 
 	cmd = exec.Command("rmdir", c.InstanceDir)
@@ -212,9 +213,11 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 }
 
 func (c *VMConfig) vmArguments() []string {
-	args := []string{"-display", "none","-m", strconv.FormatInt(c.Memory, 10), "-smp", strconv.Itoa(c.Cpus), "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-mon", "chardev=stdio,mode=readline,default", "-device", "isa-serial,chardev=stdio"}
+	args := []string{"-display", "none","-m", strconv.FormatInt(c.Memory, 10), "-smp", strconv.Itoa(c.Cpus), "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-device", "isa-serial,chardev=stdio"}
 	redirects := toQemuRedirects(c.NatRules)
 	args = append(args, redirects...)
+	monitor := fmt.Sprintf("socket,id=charmonitor,path=%s,server,nowait", c.Monitor)
+	args = append(args, "-chardev", monitor, "-mon", "chardev=charmonitor,id=monitor,mode=control")
 	if runtime.GOOS == "linux" {
 		args = append(args, "-enable-kvm", "-cpu", "host,+x2apic")
 	}
