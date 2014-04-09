@@ -90,6 +90,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			BackingFile: true,
 			InstanceDir: dir,
 			Monitor: filepath.Join(dir, "osv.monitor"),
+			ConfigFile: filepath.Join(dir, "osv.config"),
 		}
 		fmt.Printf("Created instance: %s\n", id);
 		tio, _ := util.RawTerm()

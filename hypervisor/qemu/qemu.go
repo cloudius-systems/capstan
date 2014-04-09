@@ -9,6 +9,7 @@ package qemu
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v1"
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/nbd"
@@ -35,6 +36,7 @@ type VMConfig struct {
 	BackingFile bool
 	InstanceDir string
 	Monitor	string
+	ConfigFile string
 }
 
 func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool) error {
@@ -162,7 +164,7 @@ func SetArgs(r *util.Repo, hypervisor, image string, args string) error {
 }
 
 func DeleteVM(c *VMConfig) {
-	cmd := exec.Command("rm", "-f", c.Image, " ", c.Monitor)
+	cmd := exec.Command("rm", "-f", c.Image, " ", c.Monitor, " ", c.ConfigFile)
 	_, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("rm failed: %s, %s", c.Image, c.Monitor);
@@ -201,6 +203,32 @@ func StopVM(name string) error {
 	return nil;
 }
 
+func LoadConfig(name string) (*VMConfig, error) {
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/qemu", name)
+	file := filepath.Join(dir, "osv.config")
+	c := VMConfig{}
+
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Printf("Failed to open: %s\n", file)
+		return nil, err
+	}
+	err = yaml.Unmarshal(data, &c)
+	if err != nil {
+		return nil, err
+	}
+
+	return &c, nil
+}
+
+func StoreConfig(c *VMConfig) error {
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(c.ConfigFile, data, 0644)
+}
+
 func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	if c.BackingFile {
 		dir := c.InstanceDir
@@ -226,6 +254,9 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 
 		c.Image = newDisk
 	}
+
+	StoreConfig(c)
+
 	args := append(c.vmArguments(), extra...)
 	cmd := exec.Command("qemu-system-x86_64", args...)
 	if c.Verbose {
