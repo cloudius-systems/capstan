@@ -245,13 +245,15 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 		}
 		backingFile := "backing_file=" + image
 		newDisk := dir + "/disk.qcow2"
-		cmd := exec.Command("qemu-img", "create", "-f", "qcow2", "-o", backingFile, newDisk)
-		_, err = cmd.Output()
-		if err != nil {
-			fmt.Printf("qemu-img failed: %s", newDisk);
-			return nil, err
-		}
 
+		if _, err := os.Stat(newDisk); os.IsNotExist(err) {
+			cmd := exec.Command("qemu-img", "create", "-f", "qcow2", "-o", backingFile, newDisk)
+			_, err = cmd.Output()
+			if err != nil {
+				fmt.Printf("qemu-img failed: %s", newDisk);
+				return nil, err
+			}
+		}
 		c.Image = newDisk
 	}
 

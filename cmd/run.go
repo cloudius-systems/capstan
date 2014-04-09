@@ -32,6 +32,24 @@ type RunConfig struct {
 
 func Run(repo *util.Repo, config *RunConfig) error {
 	var path string
+	instanceName, instancePlatform := util.SearchInstance(config.ImageName)
+	if instanceName != "" {
+		if instancePlatform == "qemu" {
+			c, _ := qemu.LoadConfig(config.ImageName)
+			fmt.Printf("Created instance: %s\n", instanceName);
+
+			tio, _ := util.RawTerm()
+			defer util.ResetTerm(tio)
+			cmd, err := qemu.LaunchVM(c)
+			if err != nil {
+				return err
+			}
+			if cmd != nil {
+				return cmd.Wait()
+			}
+			return nil
+		}
+	}
 	if config.ImageName != "" {
 		if _, err := os.Stat(config.ImageName); os.IsNotExist(err) {
 			if repo.ImageExists(config.Hypervisor, config.ImageName) {
@@ -96,7 +114,6 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		tio, _ := util.RawTerm()
 		defer util.ResetTerm(tio)
 		cmd, err = qemu.LaunchVM(config)
-		defer qemu.DeleteVM(config)
 	case "vbox":
 		if format != image.VDI && format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
