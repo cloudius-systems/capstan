@@ -16,7 +16,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 )
 
 type Repo struct {
@@ -60,12 +59,7 @@ func (r *Repo) PushImage(imageName string, file string) error {
 	}
 
 	dst := r.ImagePath(hypervisor, imageName)
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cmd.exe", "/c", "copy", file, dst)
-	} else {
-		cmd = exec.Command("cp", file, dst)
-	}
+	cmd := CopyFile(file, dst)
 	_, err = cmd.Output()
 	if err != nil {
 		return err

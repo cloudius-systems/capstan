@@ -44,7 +44,7 @@ func Build(r *util.Repo, hypervisor string, image string, verbose bool) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("cp", r.ImagePath(hypervisor, config.Base), r.ImagePath(hypervisor, image))
+	cmd := util.CopyFile(r.ImagePath(hypervisor, config.Base), r.ImagePath(hypervisor, image))
 	_, err = cmd.Output()
 	if err != nil {
 		return err

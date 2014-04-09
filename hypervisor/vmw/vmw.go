@@ -60,12 +60,7 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 		fmt.Printf("mkdir failed: %s", dir)
 		return nil, err
 	}
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cmd.exe", "/c", "copy", c.OriginalVMDK, c.Image)
-	} else {
-		cmd = exec.Command("cp", c.OriginalVMDK, c.Image)
-	}
+	cmd := util.CopyFile(c.OriginalVMDK, c.Image)
 	_, err = cmd.Output()
 	if err != nil {
 		fmt.Printf("cp failed: %s", c.OriginalVMDK)
