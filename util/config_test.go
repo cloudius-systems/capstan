@@ -8,7 +8,6 @@
 package util
 
 import (
-	"github.com/kylelemons/go-gypsy/yaml"
 	"testing"
 )
 
@@ -16,7 +15,7 @@ var configTests = []struct {
 	Spec string
 	Err  string
 }{
-	{"base: osv-base\n", "yaml: cmdline: \"cmdline\" not found"},
+	{"base: osv-base\n", "\"cmdline\" not found"},
 	{"base: osv-base\ncmdline: foo.so\n", ""},
 	{"base: osv-base\ncmdline: foo.so\nfiles:\n", ""},
 	{"base: osv-base\ncmdline: foo.so\nbuild: make\n", ""},
@@ -24,7 +23,7 @@ var configTests = []struct {
 
 func TestConfig(t *testing.T) {
 	for _, test := range configTests {
-		_, err := ParseConfig(yaml.Config(test.Spec))
+		_, err := ParseConfig([]byte(test.Spec))
 		var got string
 		switch err {
 		case nil:
