@@ -45,6 +45,9 @@ $ go get github.com/cloudius-systems/capstan
 This installs a ``capstan`` executable to your Go workspace so make sure your
 ``PATH`` environment variable includes ``$GOPATH/bin``.
 
+For more detailed information, check out [installation instructions](https://github.com/cloudius-systems/capstan/wiki/Capstan-Installation)
+on the wiki.
+
 ## Updating
 
 To update capstan to the latest version execute the following commands:
