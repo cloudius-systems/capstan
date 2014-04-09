@@ -10,25 +10,23 @@ package util
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/kylelemons/go-gypsy/yaml"
+	"gopkg.in/yaml.v1"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
-const time_layout = "2006-01-02T15:04:05"
 const bucket_url = "http://osv.capstan.s3.amazonaws.com/"
 
 type FileInfo struct {
-	namespace   string
-	name        string
-	description string
-	version     string
-	created     time.Time
+	Namespace   string
+	Name        string
+	Description string
+	Version     string
+	Created     string
 }
 
 type Contents struct {
@@ -51,31 +49,22 @@ func FileInfoHeader() string {
 }
 
 func (f *FileInfo) String() string {
-	return fmt.Sprintf("%-30s %-50s %-25s %-15s", f.namespace+"/"+f.name, f.description, f.version, f.created.Format(time_layout))
-}
-
-func yamlToInfo(ns, name string, mp yaml.Node) *FileInfo {
-	if mp == nil {
-		return nil
-	}
-	m, ok := mp.(yaml.Map)
-	if !ok {
-		return nil
-	}
-	y2s := func(key string) string {
-		return m[key].(yaml.Scalar).String()
-	}
-
-	tm, _ := time.Parse(time_layout, strings.TrimSpace(y2s("created")))
-	return &FileInfo{namespace: ns, name: name, version: y2s("version"), created: tm, description: y2s("description")}
+	return fmt.Sprintf("%-30s %-50s %-25s %-15s", f.Namespace+"/"+f.Name, f.Description, f.Version, f.Created)
 }
 
 func MakeFileInfo(path, ns, name string) *FileInfo {
-	file, err := yaml.ReadFile(filepath.Join(path, ns, name, "index.yaml"))
+	data, err := ioutil.ReadFile(filepath.Join(path, ns, name, "index.yaml"))
 	if err != nil {
 		return nil
 	}
-	return yamlToInfo(ns, name, file.Root)
+	f := FileInfo{}
+	err = yaml.Unmarshal(data, &f)
+	if err != nil {
+		return nil
+	}
+	f.Namespace = ns
+	f.Name = name
+	return &f
 }
 
 func RemoteFileInfo(path string) *FileInfo {
@@ -86,11 +75,21 @@ func RemoteFileInfo(path string) *FileInfo {
 
 	parts := strings.Split(path, "/")
 	defer resp.Body.Close()
-	result, err := yaml.Parse(resp.Body)
+	f := FileInfo{}
+	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil
 	}
-	return yamlToInfo(parts[0], parts[1], result)
+	err = yaml.Unmarshal(data, &f)
+	if err != nil {
+		return nil
+	}
+	if err != nil {
+		return nil
+	}
+	f.Namespace = parts[0]
+	f.Name = parts[1]
+	return &f
 }
 
 func QueryRemote() *Query {
@@ -113,7 +112,7 @@ func ListImagesRemote(search string) {
 	q := QueryRemote()
 	for _, content := range q.ContentsList {
 		if strings.HasSuffix(content.Key, "index.yaml") {
-			if img := RemoteFileInfo(content.Key); img != nil && strings.Contains(img.name, search) {
+			if img := RemoteFileInfo(content.Key); img != nil && strings.Contains(img.Name, search) {
 				fmt.Println(img.String())
 			}
 		}
@@ -121,7 +120,7 @@ func ListImagesRemote(search string) {
 }
 
 func (r *Repo) DownloadFile(name string) error {
-	output, err := os.Create(filepath.Join(r.Path, strings.TrimSuffix(name,".gz")))
+	output, err := os.Create(filepath.Join(r.Path, strings.TrimSuffix(name, ".gz")))
 	if err != nil {
 		return err
 	}
