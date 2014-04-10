@@ -32,23 +32,33 @@ type RunConfig struct {
 
 func Run(repo *util.Repo, config *RunConfig) error {
 	var path string
+	var cmd *exec.Cmd
 	instanceName, instancePlatform := util.SearchInstance(config.ImageName)
 	if instanceName != "" {
-		if instancePlatform == "qemu" {
-			c, _ := qemu.LoadConfig(config.ImageName)
-			fmt.Printf("Created instance: %s\n", instanceName);
+		fmt.Printf("Created instance: %s\n", instanceName)
+		tio, _ := util.RawTerm()
+		defer util.ResetTerm(tio)
 
-			tio, _ := util.RawTerm()
-			defer util.ResetTerm(tio)
-			cmd, err := qemu.LaunchVM(c)
-			if err != nil {
-				return err
-			}
-			if cmd != nil {
-				return cmd.Wait()
-			}
-			return nil
+		var err error
+		switch instancePlatform {
+		case "qemu":
+			c, _ := qemu.LoadConfig(instanceName)
+			cmd, err = qemu.LaunchVM(c)
+		case "vbox":
+			c, _ := vbox.LoadConfig(instanceName)
+			cmd, err = vbox.LaunchVM(c)
+		case "vmw":
+			c, _ := vmw.LoadConfig(instanceName)
+			cmd, err = vmw.LaunchVM(c)
 		}
+
+		if err != nil {
+			return err
+		}
+		if cmd != nil {
+			return cmd.Wait()
+		}
+		return nil
 	}
 	if config.ImageName != "" {
 		if _, err := os.Stat(config.ImageName); os.IsNotExist(err) {
@@ -93,7 +103,6 @@ func Run(repo *util.Repo, config *RunConfig) error {
 	if err != nil {
 		return err
 	}
-	var cmd *exec.Cmd
 	switch config.Hypervisor {
 	case "qemu":
 		id := util.ID()
