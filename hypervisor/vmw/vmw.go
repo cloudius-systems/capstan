@@ -111,8 +111,17 @@ func DeleteVM(name string) error {
 	dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", name)
 	c := &VMConfig{
 		VMXFile:  filepath.Join(dir, "osv.vmx"),
+		ConfigFile: filepath.Join(dir, "osv.config"),
 	}
-	cmd, err := vmxRun("-T", "ws", "deleteVM", c.VMXFile)
+
+	cmd := exec.Command("rm", "-f", c.ConfigFile)
+	_, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("Failed to delete: %s", c.ConfigFile);
+		return err
+	}
+
+	cmd, err = vmxRun("-T", "ws", "deleteVM", c.VMXFile)
 	if err != nil {
 		fmt.Printf("Failed to delete VM", c.VMXFile)
 		return err
