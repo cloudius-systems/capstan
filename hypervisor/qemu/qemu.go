@@ -144,7 +144,9 @@ func SetArgs(r *util.Repo, hypervisor, image string, args string) error {
 		return err
 	}
 
-	data := append([]byte(args), make([]byte, 512-len(args))...)
+	padding := 512 - (len(args) % 512)
+
+	data := append([]byte(args), make([]byte, padding)...)
 
 	if err := session.Write(512, data); err != nil {
 		return err
