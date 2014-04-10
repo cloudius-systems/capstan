@@ -165,6 +165,18 @@ func vmSetupNAT(c *VMConfig) error {
 }
 
 func DeleteVM(name string) error {
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/vbox", name)
+	c := &VMConfig{
+		ConfigFile: filepath.Join(dir, "osv.config"),
+	}
+
+	cmd := exec.Command("rm", "-f", c.ConfigFile)
+	_, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("Failed to delete: %s", c.ConfigFile);
+		return err
+	}
+
 	return VBoxManage("unregistervm", name, "--delete")
 }
 
