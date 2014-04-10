@@ -33,9 +33,12 @@ type RunConfig struct {
 func Run(repo *util.Repo, config *RunConfig) error {
 	var path string
 	var cmd *exec.Cmd
+
 	instanceName, instancePlatform := util.SearchInstance(config.ImageName)
 	if instanceName != "" {
 		fmt.Printf("Created instance: %s\n", instanceName)
+		defer fmt.Println("")
+
 		tio, _ := util.RawTerm()
 		defer util.ResetTerm(tio)
 
@@ -103,6 +106,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 	if err != nil {
 		return err
 	}
+	defer fmt.Println("")
 	switch config.Hypervisor {
 	case "qemu":
 		id := util.ID()
