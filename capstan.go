@@ -170,6 +170,18 @@ func main() {
 				cmd.Stop(instance)
 			},
 		},
+		{
+			Name:  "delete",
+			Usage: "delete an instance",
+			Action: func(c *cli.Context) {
+				if len(c.Args()) != 1 {
+					fmt.Println("usage: capstan delete [instance_name]")
+					return
+				}
+				instance := c.Args()[0]
+				cmd.Delete(instance)
+			},
+		},
 	}
 	app.Run(os.Args)
 }
