@@ -9,6 +9,7 @@ package vbox
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v1"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/util"
 	"io"
@@ -21,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"io/ioutil"
 )
 
 type VMConfig struct {
@@ -30,6 +32,7 @@ type VMConfig struct {
 	Memory   int64
 	Cpus     int
 	NatRules []nat.Rule
+	ConfigFile string
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
@@ -37,16 +40,15 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	if exists {
-		err := DeleteVM(c.Name)
+	if !exists {
+		err = vmCreate(c)
 		if err != nil {
 			return nil, err
 		}
 	}
-	err = vmCreate(c)
-	if err != nil {
-		return nil, err
-	}
+
+	StoreConfig(c)
+
 	cmd, err := VBoxHeadless("--startvm", c.Name)
 	if err != nil {
 		return nil, err
@@ -199,4 +201,30 @@ func (c *VMConfig) sockPath() string {
 
 func (c *VMConfig) storagePath() string {
 	return filepath.Join(c.Dir, c.Name, "disk.vdi")
+}
+
+func LoadConfig(name string) (*VMConfig, error) {
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/vbox", name)
+	file := filepath.Join(dir, "osv.config")
+	c := VMConfig{}
+
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Printf("Failed to open: %s\n", file)
+		return nil, err
+	}
+	err = yaml.Unmarshal(data, &c)
+	if err != nil {
+		return nil, err
+	}
+
+	return &c, nil
+}
+
+func StoreConfig(c *VMConfig) error {
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(c.ConfigFile, data, 0644)
 }

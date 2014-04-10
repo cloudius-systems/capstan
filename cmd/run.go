@@ -119,6 +119,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
 		id := util.ID()
+		dir := filepath.Join(util.HomePath(), ".capstan/instances/vbox", id)
 		config := &vbox.VMConfig{
 			Name:	  id,
 			Dir:      filepath.Join(util.HomePath(), ".capstan/instances/vbox"),
@@ -126,6 +127,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			Memory:   size,
 			Cpus:     config.Cpus,
 			NatRules: config.NatRules,
+			ConfigFile: filepath.Join(dir, "osv.config"),
 		}
 		fmt.Printf("Created instance: %s\n", id);
 		tio, _ := util.RawTerm()
