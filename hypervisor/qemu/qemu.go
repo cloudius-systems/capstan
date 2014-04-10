@@ -163,18 +163,29 @@ func SetArgs(r *util.Repo, hypervisor, image string, args string) error {
 	return nil
 }
 
-func DeleteVM(c *VMConfig) {
+func DeleteVM(name string) error {
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/qemu", name)
+	c := &VMConfig{
+		InstanceDir: dir,
+		Monitor:  filepath.Join(dir, "osv.monitor"),
+		Image:  filepath.Join(dir, "disk.qcow2"),
+		ConfigFile:  filepath.Join(dir, "osv.config"),
+	}
 	cmd := exec.Command("rm", "-f", c.Image, " ", c.Monitor, " ", c.ConfigFile)
 	_, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("rm failed: %s, %s", c.Image, c.Monitor);
+		return err
 	}
 
 	cmd = exec.Command("rmdir", c.InstanceDir)
 	_, err = cmd.Output()
 	if err != nil {
-		fmt.Printf("rmdir failed: %s", c.InstanceDir);
+		fmt.Printf("rmdir failed: %s", c.InstanceDir)
+		return err
 	}
+
+	return nil
 }
 
 func StopVM(name string) error {
