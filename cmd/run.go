@@ -131,7 +131,6 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		tio, _ := util.RawTerm()
 		defer util.ResetTerm(tio)
 		cmd, err = vbox.LaunchVM(config)
-		defer vbox.DeleteVM(config)
 	case "gce":
 		id := util.ID()
 		bucket := "osvimg"
