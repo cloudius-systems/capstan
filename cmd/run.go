@@ -162,6 +162,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			VMXFile:  filepath.Join(dir, "osv.vmx"),
 			InstanceDir: dir,
 			OriginalVMDK: path,
+			ConfigFile: filepath.Join(dir, "osv.config"),
 		}
 		fmt.Printf("Created instance: %s\n", id);
 		tio, _ := util.RawTerm()
