@@ -144,6 +144,10 @@ func vmCreate(c *VMConfig) error {
 	if err != nil {
 		return err
 	}
+	err = VBoxManage("setextradata", c.Name, "VBoxInternal/CPUM/SSE4.1", "1")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
