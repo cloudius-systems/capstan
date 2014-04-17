@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"time"
 	"os/exec"
+	"io/ioutil"
 )
 
 func HomePath() string {
@@ -36,4 +37,30 @@ func CopyFile(src, dst string) *exec.Cmd {
 		cmd = exec.Command("cp", src, dst)
 	}
 	return cmd
+}
+
+func SearchInstance(name string) (instanceName, instancePlatform string) {
+	instanceName = ""
+	instancePlatform = ""
+	rootDir := filepath.Join(HomePath(), ".capstan", "instances")
+	platforms, _ := ioutil.ReadDir(rootDir)
+	for _, platform := range platforms {
+		if !platform.IsDir() {
+			continue
+		}
+		platformDir := filepath.Join(rootDir, platform.Name())
+		instances, _ := ioutil.ReadDir(platformDir)
+		for _, instance := range instances {
+			if !instance.IsDir() {
+				continue
+			}
+			if name != instance.Name() {
+				continue
+			}
+			instanceName = instance.Name()
+			instancePlatform = platform.Name()
+			return
+		}
+	}
+	return
 }

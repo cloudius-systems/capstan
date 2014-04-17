@@ -13,30 +13,10 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
 	"github.com/cloudius-systems/capstan/hypervisor/vmw"
 	"github.com/cloudius-systems/capstan/util"
-	"io/ioutil"
-	"path/filepath"
 )
 
 func Stop(name string) error {
-	instanceName := ""
-	instancePlatform := ""
-	rootDir := filepath.Join(util.HomePath(), ".capstan", "instances")
-	platforms, _ := ioutil.ReadDir(rootDir)
-	for _, platform := range platforms {
-		if platform.IsDir() {
-			platformDir := filepath.Join(rootDir, platform.Name())
-			instances, _ := ioutil.ReadDir(platformDir)
-			for _, instance := range instances {
-				if instance.IsDir() {
-					if name == instance.Name() {
-						instanceName = instance.Name()
-						instancePlatform = platform.Name()
-					}
-				}
-			}
-		}
-	}
-
+	instanceName, instancePlatform := util.SearchInstance(name)
 	if instanceName == "" {
 		fmt.Printf("Instance: %s not found\n", name)
 		return nil
