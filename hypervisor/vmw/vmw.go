@@ -99,7 +99,11 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-func DeleteVM(c *VMConfig) error {
+func DeleteVM(name string) error {
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", name)
+	c := &VMConfig{
+		VMXFile:  filepath.Join(dir, "osv.vmx"),
+	}
 	cmd, err := vmxRun("-T", "ws", "deleteVM", c.VMXFile)
 	if err != nil {
 		fmt.Printf("Failed to delete VM", c.VMXFile)

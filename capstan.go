@@ -163,11 +163,23 @@ func main() {
 			Usage: "stop an instance",
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
-					fmt.Println("usage: capstan info [instance_name]")
+					fmt.Println("usage: capstan stop [instance_name]")
 					return
 				}
 				instance := c.Args()[0]
 				cmd.Stop(instance)
+			},
+		},
+		{
+			Name:  "delete",
+			Usage: "delete an instance",
+			Action: func(c *cli.Context) {
+				if len(c.Args()) != 1 {
+					fmt.Println("usage: capstan delete [instance_name]")
+					return
+				}
+				instance := c.Args()[0]
+				cmd.Delete(instance)
 			},
 		},
 	}

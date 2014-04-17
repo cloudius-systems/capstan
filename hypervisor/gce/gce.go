@@ -118,8 +118,8 @@ func vmPrintInfo(c *VMConfig) error {
 	return nil
 }
 
-func vmDelete(c *VMConfig) error {
-	return gcUtil("deleteinstance", "--delete_boot_pd", "-f", c.Name)
+func DeleteVM(name string) error {
+	return gcUtil("deleteinstance", "--delete_boot_pd", "-f", name)
 }
 
 func gsUtil(args ...string) error {
