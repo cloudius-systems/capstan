@@ -8,14 +8,14 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
-	"github.com/cloudius-systems/capstan/util"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
+	"github.com/cloudius-systems/capstan/util"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"errors"
 )
 
 func Build(r *util.Repo, hypervisor string, image string, verbose bool) error {

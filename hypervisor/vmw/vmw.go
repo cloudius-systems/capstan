@@ -10,10 +10,11 @@ package vmw
 import (
 	"bufio"
 	"fmt"
-	"gopkg.in/yaml.v1"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/util"
+	"gopkg.in/yaml.v1"
 	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -21,7 +22,6 @@ import (
 	"runtime"
 	"strconv"
 	"time"
-	"io/ioutil"
 )
 
 type VMConfig struct {
@@ -85,7 +85,7 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	}
 
 	var conn net.Conn
-	for i:= 0; i < 5; i++ {
+	for i := 0; i < 5; i++ {
 		conn, err = util.Connect(c.sockPath())
 		if err == nil {
 			break
@@ -110,14 +110,14 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 func DeleteVM(name string) error {
 	dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", name)
 	c := &VMConfig{
-		VMXFile:  filepath.Join(dir, "osv.vmx"),
+		VMXFile:    filepath.Join(dir, "osv.vmx"),
 		ConfigFile: filepath.Join(dir, "osv.config"),
 	}
 
 	cmd := exec.Command("rm", "-f", c.ConfigFile)
 	_, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("Failed to delete: %s", c.ConfigFile);
+		fmt.Printf("Failed to delete: %s", c.ConfigFile)
 		return err
 	}
 
@@ -137,7 +137,7 @@ func DeleteVM(name string) error {
 func StopVM(name string) error {
 	dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", name)
 	c := &VMConfig{
-		VMXFile:  filepath.Join(dir, "osv.vmx"),
+		VMXFile: filepath.Join(dir, "osv.vmx"),
 	}
 	cmd, err := vmxRun("-T", "ws", "stop", c.VMXFile)
 	if err != nil {
@@ -160,8 +160,7 @@ func (c *VMConfig) sockPath() string {
 	}
 }
 
-var vmx string =
-`#!/usr/bin/vmware
+var vmx string = `#!/usr/bin/vmware
 config.version = "8"
 virtualHW.version = "8"
 virtualHW.productCompatibility = "hosted"

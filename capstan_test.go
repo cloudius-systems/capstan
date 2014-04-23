@@ -79,7 +79,7 @@ func TestPushCommand(t *testing.T) {
 	if err != nil {
 		t.Errorf("capstan: %v", err)
 	}
-	outLines := strings.Split(string(out),"\n")
+	outLines := strings.Split(string(out), "\n")
 	if g, e := outLines[1], "example"; g != e {
 		t.Errorf("capstan: want %q, got %q", e, g)
 
@@ -123,8 +123,8 @@ func TestRmiCommand(t *testing.T) {
 	if err != nil {
 		t.Errorf("capstan: %v", err)
 	}
-	outLines := strings.Split(string(out),"\n")
-	if g, e := outLines[1] + "\n" + outLines[2], "example1\nexample2"; g != e {
+	outLines := strings.Split(string(out), "\n")
+	if g, e := outLines[1]+"\n"+outLines[2], "example1\nexample2"; g != e {
 		t.Errorf("capstan: want %q, got %q", e, g)
 
 	}
@@ -144,7 +144,7 @@ func TestRmiCommand(t *testing.T) {
 	if err != nil {
 		t.Errorf("capstan: %v", err)
 	}
-	outLines = strings.Split(string(out),"\n")
+	outLines = strings.Split(string(out), "\n")
 	if g, e := outLines[1], "example2"; g != e {
 		t.Errorf("capstan: want %q, got %q", e, g)
 

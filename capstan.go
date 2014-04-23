@@ -10,8 +10,8 @@ package main
 import (
 	"fmt"
 	"github.com/cloudius-systems/capstan/cmd"
-	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/hypervisor"
+	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/util"
 	"github.com/codegangsta/cli"
 	"os"

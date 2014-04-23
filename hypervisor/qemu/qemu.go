@@ -8,26 +8,26 @@
 package qemu
 
 import (
+	"bufio"
 	"fmt"
-	"gopkg.in/yaml.v1"
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/nbd"
 	"github.com/cloudius-systems/capstan/util"
+	"gopkg.in/yaml.v1"
 	"io"
 	"io/ioutil"
-	"bufio"
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"time"
-	"path/filepath"
 )
 
 type VMConfig struct {
-	Name	    string
+	Name        string
 	Image       string
 	Verbose     bool
 	Memory      int64
@@ -37,18 +37,18 @@ type VMConfig struct {
 	NatRules    []nat.Rule
 	BackingFile bool
 	InstanceDir string
-	Monitor	    string
+	Monitor     string
 	ConfigFile  string
 }
 
 func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool) error {
 	file := r.ImagePath(hypervisor, image)
 	vmconfig := &VMConfig{
-		Image:    file,
-		Verbose:  verbose,
-		Memory:   64,
-		Networking: "nat",
-		NatRules: []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
+		Image:       file,
+		Verbose:     verbose,
+		Memory:      64,
+		Networking:  "nat",
+		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
 	}
 	qemu, err := LaunchVM(vmconfig)
@@ -82,11 +82,11 @@ func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Confi
 func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool) error {
 	file := r.ImagePath(hypervisor, image)
 	vmconfig := &VMConfig{
-		Image:    file,
-		Verbose:  verbose,
-		Memory:   64,
-		Networking: "nat",
-		NatRules: []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
+		Image:       file,
+		Verbose:     verbose,
+		Memory:      64,
+		Networking:  "nat",
+		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
 	}
 	cmd, err := LaunchVM(vmconfig)
@@ -173,14 +173,14 @@ func DeleteVM(name string) error {
 	dir := filepath.Join(util.HomePath(), ".capstan/instances/qemu", name)
 	c := &VMConfig{
 		InstanceDir: dir,
-		Monitor:  filepath.Join(dir, "osv.monitor"),
-		Image:  filepath.Join(dir, "disk.qcow2"),
+		Monitor:     filepath.Join(dir, "osv.monitor"),
+		Image:       filepath.Join(dir, "disk.qcow2"),
 		ConfigFile:  filepath.Join(dir, "osv.config"),
 	}
 	cmd := exec.Command("rm", "-f", c.Image, " ", c.Monitor, " ", c.ConfigFile)
 	_, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("rm failed: %s, %s", c.Image, c.Monitor);
+		fmt.Printf("rm failed: %s, %s", c.Image, c.Monitor)
 		return err
 	}
 
@@ -197,7 +197,7 @@ func DeleteVM(name string) error {
 func StopVM(name string) error {
 	dir := filepath.Join(util.HomePath(), ".capstan/instances/qemu", name)
 	c := &VMConfig{
-		Monitor:  filepath.Join(dir, "osv.monitor"),
+		Monitor: filepath.Join(dir, "osv.monitor"),
 	}
 	conn, err := net.Dial("unix", c.Monitor)
 	if err != nil {
@@ -217,7 +217,7 @@ func StopVM(name string) error {
 
 	writer.Flush()
 
-	return nil;
+	return nil
 }
 
 func LoadConfig(name string) (*VMConfig, error) {
@@ -251,7 +251,7 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 		dir := c.InstanceDir
 		err := os.MkdirAll(dir, 0775)
 		if err != nil {
-			fmt.Printf("mkdir failed: %s", dir);
+			fmt.Printf("mkdir failed: %s", dir)
 			return nil, err
 		}
 
@@ -267,7 +267,7 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 			cmd := exec.Command("qemu-img", "create", "-f", "qcow2", "-o", backingFile, newDisk)
 			_, err = cmd.Output()
 			if err != nil {
-				fmt.Printf("qemu-img failed: %s", newDisk);
+				fmt.Printf("qemu-img failed: %s", newDisk)
 				return nil, err
 			}
 		}
@@ -294,7 +294,7 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 }
 
 func (c *VMConfig) vmArguments() ([]string, error) {
-	args := []string{"-display", "none","-m", strconv.FormatInt(c.Memory, 10), "-smp", strconv.Itoa(c.Cpus), "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-device", "isa-serial,chardev=stdio"}
+	args := []string{"-display", "none", "-m", strconv.FormatInt(c.Memory, 10), "-smp", strconv.Itoa(c.Cpus), "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-device", "isa-serial,chardev=stdio"}
 	net, err := c.vmNetworking()
 	if err != nil {
 		return nil, err

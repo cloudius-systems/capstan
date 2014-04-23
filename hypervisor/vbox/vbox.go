@@ -9,10 +9,11 @@ package vbox
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v1"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/util"
+	"gopkg.in/yaml.v1"
 	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -22,16 +23,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"io/ioutil"
 )
 
 type VMConfig struct {
-	Name     string
-	Dir      string
-	Image    string
-	Memory   int64
-	Cpus     int
-	NatRules []nat.Rule
+	Name       string
+	Dir        string
+	Image      string
+	Memory     int64
+	Cpus       int
+	NatRules   []nat.Rule
 	ConfigFile string
 }
 
@@ -55,7 +55,7 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	}
 
 	var conn net.Conn
-	for i:= 0; i < 5; i++ {
+	for i := 0; i < 5; i++ {
 		conn, err = util.Connect(c.sockPath())
 		if err == nil {
 			break
@@ -173,7 +173,7 @@ func DeleteVM(name string) error {
 	cmd := exec.Command("rm", "-f", c.ConfigFile)
 	_, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("Failed to delete: %s", c.ConfigFile);
+		fmt.Printf("Failed to delete: %s", c.ConfigFile)
 		return err
 	}
 

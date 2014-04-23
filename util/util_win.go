@@ -10,8 +10,8 @@
 package util
 
 import (
-	"net"
 	"github.com/natefinch/npipe"
+	"net"
 )
 
 func Connect(path string) (net.Conn, error) {

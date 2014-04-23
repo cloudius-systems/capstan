@@ -15,11 +15,11 @@ import (
 const (
 	GZ_MAGIC1 = 0x1F
 	GZ_MAGIC2 = 0x8B
-
 )
+
 type Header struct {
-	MagicNumber1        uint8
-	MagicNumber2        uint8
+	MagicNumber1 uint8
+	MagicNumber2 uint8
 }
 
 func Probe(f *os.File) bool {

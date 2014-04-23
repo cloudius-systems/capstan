@@ -9,12 +9,12 @@ package util
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"time"
-	"os/exec"
-	"io/ioutil"
 )
 
 func HomePath() string {

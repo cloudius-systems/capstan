@@ -9,9 +9,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/cloudius-systems/capstan/hypervisor/gce"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
-	"github.com/cloudius-systems/capstan/hypervisor/gce"
 	"github.com/cloudius-systems/capstan/hypervisor/vmw"
 	"github.com/cloudius-systems/capstan/image"
 	"github.com/cloudius-systems/capstan/nat"
@@ -114,7 +114,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		id := util.ID()
 		dir := filepath.Join(os.Getenv("HOME"), ".capstan/instances/qemu", id)
 		config := &qemu.VMConfig{
-			Name:	     id,
+			Name:        id,
 			Image:       path,
 			Verbose:     true,
 			Memory:      size,
@@ -127,7 +127,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			Monitor:     filepath.Join(dir, "osv.monitor"),
 			ConfigFile:  filepath.Join(dir, "osv.config"),
 		}
-		fmt.Printf("Created instance: %s\n", id);
+		fmt.Printf("Created instance: %s\n", id)
 		tio, _ := util.RawTerm()
 		defer util.ResetTerm(tio)
 		cmd, err = qemu.LaunchVM(config)
@@ -138,15 +138,15 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		id := util.ID()
 		dir := filepath.Join(util.HomePath(), ".capstan/instances/vbox", id)
 		config := &vbox.VMConfig{
-			Name:	  id,
-			Dir:      filepath.Join(util.HomePath(), ".capstan/instances/vbox"),
-			Image:    path,
-			Memory:   size,
-			Cpus:     config.Cpus,
-			NatRules: config.NatRules,
+			Name:       id,
+			Dir:        filepath.Join(util.HomePath(), ".capstan/instances/vbox"),
+			Image:      path,
+			Memory:     size,
+			Cpus:       config.Cpus,
+			NatRules:   config.NatRules,
 			ConfigFile: filepath.Join(dir, "osv.config"),
 		}
-		fmt.Printf("Created instance: %s\n", id);
+		fmt.Printf("Created instance: %s\n", id)
 		tio, _ := util.RawTerm()
 		defer util.ResetTerm(tio)
 		cmd, err = vbox.LaunchVM(config)
@@ -154,13 +154,13 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		id := util.ID()
 		bucket := "osvimg"
 		config := &gce.VMConfig{
-			Name:		"osv-capstan-" + id,
-			Image:		"osv-capstan-" + id,
-			Network:	"default",
-			MachineType:	"n1-standard-1",
-			Zone:		"us-central1-a",
+			Name:             "osv-capstan-" + id,
+			Image:            "osv-capstan-" + id,
+			Network:          "default",
+			MachineType:      "n1-standard-1",
+			Zone:             "us-central1-a",
 			CloudStoragePath: "gs://" + bucket + "/osv-capstan-" + id + ".tar.gz",
-			Tarball:	  path,
+			Tarball:          path,
 		}
 		cmd, err = gce.LaunchVM(config)
 	case "vmw":
@@ -170,18 +170,18 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		}
 		dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", id)
 		config := &vmw.VMConfig{
-			Name:     id,
-			Dir:      dir,
-			Image:    filepath.Join(dir, "osv.vmdk"),
-			Memory:   size,
-			Cpus:     config.Cpus,
-			NatRules: config.NatRules,
-			VMXFile:  filepath.Join(dir, "osv.vmx"),
-			InstanceDir: dir,
+			Name:         id,
+			Dir:          dir,
+			Image:        filepath.Join(dir, "osv.vmdk"),
+			Memory:       size,
+			Cpus:         config.Cpus,
+			NatRules:     config.NatRules,
+			VMXFile:      filepath.Join(dir, "osv.vmx"),
+			InstanceDir:  dir,
 			OriginalVMDK: path,
-			ConfigFile: filepath.Join(dir, "osv.config"),
+			ConfigFile:   filepath.Join(dir, "osv.config"),
 		}
-		fmt.Printf("Created instance: %s\n", id);
+		fmt.Printf("Created instance: %s\n", id)
 		tio, _ := util.RawTerm()
 		defer util.ResetTerm(tio)
 		cmd, err = vmw.LaunchVM(config)

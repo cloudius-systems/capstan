@@ -8,8 +8,8 @@
 package cmd
 
 import (
-	"github.com/cloudius-systems/capstan/util"
 	"fmt"
+	"github.com/cloudius-systems/capstan/util"
 	"io/ioutil"
 	"path/filepath"
 )
