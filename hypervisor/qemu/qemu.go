@@ -47,6 +47,7 @@ func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Confi
 		Image:    file,
 		Verbose:  verbose,
 		Memory:   64,
+		Networking: "nat",
 		NatRules: []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
 	}
@@ -84,6 +85,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Con
 		Image:    file,
 		Verbose:  verbose,
 		Memory:   64,
+		Networking: "nat",
 		NatRules: []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
 	}
