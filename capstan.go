@@ -92,7 +92,9 @@ func main() {
 				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
 				cli.StringFlag{"m", "1G", "memory size"},
 				cli.IntFlag{"c", 2, "number of CPUs"},
+				cli.StringFlag{"n", "nat", "networking"},
 				cli.BoolFlag{"v", "verbose mode"},
+				cli.StringFlag{"b", "virbr0", "networking bridge"},
 				cli.StringSliceFlag{"f", new(cli.StringSlice), "port forwarding rules"},
 			},
 			Action: func(c *cli.Context) {
@@ -102,6 +104,8 @@ func main() {
 					Verbose:    c.Bool("v"),
 					Memory:     c.String("m"),
 					Cpus:       c.Int("c"),
+					Networking: c.String("n"),
+					Bridge:     c.String("b"),
 					NatRules:   nat.Parse(c.StringSlice("f")),
 				}
 				err := cmd.Run(repo, config)

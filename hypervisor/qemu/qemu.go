@@ -27,16 +27,18 @@ import (
 )
 
 type VMConfig struct {
-	Name	 string
-	Image    string
-	Verbose  bool
-	Memory   int64
-	Cpus     int
-	NatRules []nat.Rule
+	Name	    string
+	Image       string
+	Verbose     bool
+	Memory      int64
+	Cpus        int
+	Networking  string
+	Bridge      string
+	NatRules    []nat.Rule
 	BackingFile bool
 	InstanceDir string
-	Monitor	string
-	ConfigFile string
+	Monitor	    string
+	ConfigFile  string
 }
 
 func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool) error {
@@ -272,7 +274,11 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 
 	StoreConfig(c)
 
-	args := append(c.vmArguments(), extra...)
+	vmArgs, err := c.vmArguments()
+	if err != nil {
+		return nil, err
+	}
+	args := append(vmArgs, extra...)
 	cmd := exec.Command("qemu-system-x86_64", args...)
 	if c.Verbose {
 		cmd.Stdout = os.Stdout
@@ -285,23 +291,34 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-func (c *VMConfig) vmArguments() []string {
-	args := []string{"-display", "none","-m", strconv.FormatInt(c.Memory, 10), "-smp", strconv.Itoa(c.Cpus), "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-device", "isa-serial,chardev=stdio"}
-	redirects := toQemuRedirects(c.NatRules)
-	args = append(args, redirects...)
+func (c *VMConfig) vmArguments() ([]string, error) {
+	args := []string{"-display", "none","-m", strconv.FormatInt(c.Memory, 10), "-smp", strconv.Itoa(c.Cpus), "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-device", "isa-serial,chardev=stdio"}
+	net, err := c.vmNetworking()
+	if err != nil {
+		return nil, err
+	}
+	args = append(args, net...)
 	monitor := fmt.Sprintf("socket,id=charmonitor,path=%s,server,nowait", c.Monitor)
 	args = append(args, "-chardev", monitor, "-mon", "chardev=charmonitor,id=monitor,mode=control")
 	if runtime.GOOS == "linux" {
 		args = append(args, "-enable-kvm", "-cpu", "host,+x2apic")
 	}
-	return args
+	return args, nil
 }
 
-func toQemuRedirects(natRules []nat.Rule) []string {
-	redirects := make([]string, 0)
-	for _, portForward := range natRules {
-		redirect := fmt.Sprintf("tcp:%s::%s", portForward.HostPort, portForward.GuestPort)
-		redirects = append(redirects, "-redir", redirect)
+func (c *VMConfig) vmNetworking() ([]string, error) {
+	args := make([]string, 0)
+	switch c.Networking {
+	case "bridge":
+		args = append(args, "-netdev", fmt.Sprintf("bridge,id=hn0,br=%s,helper=/usr/libexec/qemu-bridge-helper", c.Bridge), "-device", "virtio-net-pci,netdev=hn0,id=nic1")
+		return args, nil
+	case "nat":
+		args = append(args, "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0")
+		for _, portForward := range c.NatRules {
+			redirect := fmt.Sprintf("tcp:%s::%s", portForward.HostPort, portForward.GuestPort)
+			args = append(args, "-redir", redirect)
+		}
+		return args, nil
 	}
-	return redirects
+	return nil, fmt.Errorf("%s: networking not supported", c.Networking)
 }

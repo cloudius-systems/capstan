@@ -27,6 +27,8 @@ type RunConfig struct {
 	Verbose    bool
 	Memory     string
 	Cpus       int
+	Networking string
+	Bridge     string
 	NatRules   []nat.Rule
 }
 
@@ -112,16 +114,18 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		id := util.ID()
 		dir := filepath.Join(os.Getenv("HOME"), ".capstan/instances/qemu", id)
 		config := &qemu.VMConfig{
-			Name:	  id,
-			Image:    path,
-			Verbose:  true,
-			Memory:   size,
-			Cpus:     config.Cpus,
-			NatRules: config.NatRules,
+			Name:	     id,
+			Image:       path,
+			Verbose:     true,
+			Memory:      size,
+			Cpus:        config.Cpus,
+			Networking:  config.Networking,
+			Bridge:      config.Bridge,
+			NatRules:    config.NatRules,
 			BackingFile: true,
 			InstanceDir: dir,
-			Monitor: filepath.Join(dir, "osv.monitor"),
-			ConfigFile: filepath.Join(dir, "osv.config"),
+			Monitor:     filepath.Join(dir, "osv.monitor"),
+			ConfigFile:  filepath.Join(dir, "osv.config"),
 		}
 		fmt.Printf("Created instance: %s\n", id);
 		tio, _ := util.RawTerm()
