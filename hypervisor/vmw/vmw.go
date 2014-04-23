@@ -10,6 +10,7 @@ package vmw
 import (
 	"bufio"
 	"fmt"
+	"gopkg.in/yaml.v1"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/util"
 	"io"
@@ -20,6 +21,7 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+	"io/ioutil"
 )
 
 type VMConfig struct {
@@ -32,6 +34,7 @@ type VMConfig struct {
 	VMXFile      string
 	InstanceDir  string
 	OriginalVMDK string
+	ConfigFile   string
 }
 
 func vmxRun(args ...string) (*exec.Cmd, error) {
@@ -54,24 +57,29 @@ func doRead(done chan bool, conn net.Conn) {
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
-	dir := c.InstanceDir
-	err := os.MkdirAll(dir, 0777)
-	if err != nil {
-		fmt.Printf("mkdir failed: %s", dir)
-		return nil, err
+	if _, err := os.Stat(c.VMXFile); os.IsNotExist(err) {
+		dir := c.InstanceDir
+		err := os.MkdirAll(dir, 0777)
+		if err != nil {
+			fmt.Printf("mkdir failed: %s", dir)
+			return nil, err
+		}
+		cmd := util.CopyFile(c.OriginalVMDK, c.Image)
+		_, err = cmd.Output()
+		if err != nil {
+			fmt.Printf("cp failed: %s", c.OriginalVMDK)
+			return nil, err
+		}
+		err = vmCreateVMXFile(c)
+		if err != nil {
+			fmt.Printf("Create VMXFile failed: %s", c.VMXFile)
+			return nil, err
+		}
 	}
-	cmd := util.CopyFile(c.OriginalVMDK, c.Image)
-	_, err = cmd.Output()
-	if err != nil {
-		fmt.Printf("cp failed: %s", c.OriginalVMDK)
-		return nil, err
-	}
-	err = vmCreateVMXFile(c)
-	if err != nil {
-		fmt.Printf("Create VMXFile failed: %s", c.VMXFile)
-		return nil, err
-	}
-	cmd, err = vmxRun("-T", "ws", "start", c.VMXFile, "nogui")
+
+	StoreConfig(c)
+
+	cmd, err := vmxRun("-T", "ws", "start", c.VMXFile, "nogui")
 	if err != nil {
 		return nil, err
 	}
@@ -103,8 +111,17 @@ func DeleteVM(name string) error {
 	dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", name)
 	c := &VMConfig{
 		VMXFile:  filepath.Join(dir, "osv.vmx"),
+		ConfigFile: filepath.Join(dir, "osv.config"),
 	}
-	cmd, err := vmxRun("-T", "ws", "deleteVM", c.VMXFile)
+
+	cmd := exec.Command("rm", "-f", c.ConfigFile)
+	_, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("Failed to delete: %s", c.ConfigFile);
+		return err
+	}
+
+	cmd, err = vmxRun("-T", "ws", "deleteVM", c.VMXFile)
 	if err != nil {
 		fmt.Printf("Failed to delete VM", c.VMXFile)
 		return err
@@ -214,4 +231,30 @@ func vmCreateVMXFile(c *VMConfig) error {
 
 	writer.Flush()
 	return nil
+}
+
+func LoadConfig(name string) (*VMConfig, error) {
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", name)
+	file := filepath.Join(dir, "osv.config")
+	c := VMConfig{}
+
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Printf("Failed to open: %s\n", file)
+		return nil, err
+	}
+	err = yaml.Unmarshal(data, &c)
+	if err != nil {
+		return nil, err
+	}
+
+	return &c, nil
+}
+
+func StoreConfig(c *VMConfig) error {
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(c.ConfigFile, data, 0644)
 }

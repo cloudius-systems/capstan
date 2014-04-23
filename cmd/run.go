@@ -32,23 +32,36 @@ type RunConfig struct {
 
 func Run(repo *util.Repo, config *RunConfig) error {
 	var path string
+	var cmd *exec.Cmd
+
 	instanceName, instancePlatform := util.SearchInstance(config.ImageName)
 	if instanceName != "" {
-		if instancePlatform == "qemu" {
-			c, _ := qemu.LoadConfig(config.ImageName)
-			fmt.Printf("Created instance: %s\n", instanceName);
+		fmt.Printf("Created instance: %s\n", instanceName)
+		defer fmt.Println("")
 
-			tio, _ := util.RawTerm()
-			defer util.ResetTerm(tio)
-			cmd, err := qemu.LaunchVM(c)
-			if err != nil {
-				return err
-			}
-			if cmd != nil {
-				return cmd.Wait()
-			}
-			return nil
+		tio, _ := util.RawTerm()
+		defer util.ResetTerm(tio)
+
+		var err error
+		switch instancePlatform {
+		case "qemu":
+			c, _ := qemu.LoadConfig(instanceName)
+			cmd, err = qemu.LaunchVM(c)
+		case "vbox":
+			c, _ := vbox.LoadConfig(instanceName)
+			cmd, err = vbox.LaunchVM(c)
+		case "vmw":
+			c, _ := vmw.LoadConfig(instanceName)
+			cmd, err = vmw.LaunchVM(c)
 		}
+
+		if err != nil {
+			return err
+		}
+		if cmd != nil {
+			return cmd.Wait()
+		}
+		return nil
 	}
 	if config.ImageName != "" {
 		if _, err := os.Stat(config.ImageName); os.IsNotExist(err) {
@@ -93,7 +106,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 	if err != nil {
 		return err
 	}
-	var cmd *exec.Cmd
+	defer fmt.Println("")
 	switch config.Hypervisor {
 	case "qemu":
 		id := util.ID()
@@ -119,6 +132,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
 		id := util.ID()
+		dir := filepath.Join(util.HomePath(), ".capstan/instances/vbox", id)
 		config := &vbox.VMConfig{
 			Name:	  id,
 			Dir:      filepath.Join(util.HomePath(), ".capstan/instances/vbox"),
@@ -126,6 +140,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			Memory:   size,
 			Cpus:     config.Cpus,
 			NatRules: config.NatRules,
+			ConfigFile: filepath.Join(dir, "osv.config"),
 		}
 		fmt.Printf("Created instance: %s\n", id);
 		tio, _ := util.RawTerm()
@@ -160,6 +175,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			VMXFile:  filepath.Join(dir, "osv.vmx"),
 			InstanceDir: dir,
 			OriginalVMDK: path,
+			ConfigFile: filepath.Join(dir, "osv.config"),
 		}
 		fmt.Printf("Created instance: %s\n", id);
 		tio, _ := util.RawTerm()
