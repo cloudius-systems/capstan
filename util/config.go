@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v1"
 	"io/ioutil"
+	"path/filepath"
+	"strings"
 )
 
 type Config struct {
@@ -31,7 +33,15 @@ func ReadConfig(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ParseConfig(data)
+	c, err := ParseConfig(data)
+	if err != nil {
+		return nil, err
+	}
+	err = c.substituteVars()
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 func ParseConfig(data []byte) (*Config, error) {
@@ -44,4 +54,11 @@ func ParseConfig(data []byte) (*Config, error) {
 		return nil, fmt.Errorf("\"cmdline\" not found")
 	}
 	return &c, nil
+}
+
+func (c *Config) substituteVars() error {
+	for target, source := range c.Files {
+		c.Files[target] = strings.Replace(source, "&", filepath.Base(target), -1)
+	}
+	return nil
 }
