@@ -25,3 +25,21 @@ files:
 specifies the full path of the file as it will appear in the image and the
 right side specifies a relative path to current directory of the actual file
 that is added to the image.
+
+File mapping supports basename variable substitution with the "&" character.
+You can specify this:
+
+```
+files:
+  /usr/app/app.jar: build/&
+```
+
+which expands to the following during build:
+
+```
+files:
+  /usr/app/app.jar: build/app.jar
+```
+
+Here ``/usr/app/app.jar`` is the path in the built image and ``build/app.jar``
+is the file that is picked up from the local filesystem.
