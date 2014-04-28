@@ -201,9 +201,10 @@ func StopVM(name string) error {
 	}
 	conn, err := net.Dial("unix", c.Monitor)
 	if err != nil {
-		fmt.Println("Failed to stop instance: %s", name)
-		return err
+		// The instance is stopped already
+		return nil
 	}
+
 	writer := bufio.NewWriter(conn)
 
 	cmd := `{ "execute": "qmp_capabilities"}`
