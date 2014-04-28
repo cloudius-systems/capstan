@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -256,4 +257,33 @@ func StoreConfig(c *VMConfig) error {
 		return err
 	}
 	return ioutil.WriteFile(c.ConfigFile, data, 0644)
+}
+
+func vmList() ([]string, error) {
+	cmd := exec.Command("vmrun", "list")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	vms := make([]string, 0)
+	lines := strings.Split(string(out), "\n")
+	for _, line := range lines {
+		dir := filepath.Dir(line)
+		vm := filepath.Base(dir)
+		vms = append(vms, vm)
+	}
+	return vms, nil
+}
+
+func GetVMStatus(name, dir string) (string, error) {
+	vms, err := vmList()
+	if err != nil {
+		return "Stopped", err
+	}
+	for _, vm := range vms {
+		if vm == name {
+			return "Running", nil
+		}
+	}
+	return "Stopped", nil
 }

@@ -71,7 +71,7 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 }
 
 func vmExists(vmName string) (bool, error) {
-	vms, err := vmList()
+	vms, err := vmList("vms")
 	if err != nil {
 		return false, err
 	}
@@ -83,8 +83,8 @@ func vmExists(vmName string) (bool, error) {
 	return false, nil
 }
 
-func vmList() ([]string, error) {
-	cmd := exec.Command("VBoxManage", "list", "vms")
+func vmList(list_type string) ([]string, error) {
+	cmd := exec.Command("VBoxManage", "list", list_type)
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, err
@@ -239,4 +239,17 @@ func StoreConfig(c *VMConfig) error {
 		return err
 	}
 	return ioutil.WriteFile(c.ConfigFile, data, 0644)
+}
+
+func GetVMStatus(name, dir string) (string, error) {
+	vms, err := vmList("runningvms")
+	if err != nil {
+		return "Stopped", err
+	}
+	for _, vm := range vms {
+		if vm == name {
+			return "Running", nil
+		}
+	}
+	return "Stopped", nil
 }

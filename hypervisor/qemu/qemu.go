@@ -220,6 +220,18 @@ func StopVM(name string) error {
 	return nil
 }
 
+func GetVMStatus(name, dir string) (string, error) {
+	c := &VMConfig{
+		Monitor: filepath.Join(dir, "osv.monitor"),
+	}
+	_, err := net.Dial("unix", c.Monitor)
+	if err != nil {
+		return "Stopped", nil
+	}
+
+	return "Running", nil
+}
+
 func LoadConfig(name string) (*VMConfig, error) {
 	dir := filepath.Join(util.HomePath(), ".capstan/instances/qemu", name)
 	file := filepath.Join(dir, "osv.config")
