@@ -89,6 +89,7 @@ func main() {
 			Name:  "run",
 			Usage: "launch a VM. You may pass the image name as the first argument.",
 			Flags: []cli.Flag{
+				cli.StringFlag{"i", "", "image_name"},
 				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
 				cli.StringFlag{"m", "1G", "memory size"},
 				cli.IntFlag{"c", 2, "number of CPUs"},
@@ -99,14 +100,15 @@ func main() {
 			},
 			Action: func(c *cli.Context) {
 				config := &cmd.RunConfig{
-					ImageName:  c.Args().First(),
-					Hypervisor: c.String("p"),
-					Verbose:    c.Bool("v"),
-					Memory:     c.String("m"),
-					Cpus:       c.Int("c"),
-					Networking: c.String("n"),
-					Bridge:     c.String("b"),
-					NatRules:   nat.Parse(c.StringSlice("f")),
+					InstanceName: c.Args().First(),
+					ImageName:    c.String("i"),
+					Hypervisor:   c.String("p"),
+					Verbose:      c.Bool("v"),
+					Memory:       c.String("m"),
+					Cpus:         c.Int("c"),
+					Networking:   c.String("n"),
+					Bridge:       c.String("b"),
+					NatRules:     nat.Parse(c.StringSlice("f")),
 				}
 				err := cmd.Run(repo, config)
 				if err != nil {
