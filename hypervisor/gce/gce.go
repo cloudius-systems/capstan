@@ -147,3 +147,8 @@ func gcUtil(args ...string) error {
 	}
 	return nil
 }
+
+func GetVMStatus(name, dir string) (string, error) {
+	// TODO: Return the real status using gcutil
+	return "Running", nil
+}
