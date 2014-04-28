@@ -165,6 +165,8 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			Image:      path,
 			Memory:     size,
 			Cpus:       config.Cpus,
+			Networking: config.Networking,
+			Bridge:     config.Bridge,
 			NatRules:   config.NatRules,
 			ConfigFile: filepath.Join(dir, "osv.config"),
 		}
