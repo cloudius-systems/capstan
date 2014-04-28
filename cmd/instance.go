@@ -9,6 +9,10 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/cloudius-systems/capstan/hypervisor/gce"
+	"github.com/cloudius-systems/capstan/hypervisor/qemu"
+	"github.com/cloudius-systems/capstan/hypervisor/vbox"
+	"github.com/cloudius-systems/capstan/hypervisor/vmw"
 	"github.com/cloudius-systems/capstan/util"
 	"io/ioutil"
 	"path/filepath"
@@ -36,6 +40,18 @@ func Instances() error {
 }
 
 func printInstance(name, platform, dir string) error {
-	fmt.Printf("%-20s %-10s %-10s %-15s\n", name, platform, "Running", "")
+	var status string
+
+	switch platform {
+	case "qemu":
+		status, _ = qemu.GetVMStatus(name, dir)
+	case "vbox":
+		status, _ = vbox.GetVMStatus(name, dir)
+	case "vmw":
+		status, _ = vmw.GetVMStatus(name, dir)
+	case "gce":
+		status, _ = gce.GetVMStatus(name, dir)
+	}
+	fmt.Printf("%-20s %-10s %-10s %-15s\n", name, platform, status, "")
 	return nil
 }
