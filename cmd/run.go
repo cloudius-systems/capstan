@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 type RunConfig struct {
@@ -68,10 +69,12 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			}
 			return nil
 		} else {
-			fmt.Printf("Instance %s does not exist\n", config.InstanceName)
-			return nil
+			// The InstanceName is actually a ImageName
+			// so, cmd like "capstan run cloudius/osv" will work
+			config.ImageName = config.InstanceName
+			config.InstanceName = strings.Replace(config.InstanceName, "/", "-", -1)
+			return Run(repo, config)
 		}
-
 	// Both ImageName and InstanceName are specified
 	} else if config.ImageName != "" && config.InstanceName != "" {
 		if _, err := os.Stat(config.ImageName); os.IsNotExist(err) {
