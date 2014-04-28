@@ -151,6 +151,10 @@ func Run(repo *util.Repo, config *RunConfig) error {
 	switch config.Hypervisor {
 	case "qemu":
 		dir := filepath.Join(os.Getenv("HOME"), ".capstan/instances/qemu", id)
+		bridge := config.Bridge
+		if bridge == "" {
+			bridge = "virbr0"
+		}
 		config := &qemu.VMConfig{
 			Name:        id,
 			Image:       path,
@@ -158,7 +162,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			Memory:      size,
 			Cpus:        config.Cpus,
 			Networking:  config.Networking,
-			Bridge:      config.Bridge,
+			Bridge:      bridge,
 			NatRules:    config.NatRules,
 			BackingFile: true,
 			InstanceDir: dir,
@@ -171,12 +175,18 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
 		dir := filepath.Join(util.HomePath(), ".capstan/instances/vbox", id)
+		bridge := config.Bridge
+		if bridge == "" {
+			bridge = "vboxnet0"
+		}
 		config := &vbox.VMConfig{
 			Name:       id,
 			Dir:        filepath.Join(util.HomePath(), ".capstan/instances/vbox"),
 			Image:      path,
 			Memory:     size,
 			Cpus:       config.Cpus,
+			Networking: config.Networking,
+			Bridge:     bridge,
 			NatRules:   config.NatRules,
 			ConfigFile: filepath.Join(dir, "osv.config"),
 		}
