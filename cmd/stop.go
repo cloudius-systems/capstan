@@ -12,6 +12,7 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
 	"github.com/cloudius-systems/capstan/hypervisor/vmw"
+	"github.com/cloudius-systems/capstan/hypervisor/gce"
 	"github.com/cloudius-systems/capstan/util"
 )
 
@@ -30,6 +31,8 @@ func Stop(name string) error {
 		err = vbox.StopVM(name)
 	case "vmw":
 		err = vmw.StopVM(name)
+	case "gce":
+		err = gce.StopVM(name)
 	}
 
 	if err != nil {

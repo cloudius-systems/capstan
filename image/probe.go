@@ -21,11 +21,16 @@ const (
 	QCOW2 ImageFormat = iota
 	VDI
 	VMDK
-	GCE
+	GCE_TARBALL
+	GCE_GS
 	Unknown
 )
 
 func Probe(path string) (ImageFormat, error) {
+	if gce.ProbeGS(path) {
+		return GCE_GS, nil
+	}
+
 	f, err := os.Open(path)
 	if err != nil {
 		return Unknown, err
@@ -44,8 +49,13 @@ func Probe(path string) (ImageFormat, error) {
 		return VMDK, nil
 	}
 	f.Seek(0, os.SEEK_SET)
-	if gce.Probe(f) {
-		return GCE, nil
+	if gce.ProbeTarball(f) {
+		return GCE_TARBALL, nil
 	}
 	return Unknown, nil
+}
+
+func IsCloudImage(path string) bool {
+	format, _ := Probe(path)
+	return format == GCE_GS
 }

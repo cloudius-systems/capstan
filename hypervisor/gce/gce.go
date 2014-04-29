@@ -8,7 +8,12 @@
 package gce
 
 import (
+	"github.com/cloudius-systems/capstan/util"
+	"gopkg.in/yaml.v1"
+	"io/ioutil"
+	"path/filepath"
 	"fmt"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -22,6 +27,9 @@ type VMConfig struct {
 	Zone             string
 	CloudStoragePath string
 	Tarball          string
+	ConfigFile	 string
+	InstanceDir	 string
+	BootDisk	 string
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
@@ -34,6 +42,9 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	StoreConfig(c)
+
 	err = vmPrintInfo(c)
 	if err != nil {
 		return nil, err
@@ -41,8 +52,18 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	return nil, nil
 }
 
+func StopVM(name string) error {
+	return gcUtil("deleteinstance", "--nodelete_boot_pd", "-f", name)
+}
+
 func vmCreate(c *VMConfig) error {
-	err := gcUtil("addinstance", "--image", c.Image, "--network", c.Network, "--machine_type", c.MachineType, "--zone", c.Zone, c.Name)
+	var err error
+	if c.BootDisk == "" {
+		err = gcUtil("addinstance", "--image", c.Image, "--network", c.Network, "--machine_type", c.MachineType, "--zone", c.Zone, c.Name)
+		c.BootDisk = c.Image
+	} else {
+		err = gcUtil("addinstance", "--disk", c.BootDisk + ",boot", "--network", c.Network, "--machine_type", c.MachineType, "--zone", c.Zone, c.Name)
+	}
 	if err != nil {
 		return err
 	}
@@ -50,11 +71,14 @@ func vmCreate(c *VMConfig) error {
 }
 
 func vmDeleteImage(c *VMConfig) error {
-	err := gsUtil("rm", c.CloudStoragePath)
-	if err != nil {
-		return err
+	if c.Tarball != "" {
+		c.Tarball = ""
+		err := gsUtil("rm", c.CloudStoragePath)
+		if err != nil {
+			return err
+		}
 	}
-	err = gcUtil("deleteimage", "-f", c.Image)
+	err := gcUtil("deleteimage", "-f", c.Image)
 	if err != nil {
 		return err
 	}
@@ -62,23 +86,25 @@ func vmDeleteImage(c *VMConfig) error {
 }
 
 func vmUploadImage(c *VMConfig) error {
-	err := gsUtil("cp", c.Tarball, c.CloudStoragePath)
-	if err != nil {
-		return err
+	if c.Tarball != "" {
+		err := gsUtil("cp", c.Tarball, c.CloudStoragePath)
+		if err != nil {
+			return err
+		}
 	}
-	err = gcUtil("addimage", c.Image, c.CloudStoragePath)
+	err := gcUtil("addimage", c.Image, c.CloudStoragePath)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func vmGetIP(c *VMConfig) (string, string, error) {
-	externalIP, internalIP := "Unknow", "Unknow"
-	cmd := exec.Command("gcutil", "getinstance", c.Name)
+func vmGetInfo(name string) (string, string, string, error) {
+	status, externalIP, internalIP := "", "Unknow", "Unknow"
+	cmd := exec.Command("gcutil", "getinstance", name)
 	out, err := cmd.Output()
 	if err != nil {
-		return externalIP, internalIP, nil
+		return status, externalIP, internalIP, nil
 	}
 
 	lines := strings.Split(string(out), "\n")
@@ -96,30 +122,56 @@ func vmGetIP(c *VMConfig) (string, string, error) {
 			externalIP = value
 		} else if key == "ip" {
 			internalIP = value
+		} else if key == "status" {
+			status = value
 		}
 	}
 
-	return externalIP, internalIP, nil
+	return status, externalIP, internalIP, nil
 }
 
 func vmPrintInfo(c *VMConfig) error {
-	externalIP, internalIP, err := vmGetIP(c)
+	_, externalIP, internalIP, err := vmGetInfo(c.Name)
 	if err != nil {
 		fmt.Printf("Failed To Get Instance IP Info: %s\n", c.Name)
 		return err
 	}
 
-	fmt.Printf("Created Instance: %s\n", c.Name)
 	fmt.Printf("Public        IP: %s\n", externalIP)
 	fmt.Printf("Internal      IP: %s\n", internalIP)
 	fmt.Printf("Machine     Type: %s\n", c.MachineType)
 	fmt.Printf("Zone            : %s\n", c.Zone)
+	fmt.Printf("SSH             : gcutil ssh %s\n", c.Name)
+	fmt.Printf("SSH             : ssh admin@%s\n", externalIP)
 
 	return nil
 }
 
 func DeleteVM(name string) error {
-	return gcUtil("deleteinstance", "--delete_boot_pd", "-f", name)
+	gcUtil("deleteinstance", "--delete_boot_pd", "-f", name)
+
+	gcUtil("deletedisk", "-f",  name)
+
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", name)
+	c := &VMConfig{
+		InstanceDir: dir,
+		ConfigFile:  filepath.Join(dir, "osv.config"),
+	}
+	cmd := exec.Command("rm", "-f", c.ConfigFile)
+	_, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("rm failed: %s", c.ConfigFile)
+		return err
+	}
+
+	cmd = exec.Command("rmdir", c.InstanceDir)
+	_, err = cmd.Output()
+	if err != nil {
+		fmt.Printf("rmdir failed: %s", c.InstanceDir)
+		return err
+	}
+
+	return nil
 }
 
 func gsUtil(args ...string) error {
@@ -149,6 +201,48 @@ func gcUtil(args ...string) error {
 }
 
 func GetVMStatus(name, dir string) (string, error) {
-	// TODO: Return the real status using gcutil
-	return "Running", nil
+	status, _, _, err := vmGetInfo(name)
+	if err != nil {
+		return "Stopped", err
+	}
+
+	if status == "RUNNING" {
+		return "Running", nil
+	} else if status == "STOPPING" {
+		return "Running", nil
+	} else {
+		return "Stopped", nil
+	}
+}
+
+func StoreConfig(c *VMConfig) error {
+	dir := c.InstanceDir
+	err := os.MkdirAll(dir, 0775)
+	if err != nil {
+		fmt.Printf("mkdir failed: %s", dir)
+		return err
+	}
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(c.ConfigFile, data, 0644)
+}
+
+func LoadConfig(name string) (*VMConfig, error) {
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", name)
+	file := filepath.Join(dir, "osv.config")
+	c := VMConfig{}
+
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Printf("Failed to open: %s\n", file)
+		return nil, err
+	}
+	err = yaml.Unmarshal(data, &c)
+	if err != nil {
+		return nil, err
+	}
+
+	return &c, nil
 }
