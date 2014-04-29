@@ -51,6 +51,10 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	return nil, nil
 }
 
+func StopVM(name string) error {
+	return gcUtil("deleteinstance", "--nodelete_boot_pd", "-f", name)
+}
+
 func vmCreate(c *VMConfig) error {
 	err := gcUtil("addinstance", "--image", c.Image, "--network", c.Network, "--machine_type", c.MachineType, "--zone", c.Zone, c.Name)
 	if err != nil {

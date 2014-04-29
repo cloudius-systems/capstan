@@ -30,6 +30,8 @@ func Stop(name string) error {
 		err = vbox.StopVM(name)
 	case "vmw":
 		err = vmw.StopVM(name)
+	case "gce":
+		err = gce.StopVM(name)
 	}
 
 	if err != nil {
