@@ -10,6 +10,7 @@ package gce
 import (
 	"encoding/binary"
 	"os"
+	"strings"
 )
 
 const (
@@ -22,7 +23,7 @@ type Header struct {
 	MagicNumber2 uint8
 }
 
-func Probe(f *os.File) bool {
+func ProbeTarball(f *os.File) bool {
 	header, err := readHeader(f)
 	if err != nil {
 		return false
@@ -37,4 +38,8 @@ func readHeader(f *os.File) (*Header, error) {
 		return nil, err
 	}
 	return &header, nil
+}
+
+func ProbeGS(path string) bool {
+	return strings.HasPrefix(path, "gs://")
 }

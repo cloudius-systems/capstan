@@ -50,11 +50,13 @@ func vmCreate(c *VMConfig) error {
 }
 
 func vmDeleteImage(c *VMConfig) error {
-	err := gsUtil("rm", c.CloudStoragePath)
-	if err != nil {
-		return err
+	if c.Tarball != "" {
+		err := gsUtil("rm", c.CloudStoragePath)
+		if err != nil {
+			return err
+		}
 	}
-	err = gcUtil("deleteimage", "-f", c.Image)
+	err := gcUtil("deleteimage", "-f", c.Image)
 	if err != nil {
 		return err
 	}
@@ -62,11 +64,13 @@ func vmDeleteImage(c *VMConfig) error {
 }
 
 func vmUploadImage(c *VMConfig) error {
-	err := gsUtil("cp", c.Tarball, c.CloudStoragePath)
-	if err != nil {
-		return err
+	if c.Tarball != "" {
+		err := gsUtil("cp", c.Tarball, c.CloudStoragePath)
+		if err != nil {
+			return err
+		}
 	}
-	err = gcUtil("addimage", c.Image, c.CloudStoragePath)
+	err := gcUtil("addimage", c.Image, c.CloudStoragePath)
 	if err != nil {
 		return err
 	}

@@ -80,6 +80,8 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		if _, err := os.Stat(config.ImageName); os.IsNotExist(err) {
 			if repo.ImageExists(config.Hypervisor, config.ImageName) {
 				path = repo.ImagePath(config.Hypervisor, config.ImageName)
+			} else if image.IsCloudImage(config.ImageName) {
+				path = config.ImageName
 			} else if util.IsRemoteImage(config.ImageName) {
 				err := Pull(repo, config.Hypervisor, config.ImageName)
 				if err != nil {
@@ -173,16 +175,24 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		defer util.ResetTerm(tio)
 		cmd, err = vbox.LaunchVM(config)
 	case "gce":
+		if format != image.GCE_TARBALL && format != image.GCE_GS {
+			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
+		}
 		id := config.InstanceName
 		bucket := "osvimg"
 		config := &gce.VMConfig{
-			Name:             "osv-capstan-" + id,
-			Image:            "osv-capstan-" + id,
+			Name:             id,
+			Image:		  id,
 			Network:          "default",
 			MachineType:      "n1-standard-1",
 			Zone:             "us-central1-a",
-			CloudStoragePath: "gs://" + bucket + "/osv-capstan-" + id + ".tar.gz",
-			Tarball:          path,
+		}
+		if format == image.GCE_TARBALL {
+			config.CloudStoragePath = "gs://" + bucket + "/" + id + ".tar.gz"
+			config.Tarball = path
+		} else {
+			config.CloudStoragePath = path
+			config.Tarball = ""
 		}
 		cmd, err = gce.LaunchVM(config)
 	case "vmw":
