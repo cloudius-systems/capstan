@@ -19,53 +19,64 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 type RunConfig struct {
-	ImageName  string
-	Hypervisor string
-	Verbose    bool
-	Memory     string
-	Cpus       int
-	Networking string
-	Bridge     string
-	NatRules   []nat.Rule
+	InstanceName string
+	ImageName    string
+	Hypervisor   string
+	Verbose      bool
+	Memory       string
+	Cpus         int
+	Networking   string
+	Bridge       string
+	NatRules     []nat.Rule
 }
 
 func Run(repo *util.Repo, config *RunConfig) error {
 	var path string
 	var cmd *exec.Cmd
 
-	instanceName, instancePlatform := util.SearchInstance(config.ImageName)
-	if instanceName != "" {
-		fmt.Printf("Created instance: %s\n", instanceName)
-		defer fmt.Println("")
+	// Start an existing instance
+	if config.ImageName == "" && config.InstanceName != "" {
+		instanceName, instancePlatform := util.SearchInstance(config.InstanceName)
+		if instanceName != "" {
+			fmt.Printf("Created instance: %s\n", instanceName)
+			defer fmt.Println("")
 
-		tio, _ := util.RawTerm()
-		defer util.ResetTerm(tio)
+			tio, _ := util.RawTerm()
+			defer util.ResetTerm(tio)
 
-		var err error
-		switch instancePlatform {
-		case "qemu":
-			c, _ := qemu.LoadConfig(instanceName)
-			cmd, err = qemu.LaunchVM(c)
-		case "vbox":
-			c, _ := vbox.LoadConfig(instanceName)
-			cmd, err = vbox.LaunchVM(c)
-		case "vmw":
-			c, _ := vmw.LoadConfig(instanceName)
-			cmd, err = vmw.LaunchVM(c)
-		}
+			var err error
+			switch instancePlatform {
+			case "qemu":
+				c, _ := qemu.LoadConfig(instanceName)
+				cmd, err = qemu.LaunchVM(c)
+			case "vbox":
+				c, _ := vbox.LoadConfig(instanceName)
+				cmd, err = vbox.LaunchVM(c)
+			case "vmw":
+				c, _ := vmw.LoadConfig(instanceName)
+				cmd, err = vmw.LaunchVM(c)
+			}
 
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
+			if cmd != nil {
+				return cmd.Wait()
+			}
+			return nil
+		} else {
+			// The InstanceName is actually a ImageName
+			// so, cmd like "capstan run cloudius/osv" will work
+			config.ImageName = config.InstanceName
+			config.InstanceName = strings.Replace(config.InstanceName, "/", "-", -1)
+			return Run(repo, config)
 		}
-		if cmd != nil {
-			return cmd.Wait()
-		}
-		return nil
-	}
-	if config.ImageName != "" {
+	// Both ImageName and InstanceName are specified
+	} else if config.ImageName != "" && config.InstanceName != "" {
 		if _, err := os.Stat(config.ImageName); os.IsNotExist(err) {
 			if repo.ImageExists(config.Hypervisor, config.ImageName) {
 				path = repo.ImagePath(config.Hypervisor, config.ImageName)
@@ -81,8 +92,12 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		} else {
 			path = config.ImageName
 		}
-	} else {
+		deleteInstance(config.InstanceName)
+
+	// Valid only when Capstanfile is present
+	} else if config.ImageName == "" && config.InstanceName == "" {
 		config.ImageName = repo.DefaultImage()
+		config.InstanceName = config.ImageName
 		if config.ImageName == "" {
 			return fmt.Errorf("No Capstanfile found, unable to run.")
 		}
@@ -96,7 +111,14 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			}
 		}
 		path = repo.ImagePath(config.Hypervisor, config.ImageName)
+		deleteInstance(config.InstanceName)
+
+		// Cmdline option is not valid
+	} else {
+		usage()
+		return nil
 	}
+
 	format, err := image.Probe(path)
 	if err != nil {
 		return err
@@ -111,7 +133,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 	defer fmt.Println("")
 	switch config.Hypervisor {
 	case "qemu":
-		id := util.ID()
+		id := config.InstanceName
 		dir := filepath.Join(os.Getenv("HOME"), ".capstan/instances/qemu", id)
 		config := &qemu.VMConfig{
 			Name:        id,
@@ -135,7 +157,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		if format != image.VDI && format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
-		id := util.ID()
+		id := config.InstanceName
 		dir := filepath.Join(util.HomePath(), ".capstan/instances/vbox", id)
 		config := &vbox.VMConfig{
 			Name:       id,
@@ -151,7 +173,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		defer util.ResetTerm(tio)
 		cmd, err = vbox.LaunchVM(config)
 	case "gce":
-		id := util.ID()
+		id := config.InstanceName
 		bucket := "osvimg"
 		config := &gce.VMConfig{
 			Name:             "osv-capstan-" + id,
@@ -164,7 +186,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		}
 		cmd, err = gce.LaunchVM(config)
 	case "vmw":
-		id := util.ID()
+		id := config.InstanceName
 		if format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
@@ -196,4 +218,33 @@ func Run(repo *util.Repo, config *RunConfig) error {
 	} else {
 		return nil
 	}
+}
+
+func usage() {
+	fmt.Println("Please try one of the following:")
+	fmt.Println("1) capstan run")
+	fmt.Println("   run under a directory contains Capstanfile")
+	fmt.Println("2) capstan run $instance_name")
+	fmt.Println("   start an existing instance")
+	fmt.Println("3) capstan run -i $image_name $instance_name")
+	fmt.Println("   start an instance using $image_name")
+}
+
+func deleteInstance(name string) error {
+	instanceName, instancePlatform := util.SearchInstance(name)
+	if instanceName == "" {
+		return nil
+	}
+	var err error
+	switch instancePlatform {
+	case "qemu":
+		err = qemu.DeleteVM(name)
+	case "vbox":
+		err = vbox.DeleteVM(name)
+	case "vmw":
+		err = vmw.DeleteVM(name)
+	case "gce":
+		err = gce.DeleteVM(name)
+	}
+	return err
 }
