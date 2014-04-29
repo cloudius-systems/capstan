@@ -99,12 +99,12 @@ func vmUploadImage(c *VMConfig) error {
 	return nil
 }
 
-func vmGetIP(c *VMConfig) (string, string, error) {
-	externalIP, internalIP := "Unknow", "Unknow"
-	cmd := exec.Command("gcutil", "getinstance", c.Name)
+func vmGetInfo(name string) (string, string, string, error) {
+	status, externalIP, internalIP := "", "Unknow", "Unknow"
+	cmd := exec.Command("gcutil", "getinstance", name)
 	out, err := cmd.Output()
 	if err != nil {
-		return externalIP, internalIP, nil
+		return status, externalIP, internalIP, nil
 	}
 
 	lines := strings.Split(string(out), "\n")
@@ -122,14 +122,16 @@ func vmGetIP(c *VMConfig) (string, string, error) {
 			externalIP = value
 		} else if key == "ip" {
 			internalIP = value
+		} else if key == "status" {
+			status = value
 		}
 	}
 
-	return externalIP, internalIP, nil
+	return status, externalIP, internalIP, nil
 }
 
 func vmPrintInfo(c *VMConfig) error {
-	externalIP, internalIP, err := vmGetIP(c)
+	_, externalIP, internalIP, err := vmGetInfo(c.Name)
 	if err != nil {
 		fmt.Printf("Failed To Get Instance IP Info: %s\n", c.Name)
 		return err
@@ -200,8 +202,18 @@ func gcUtil(args ...string) error {
 }
 
 func GetVMStatus(name, dir string) (string, error) {
-	// TODO: Return the real status using gcutil
-	return "Running", nil
+	status, _, _, err := vmGetInfo(name)
+	if err != nil {
+		return "Stopped", err
+	}
+
+	if status == "RUNNING" {
+		return "Running", nil
+	} else if status == "STOPPING" {
+		return "Running", nil
+	} else {
+		return "Stopped", nil
+	}
 }
 
 func StoreConfig(c *VMConfig) error {
