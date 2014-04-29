@@ -136,7 +136,30 @@ func vmPrintInfo(c *VMConfig) error {
 }
 
 func DeleteVM(name string) error {
-	return gcUtil("deleteinstance", "--delete_boot_pd", "-f", name)
+	gcUtil("deleteinstance", "--delete_boot_pd", "-f", name)
+
+	gcUtil("deletedisk", "-f",  name)
+
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", name)
+	c := &VMConfig{
+		InstanceDir: dir,
+		ConfigFile:  filepath.Join(dir, "osv.config"),
+	}
+	cmd := exec.Command("rm", "-f", c.ConfigFile)
+	_, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("rm failed: %s", c.ConfigFile)
+		return err
+	}
+
+	cmd = exec.Command("rmdir", c.InstanceDir)
+	_, err = cmd.Output()
+	if err != nil {
+		fmt.Printf("rmdir failed: %s", c.InstanceDir)
+		return err
+	}
+
+	return nil
 }
 
 func gsUtil(args ...string) error {
