@@ -29,6 +29,7 @@ type VMConfig struct {
 	Tarball          string
 	ConfigFile	 string
 	InstanceDir	 string
+	BootDisk	 string
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
@@ -56,7 +57,13 @@ func StopVM(name string) error {
 }
 
 func vmCreate(c *VMConfig) error {
-	err := gcUtil("addinstance", "--image", c.Image, "--network", c.Network, "--machine_type", c.MachineType, "--zone", c.Zone, c.Name)
+	var err error
+	if c.BootDisk == "" {
+		err = gcUtil("addinstance", "--image", c.Image, "--network", c.Network, "--machine_type", c.MachineType, "--zone", c.Zone, c.Name)
+		c.BootDisk = c.Image
+	} else {
+		err = gcUtil("addinstance", "--disk", c.BootDisk + ",boot", "--network", c.Network, "--machine_type", c.MachineType, "--zone", c.Zone, c.Name)
+	}
 	if err != nil {
 		return err
 	}
