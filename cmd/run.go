@@ -42,11 +42,14 @@ func Run(repo *util.Repo, config *RunConfig) error {
 	if config.ImageName == "" && config.InstanceName != "" {
 		instanceName, instancePlatform := util.SearchInstance(config.InstanceName)
 		if instanceName != "" {
-			fmt.Printf("Created instance: %s\n", instanceName)
 			defer fmt.Println("")
 
-			tio, _ := util.RawTerm()
-			defer util.ResetTerm(tio)
+			fmt.Printf("Created instance: %s\n", instanceName)
+			// Do not set RawTerm for gce
+			if (instancePlatform != "gce") {
+				tio, _ := util.RawTerm()
+				defer util.ResetTerm(tio)
+			}
 
 			var err error
 			switch instancePlatform {
@@ -136,9 +139,17 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		return err
 	}
 	defer fmt.Println("")
+
+	id := config.InstanceName
+	fmt.Printf("Created instance: %s\n", id)
+	// Do not set RawTerm for gce
+	if (config.Hypervisor != "gce") {
+		tio, _ := util.RawTerm()
+		defer util.ResetTerm(tio)
+	}
+
 	switch config.Hypervisor {
 	case "qemu":
-		id := config.InstanceName
 		dir := filepath.Join(os.Getenv("HOME"), ".capstan/instances/qemu", id)
 		config := &qemu.VMConfig{
 			Name:        id,
@@ -154,15 +165,11 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			Monitor:     filepath.Join(dir, "osv.monitor"),
 			ConfigFile:  filepath.Join(dir, "osv.config"),
 		}
-		fmt.Printf("Created instance: %s\n", id)
-		tio, _ := util.RawTerm()
-		defer util.ResetTerm(tio)
 		cmd, err = qemu.LaunchVM(config)
 	case "vbox":
 		if format != image.VDI && format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
-		id := config.InstanceName
 		dir := filepath.Join(util.HomePath(), ".capstan/instances/vbox", id)
 		config := &vbox.VMConfig{
 			Name:       id,
@@ -173,15 +180,11 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			NatRules:   config.NatRules,
 			ConfigFile: filepath.Join(dir, "osv.config"),
 		}
-		fmt.Printf("Created instance: %s\n", id)
-		tio, _ := util.RawTerm()
-		defer util.ResetTerm(tio)
 		cmd, err = vbox.LaunchVM(config)
 	case "gce":
 		if format != image.GCE_TARBALL && format != image.GCE_GS {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
-		id := config.InstanceName
 		dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", id)
 		bucket := "osvimg"
 		config := &gce.VMConfig{
@@ -202,7 +205,6 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		}
 		cmd, err = gce.LaunchVM(config)
 	case "vmw":
-		id := config.InstanceName
 		if format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
@@ -219,9 +221,6 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			OriginalVMDK: path,
 			ConfigFile:   filepath.Join(dir, "osv.config"),
 		}
-		fmt.Printf("Created instance: %s\n", id)
-		tio, _ := util.RawTerm()
-		defer util.ResetTerm(tio)
 		cmd, err = vmw.LaunchVM(config)
 	default:
 		err = fmt.Errorf("%s: is not a supported hypervisor", config.Hypervisor)
