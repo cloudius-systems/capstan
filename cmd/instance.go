@@ -19,7 +19,7 @@ import (
 )
 
 func Instances() error {
-	header := fmt.Sprintf("%-20s %-10s %-10s %-15s", "Name", "Platform", "Status", "Image")
+	header := fmt.Sprintf("%-35s %-10s %-10s %-15s", "Name", "Platform", "Status", "Image")
 	fmt.Println(header)
 	rootDir := filepath.Join(util.HomePath(), ".capstan", "instances")
 	platforms, _ := ioutil.ReadDir(rootDir)
@@ -52,6 +52,6 @@ func printInstance(name, platform, dir string) error {
 	case "gce":
 		status, _ = gce.GetVMStatus(name, dir)
 	}
-	fmt.Printf("%-20s %-10s %-10s %-15s\n", name, platform, status, "")
+	fmt.Printf("%-35s %-10s %-10s %-15s\n", name, platform, status, "")
 	return nil
 }
