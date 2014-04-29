@@ -36,17 +36,8 @@ On OS X:
 $ brew install qemu
 ```
 
-Make sure you have GOPATH variable set to point the 'bin' location of go installation:
-
-```
-$go env GOPATH
-```
-
-If not set:
-
-```
-export GOPATH=</usr/local/go/bin>
-```
+Make sure you have the ``GOPATH`` environment variable set to point to a
+writable Go workspace such as ``$HOME/go``.
 
 To install Capstan, type:
 
