@@ -8,7 +8,12 @@
 package gce
 
 import (
+	"github.com/cloudius-systems/capstan/util"
+	"gopkg.in/yaml.v1"
+	"io/ioutil"
+	"path/filepath"
 	"fmt"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -22,6 +27,8 @@ type VMConfig struct {
 	Zone             string
 	CloudStoragePath string
 	Tarball          string
+	ConfigFile	 string
+	InstanceDir	 string
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
@@ -34,6 +41,9 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	StoreConfig(c)
+
 	err = vmPrintInfo(c)
 	if err != nil {
 		return nil, err
@@ -51,6 +61,7 @@ func vmCreate(c *VMConfig) error {
 
 func vmDeleteImage(c *VMConfig) error {
 	if c.Tarball != "" {
+		c.Tarball = ""
 		err := gsUtil("rm", c.CloudStoragePath)
 		if err != nil {
 			return err
@@ -157,4 +168,36 @@ func gcUtil(args ...string) error {
 func GetVMStatus(name, dir string) (string, error) {
 	// TODO: Return the real status using gcutil
 	return "Running", nil
+}
+
+func StoreConfig(c *VMConfig) error {
+	dir := c.InstanceDir
+	err := os.MkdirAll(dir, 0775)
+	if err != nil {
+		fmt.Printf("mkdir failed: %s", dir)
+		return err
+	}
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(c.ConfigFile, data, 0644)
+}
+
+func LoadConfig(name string) (*VMConfig, error) {
+	dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", name)
+	file := filepath.Join(dir, "osv.config")
+	c := VMConfig{}
+
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Printf("Failed to open: %s\n", file)
+		return nil, err
+	}
+	err = yaml.Unmarshal(data, &c)
+	if err != nil {
+		return nil, err
+	}
+
+	return &c, nil
 }

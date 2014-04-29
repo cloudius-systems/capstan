@@ -59,6 +59,9 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			case "vmw":
 				c, _ := vmw.LoadConfig(instanceName)
 				cmd, err = vmw.LaunchVM(c)
+			case "gce":
+				c, _ := gce.LoadConfig(instanceName)
+				cmd, err = gce.LaunchVM(c)
 			}
 
 			if err != nil {
@@ -179,6 +182,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
 		id := config.InstanceName
+		dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", id)
 		bucket := "osvimg"
 		config := &gce.VMConfig{
 			Name:             id,
@@ -186,6 +190,8 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			Network:          "default",
 			MachineType:      "n1-standard-1",
 			Zone:             "us-central1-a",
+			ConfigFile:	  filepath.Join(dir, "osv.config"),
+			InstanceDir:	  dir,
 		}
 		if format == image.GCE_TARBALL {
 			config.CloudStoragePath = "gs://" + bucket + "/" + id + ".tar.gz"
