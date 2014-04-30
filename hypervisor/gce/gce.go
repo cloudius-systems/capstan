@@ -141,6 +141,7 @@ func vmPrintInfo(c *VMConfig) error {
 	fmt.Printf("Internal      IP: %s\n", internalIP)
 	fmt.Printf("Machine     Type: %s\n", c.MachineType)
 	fmt.Printf("Zone            : %s\n", c.Zone)
+	fmt.Printf("Serial          : gcutil getserialportoutput %s\n", c.Name)
 	fmt.Printf("SSH             : gcutil ssh %s\n", c.Name)
 	fmt.Printf("SSH             : ssh admin@%s\n", externalIP)
 
