@@ -29,6 +29,8 @@ type VMConfig struct {
 	Image      string
 	Memory     int64
 	Cpus       int
+	Networking string
+	Bridge     string
 	NatRules   []nat.Rule
 	ConfigFile string
 }
@@ -114,11 +116,7 @@ func vmCreate(c *VMConfig) error {
 	if err != nil {
 		return err
 	}
-	err = VBoxManage("modifyvm", c.Name, "--nic1", "nat", "--nictype1", "virtio")
-	if err != nil {
-		return err
-	}
-	err = vmSetupNAT(c)
+	err = vmSetupNetworking(c)
 	if err != nil {
 		return err
 	}
@@ -145,7 +143,21 @@ func vmCreate(c *VMConfig) error {
 	return nil
 }
 
+func vmSetupNetworking(c *VMConfig) error {
+	switch c.Networking {
+	case "bridge":
+		return VBoxManage("modifyvm", c.Name, "--nic1", "bridged", "--bridgeadapter1", c.Bridge, "--nictype1", "virtio")
+	case "nat":
+		return vmSetupNAT(c)
+	}
+	return fmt.Errorf("%s: networking not supported", c.Networking)
+}
+
 func vmSetupNAT(c *VMConfig) error {
+	err := VBoxManage("modifyvm", c.Name, "--nic1", "nat", "--nictype1", "virtio")
+	if err != nil {
+		return err
+	}
 	for _, rule := range c.NatRules {
 		natRule := fmt.Sprintf("guest%s,tcp,,%s,,%s", rule.GuestPort, rule.HostPort, rule.GuestPort)
 		err := VBoxManage("modifyvm", c.Name, "--natpf1", natRule)
