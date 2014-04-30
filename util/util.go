@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+	"net"
 )
 
 func HomePath() string {
@@ -63,4 +64,17 @@ func SearchInstance(name string) (instanceName, instancePlatform string) {
 		}
 	}
 	return
+}
+
+func ConnectAndWait(path string) (net.Conn, error) {
+	var conn net.Conn
+	var err error
+	for i := 0; i < 20; i++ {
+		conn, err = Connect(path)
+		if err == nil {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return conn, err
 }

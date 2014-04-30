@@ -14,7 +14,6 @@ import (
 	"gopkg.in/yaml.v1"
 	"io"
 	"io/ioutil"
-	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,7 +21,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type VMConfig struct {
@@ -54,17 +52,11 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 		return nil, err
 	}
 
-	var conn net.Conn
-	for i := 0; i < 5; i++ {
-		conn, err = util.Connect(c.sockPath())
-		if err == nil {
-			break
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
+	conn, err := util.ConnectAndWait(c.sockPath())
 	if err != nil {
 		return nil, err
 	}
+
 	go io.Copy(conn, os.Stdin)
 	go io.Copy(os.Stdout, conn)
 	return cmd, nil
