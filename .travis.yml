@@ -6,6 +6,7 @@ go:
   - tip
 
 before_install:
+  - sudo apt-get update -qq
   - sudo apt-get install qemu-kvm
   - export PATH=/home/travis/gopath/bin:$PATH
 
