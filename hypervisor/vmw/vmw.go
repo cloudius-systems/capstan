@@ -115,12 +115,12 @@ func DeleteVM(name string) error {
 
 	cmd, err = vmxRun("-T", "ws", "deleteVM", c.VMXFile)
 	if err != nil {
-		fmt.Printf("Failed to delete VM", c.VMXFile)
+		fmt.Printf("Failed to delete VM %s", c.VMXFile)
 		return err
 	}
 	err = cmd.Wait()
 	if err != nil {
-		fmt.Printf("Failed to delete VM", c.VMXFile)
+		fmt.Printf("Failed to delete VM %s", c.VMXFile)
 		return err
 	}
 	return nil
@@ -133,12 +133,12 @@ func StopVM(name string) error {
 	}
 	cmd, err := vmxRun("-T", "ws", "stop", c.VMXFile)
 	if err != nil {
-		fmt.Printf("Failed to stop VM", c.VMXFile)
+		fmt.Printf("Failed to stop VM %s", c.VMXFile)
 		return err
 	}
 	err = cmd.Wait()
 	if err != nil {
-		fmt.Printf("Failed to stop VM", c.VMXFile)
+		fmt.Printf("Failed to stop VM %s", c.VMXFile)
 		return err
 	}
 	return nil
