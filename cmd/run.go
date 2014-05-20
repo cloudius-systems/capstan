@@ -47,8 +47,8 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			fmt.Printf("Created instance: %s\n", instanceName)
 			// Do not set RawTerm for gce
 			if (instancePlatform != "gce") {
-				tio, _ := util.RawTerm()
-				defer util.ResetTerm(tio)
+				util.RawTerm()
+				defer util.ResetTerm()
 			}
 
 			var err error
@@ -144,8 +144,8 @@ func Run(repo *util.Repo, config *RunConfig) error {
 	fmt.Printf("Created instance: %s\n", id)
 	// Do not set RawTerm for gce
 	if (config.Hypervisor != "gce") {
-		tio, _ := util.RawTerm()
-		defer util.ResetTerm(tio)
+		util.RawTerm()
+		defer util.ResetTerm()
 	}
 
 	switch config.Hypervisor {
