@@ -43,3 +43,8 @@ files:
 
 Here ``/usr/app/app.jar`` is the path in the built image and ``build/app.jar``
 is the file that is picked up from the local filesystem.
+
+``rootfs`` specifies a directory that is amended to the base image. The directory hierarchy
+in the base image will be the same as in the rootfs directory. If rootfs is not specified
+in Capstanfile, a default rootfs directory named ROOTFS will be used. If both files and rootfs
+are specified, both will be used to amended the base image.

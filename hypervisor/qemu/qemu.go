@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -79,6 +80,17 @@ func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Confi
 	return err
 }
 
+func copyFile(conn net.Conn, src string, dst string) error {
+	fi, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISREG, fi.Size()))
+	b, err := ioutil.ReadFile(src)
+	cpio.WritePadded(conn, b)
+	return nil
+}
+
 func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool) error {
 	file := r.ImagePath(hypervisor, image)
 	vmconfig := &VMConfig{
@@ -102,15 +114,29 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Con
 		return err
 	}
 
-	for key, value := range config.Files {
-		fi, err := os.Stat(value)
+	if _, err = os.Stat(config.Rootfs); !os.IsNotExist(err) {
+		err = filepath.Walk(config.Rootfs, func(src string, info os.FileInfo, _ error) error {
+			if info.IsDir() {
+				return nil
+			}
+			dst := strings.Replace(src, config.Rootfs, "", -1)
+			if (verbose) {
+				fmt.Println(src + "  --> " + dst)
+			}
+			return copyFile(conn, src, dst)
+		})
+	}
+
+	for dst, src := range config.Files {
+		err = copyFile(conn, src, dst)
+		if (verbose) {
+			fmt.Println(src + "  --> " + dst)
+		}
 		if err != nil {
 			return err
 		}
-		cpio.WritePadded(conn, cpio.ToWireFormat(key, cpio.C_ISREG, fi.Size()))
-		b, err := ioutil.ReadFile(value)
-		cpio.WritePadded(conn, b)
 	}
+
 
 	cpio.WritePadded(conn, cpio.ToWireFormat("TRAILER!!!", 0, 0))
 
