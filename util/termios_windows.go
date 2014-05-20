@@ -7,9 +7,9 @@
 
 package util
 
-func RawTerm() (int, error) {
-	return 0, nil
+func RawTerm() error {
+	return nil
 }
 
-func ResetTerm(tio int) {
+func ResetTerm() {
 }

@@ -10,21 +10,15 @@
 package util
 
 import (
-	"github.com/kylelemons/goat/termios"
+	"os/exec"
 )
 
-func RawTerm() (*termios.TermSettings, error) {
-	tio, err := termios.NewTermSettings(0)
-	if err != nil {
-		return nil, err
-	}
-	err = tio.Raw()
-	if err != nil {
-		return nil, err
-	}
-	return tio, err
+func RawTerm() error {
+	cmd := exec.Command("stty", "raw")
+	return cmd.Run()
 }
 
-func ResetTerm(tio *termios.TermSettings) {
-	tio.Reset()
+func ResetTerm() {
+	cmd := exec.Command("stty", "cooked")
+	cmd.Run()
 }
