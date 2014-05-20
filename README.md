@@ -20,11 +20,17 @@ OSv support.
 
 ## Installation
 
-You need a working Go environment installed. See [Go install
-instructions](http://golang.org/doc/install.html) for how to do that. Go
-version 1.1 or later is required.
+You can install Capstan either by downloading pre-built binaries or building it
+from sources.
 
-You also need QEMU installed. On Fedora:
+### Prerequisites
+
+You need to have a hypervisor such as QEMU/KVM or VirtualBox installed on your
+machine to launch OSv VMs.
+
+If you want to build your own OSv images, you need QEMU installed.
+
+On Fedora:
 
 ```
 $ sudo yum install qemu-system-x86
@@ -35,6 +41,30 @@ On OS X:
 ```
 $ brew install qemu
 ```
+
+### Installing Binaries
+
+To install the binaries, make sure ``$HOME/bin`` is part of the ``PATH``
+environment variable and then download the  ``capstan`` executable and place it
+in ``$HOME/bin``.
+
+On Linux:
+
+```
+$ mkdir -p $HOME/bin && curl http://osv.capstan.s3.amazonaws.com/capstan/v0.1.0/linux_amd64/capstan -o $HOME/bin/capstan && chmod u+x $HOME/bin/capstan
+```
+
+On OS X:
+
+```
+$ mkdir -p $HOME/bin && curl http://osv.capstan.s3.amazonaws.com/capstan/v0.1.0/darwin_amd64/capstan -o $HOME/bin/capstan && chmod u+x $HOME/bin/capstan
+```
+
+### Installing from Sources
+
+You need a working Go environment installed. See [Go install
+instructions](http://golang.org/doc/install.html) for how to do that. Go
+version 1.1 or later is required.
 
 Make sure you have the ``GOPATH`` environment variable set to point to a
 writable Go workspace such as ``$HOME/go``.
@@ -51,7 +81,7 @@ This installs a ``capstan`` executable to your Go workspace so make sure your
 For more detailed information, check out [installation instructions](https://github.com/cloudius-systems/capstan/wiki/Capstan-Installation)
 on the wiki.
 
-## Updating
+### Updating from Sources
 
 To update capstan to the latest version execute the following commands:
 ```sh
