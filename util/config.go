@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"os"
 )
 
 type Config struct {
@@ -21,6 +22,7 @@ type Config struct {
 	Cmdline string
 	Build   string
 	Files   map[string]string
+	Rootfs  string
 }
 
 func ConfigExists(filename string) bool {
@@ -52,6 +54,14 @@ func ParseConfig(data []byte) (*Config, error) {
 	}
 	if c.Cmdline == "" {
 		return nil, fmt.Errorf("\"cmdline\" not found")
+	}
+	if c.Rootfs == "" {
+		c.Rootfs = "ROOTFS"
+	} else {
+		if _, err := os.Stat(c.Rootfs); os.IsNotExist(err) {
+			fmt.Printf("Capstanfile: rootfs: %s does not exist\n", c.Rootfs)
+			return nil, err
+		}
 	}
 	return &c, nil
 }
