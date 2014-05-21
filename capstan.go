@@ -141,6 +141,7 @@ func main() {
 		},
 		{
 			Name:  "images",
+			ShortName: "i",
 			Usage: "list images",
 			Action: func(c *cli.Context) {
 				repo.ListImages()
@@ -159,6 +160,7 @@ func main() {
 		},
 		{
 			Name:  "instances",
+			ShortName: "I",
 			Usage: "list instances",
 			Action: func(c *cli.Context) {
 				cmd.Instances()
