@@ -95,7 +95,7 @@ func main() {
 				cli.IntFlag{"c", 2, "number of CPUs"},
 				cli.StringFlag{"n", "nat", "networking: nat|bridge"},
 				cli.BoolFlag{"v", "verbose mode"},
-				cli.StringFlag{"b", "", "networking bridge"},
+				cli.StringFlag{"b", "", "networking bridge: e.g., virbr0, vboxnet0"},
 				cli.StringSliceFlag{"f", new(cli.StringSlice), "port forwarding rules"},
 			},
 			Action: func(c *cli.Context) {
