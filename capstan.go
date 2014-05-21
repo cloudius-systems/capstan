@@ -90,12 +90,12 @@ func main() {
 			Usage: "launch a VM. You may pass the image name as the first argument.",
 			Flags: []cli.Flag{
 				cli.StringFlag{"i", "", "image_name"},
-				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
+				cli.StringFlag{"p", hypervisor.Default(), "hypervisor: qemu|vbox|vmw|gce"},
 				cli.StringFlag{"m", "1G", "memory size"},
 				cli.IntFlag{"c", 2, "number of CPUs"},
-				cli.StringFlag{"n", "nat", "networking"},
+				cli.StringFlag{"n", "nat", "networking: nat|bridge"},
 				cli.BoolFlag{"v", "verbose mode"},
-				cli.StringFlag{"b", "", "networking bridge"},
+				cli.StringFlag{"b", "", "networking bridge: e.g., virbr0, vboxnet0"},
 				cli.StringSliceFlag{"f", new(cli.StringSlice), "port forwarding rules"},
 			},
 			Action: func(c *cli.Context) {
@@ -141,6 +141,7 @@ func main() {
 		},
 		{
 			Name:  "images",
+			ShortName: "i",
 			Usage: "list images",
 			Action: func(c *cli.Context) {
 				repo.ListImages()
@@ -159,6 +160,7 @@ func main() {
 		},
 		{
 			Name:  "instances",
+			ShortName: "I",
 			Usage: "list instances",
 			Action: func(c *cli.Context) {
 				cmd.Instances()
