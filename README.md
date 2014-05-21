@@ -51,13 +51,13 @@ in ``$HOME/bin``.
 On Linux:
 
 ```
-$ mkdir -p $HOME/bin && curl http://osv.capstan.s3.amazonaws.com/capstan/v0.1.0/linux_amd64/capstan -o $HOME/bin/capstan && chmod u+x $HOME/bin/capstan
+$ mkdir -p $HOME/bin && curl http://osv.capstan.s3.amazonaws.com/capstan/v0.1.1/linux_amd64/capstan -o $HOME/bin/capstan && chmod u+x $HOME/bin/capstan
 ```
 
 On OS X:
 
 ```
-$ mkdir -p $HOME/bin && curl http://osv.capstan.s3.amazonaws.com/capstan/v0.1.0/darwin_amd64/capstan -o $HOME/bin/capstan && chmod u+x $HOME/bin/capstan
+$ mkdir -p $HOME/bin && curl http://osv.capstan.s3.amazonaws.com/capstan/v0.1.1/darwin_amd64/capstan -o $HOME/bin/capstan && chmod u+x $HOME/bin/capstan
 ```
 
 ### Installing from Sources
