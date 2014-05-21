@@ -13,6 +13,6 @@ import (
 	"net"
 )
 
-func Connect(path string) (net.Conn, error) {
-	return net.Dial("unix", path)
+func Connect(network, path string) (net.Conn, error) {
+	return net.Dial(network, path)
 }

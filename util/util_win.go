@@ -14,6 +14,6 @@ import (
 	"net"
 )
 
-func Connect(path string) (net.Conn, error) {
+func Connect(network, path string) (net.Conn, error) {
 	return npipe.Dial(path)
 }
