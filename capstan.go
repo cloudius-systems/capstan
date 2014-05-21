@@ -90,7 +90,7 @@ func main() {
 			Usage: "launch a VM. You may pass the image name as the first argument.",
 			Flags: []cli.Flag{
 				cli.StringFlag{"i", "", "image_name"},
-				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
+				cli.StringFlag{"p", hypervisor.Default(), "hypervisor: qemu|vbox|vmw|gce"},
 				cli.StringFlag{"m", "1G", "memory size"},
 				cli.IntFlag{"c", 2, "number of CPUs"},
 				cli.StringFlag{"n", "nat", "networking"},
