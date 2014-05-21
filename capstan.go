@@ -93,7 +93,7 @@ func main() {
 				cli.StringFlag{"p", hypervisor.Default(), "hypervisor: qemu|vbox|vmw|gce"},
 				cli.StringFlag{"m", "1G", "memory size"},
 				cli.IntFlag{"c", 2, "number of CPUs"},
-				cli.StringFlag{"n", "nat", "networking"},
+				cli.StringFlag{"n", "nat", "networking: nat|bridge"},
 				cli.BoolFlag{"v", "verbose mode"},
 				cli.StringFlag{"b", "", "networking bridge"},
 				cli.StringSliceFlag{"f", new(cli.StringSlice), "port forwarding rules"},
