@@ -8,8 +8,10 @@
 package util
 
 import (
+	"compress/gzip"
 	"encoding/xml"
 	"fmt"
+	"github.com/cheggaaa/pb"
 	"gopkg.in/yaml.v1"
 	"io"
 	"io/ioutil"
@@ -120,22 +122,38 @@ func ListImagesRemote(search string) {
 }
 
 func (r *Repo) DownloadFile(name string) error {
+	compressed := strings.HasSuffix(name, ".gz")
 	output, err := os.Create(filepath.Join(r.Path, strings.TrimSuffix(name, ".gz")))
 	if err != nil {
 		return err
 	}
 	defer output.Close()
-	fmt.Printf("Fetching %s...", name)
-	resp, err := http.Get(bucket_url + name)
+	fmt.Printf("Downloading %s...\n", name)
+	tr := &http.Transport{
+		DisableCompression: true,
+	}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Get(bucket_url + name)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	n, err := io.Copy(output, resp.Body)
+	bar := pb.New64(resp.ContentLength).SetUnits(pb.U_BYTES)
+	bar.Start()
+	proxyReader := bar.NewProxyReader(resp.Body)
+	var reader io.Reader = proxyReader
+	if compressed {
+		gzipReader, err := gzip.NewReader(proxyReader)
+		if err != nil {
+			return err
+		}
+		reader = gzipReader
+	}
+	_, err = io.Copy(output, reader)
+	bar.Finish()
 	if err != nil {
 		return err
 	}
-	fmt.Println(n, "bytes downloaded.")
 	return nil
 }
 
