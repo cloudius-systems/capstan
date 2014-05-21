@@ -54,7 +54,7 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 		return nil, err
 	}
 
-	conn, err := util.ConnectAndWait(c.sockPath())
+	conn, err := util.ConnectAndWait("unix", c.sockPath())
 	if err != nil {
 		return nil, err
 	}

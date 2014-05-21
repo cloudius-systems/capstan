@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"time"
 )
 
 type VMConfig struct {
@@ -57,9 +56,7 @@ func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Confi
 	}
 	defer qemu.Process.Kill()
 
-	time.Sleep(1 * time.Second)
-
-	conn, err := net.Dial("tcp", "localhost:10000")
+	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
 	if err != nil {
 		return err
 	}
@@ -95,9 +92,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Con
 	}
 	defer cmd.Process.Kill()
 
-	time.Sleep(1 * time.Second)
-
-	conn, err := net.Dial("tcp", "localhost:10000")
+	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
 	if err != nil {
 		return err
 	}
@@ -135,9 +130,8 @@ func SetArgs(r *util.Repo, hypervisor, image string, args string) error {
 	}
 	go io.Copy(os.Stdout, stdout)
 	go io.Copy(os.Stderr, stderr)
-	time.Sleep(1 * time.Second)
 
-	conn, err := net.Dial("tcp", "localhost:10809")
+	conn, err := util.ConnectAndWait("tcp", "localhost:10809")
 	if err != nil {
 		return err
 	}

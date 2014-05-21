@@ -66,11 +66,11 @@ func SearchInstance(name string) (instanceName, instancePlatform string) {
 	return
 }
 
-func ConnectAndWait(path string) (net.Conn, error) {
+func ConnectAndWait(network, path string) (net.Conn, error) {
 	var conn net.Conn
 	var err error
 	for i := 0; i < 20; i++ {
-		conn, err = Connect(path)
+		conn, err = Connect(network, path)
 		if err == nil {
 			break
 		}
