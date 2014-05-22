@@ -104,6 +104,18 @@ To run OSv on VirtualBox, type:
 $ capstan run -p vbox cloudius/osv
 ```
 
+To port-forwarding OSv port 22 to Host port 10022, type:
+
+```
+$ capstan run -f "10022:22" cloudius/osv
+```
+
+To bridging OSv vNIC to Host bridge interface, type:
+
+```
+$ capstan run -n bridge cloudius/osv
+```
+
 To show a list of available remote images, type:
 
 ```
