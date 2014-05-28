@@ -113,7 +113,11 @@ $ capstan run -f "10022:22" cloudius/osv
 To bridging OSv vNIC to Host bridge interface, type:
 
 ```
+On Linux:
 $ capstan run -n bridge cloudius/osv
+
+On OS X with VirtualBox:
+$ capstan run -n bridge -b <physical NIC name> cloudius/osv
 ```
 
 To show a list of available remote images, type:
