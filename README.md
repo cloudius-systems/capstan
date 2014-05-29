@@ -36,6 +36,20 @@ On Fedora:
 $ sudo yum install qemu-system-x86
 ```
 
+On Ubuntu 12.04 LTS:
+
+default `qemu` package in apt will not work, you need to build latest `qemu-2.0.0` from source:
+
+``` bash
+wget http://wiki.qemu-project.org/download/qemu-2.0.0.tar.bz2
+tar xvjf qemu-2.0.0.tar.bz2 
+cd qemu-2.0.0/
+./configure 
+make
+sudo make install
+```
+
+
 On OS X:
 
 ```
