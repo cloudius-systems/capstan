@@ -327,7 +327,15 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 }
 
 func (c *VMConfig) vmArguments() ([]string, error) {
-	args := []string{"-display", "none", "-m", strconv.FormatInt(c.Memory, 10), "-smp", strconv.Itoa(c.Cpus), "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-device", "isa-serial,chardev=stdio"}
+	args := make([]string, 0)
+	args = append(args, "-display", "none")
+	args = append(args, "-m", strconv.FormatInt(c.Memory, 10))
+	args = append(args, "-smp", strconv.Itoa(c.Cpus))
+	args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")
+	args = append(args, "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none")
+	args = append(args, "-device", "virtio-rng-pci")
+	args = append(args, "-chardev", "stdio,mux=on,id=stdio,signal=off")
+	args = append(args, "-device", "isa-serial,chardev=stdio")
 	net, err := c.vmNetworking()
 	if err != nil {
 		return nil, err
