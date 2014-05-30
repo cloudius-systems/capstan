@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -39,6 +40,12 @@ type VMConfig struct {
 	InstanceDir string
 	Monitor     string
 	ConfigFile  string
+}
+
+type Version struct {
+	Major int
+	Minor int
+	Patch int
 }
 
 func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool) error {
@@ -309,7 +316,11 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 
 	StoreConfig(c)
 
-	vmArgs, err := c.vmArguments()
+	version, err := probeVersion()
+	if err != nil {
+		return nil, err
+	}
+	vmArgs, err := c.vmArguments(version)
 	if err != nil {
 		return nil, err
 	}
@@ -326,8 +337,51 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-func (c *VMConfig) vmArguments() ([]string, error) {
-	args := []string{"-display", "none", "-m", strconv.FormatInt(c.Memory, 10), "-smp", strconv.Itoa(c.Cpus), "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0", "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none", "-device", "virtio-rng-pci", "-chardev", "stdio,mux=on,id=stdio,signal=off", "-device", "isa-serial,chardev=stdio"}
+func probeVersion() (*Version, error) {
+	cmd := exec.Command("qemu-system-x86_64", "-version")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	r, err := regexp.Compile("QEMU emulator version (\\d+)\\.(\\d+)\\.(\\d+)")
+	if err != nil {
+		return nil, err
+	}
+	version := r.FindStringSubmatch(string(out))
+	if len(version) != 4 {
+		return nil, fmt.Errorf("unable to parse QEMU version from '%s'", string(out))
+	}
+	major, err := strconv.Atoi(version[1])
+	if err != nil {
+		return nil, err
+	}
+	minor, err := strconv.Atoi(version[2])
+	if err != nil {
+		return nil, err
+	}
+	patch, err := strconv.Atoi(version[3])
+	if err != nil {
+		return nil, err
+	}
+	return &Version{
+		Major: major,
+		Minor: minor,
+		Patch: patch,
+	}, nil
+}
+
+func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
+	args := make([]string, 0)
+	args = append(args, "-display", "none")
+	args = append(args, "-m", strconv.FormatInt(c.Memory, 10))
+	args = append(args, "-smp", strconv.Itoa(c.Cpus))
+	args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")
+	args = append(args, "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none")
+	if version.Major >= 1 && version.Minor >= 3 {
+		args = append(args, "-device", "virtio-rng-pci")
+	}
+	args = append(args, "-chardev", "stdio,mux=on,id=stdio,signal=off")
+	args = append(args, "-device", "isa-serial,chardev=stdio")
 	net, err := c.vmNetworking()
 	if err != nil {
 		return nil, err
