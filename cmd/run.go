@@ -20,6 +20,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"io/ioutil"
 )
 
 type RunConfig struct {
@@ -96,6 +97,13 @@ func Run(repo *util.Repo, config *RunConfig) error {
 				path = repo.ImagePath(config.Hypervisor, config.ImageName)
 			} else {
 				return fmt.Errorf("%s: no such image", config.ImageName)
+			}
+			if config.Hypervisor == "gce"  && !image.IsCloudImage(config.ImageName) {
+				str, err := ioutil.ReadFile(path)
+				if err != nil {
+					return err
+				}
+				path = string(str)
 			}
 		} else {
 			path = config.ImageName
