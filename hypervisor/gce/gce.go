@@ -33,7 +33,12 @@ type VMConfig struct {
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
-	err := vmUploadImage(c)
+	err := LoginCheck()
+	if err != nil {
+		return nil, err
+	}
+
+	err = vmUploadImage(c)
 	if err != nil {
 		return nil, err
 	}
@@ -246,4 +251,19 @@ func LoadConfig(name string) (*VMConfig, error) {
 	}
 
 	return &c, nil
+}
+
+func LoginCheck() (error) {
+	_, err := exec.LookPath("gcutil")
+	if err != nil {
+		fmt.Println("gcutil is not found. Please install Google Cloud SDK:")
+		fmt.Println("https://developers.google.com/cloud/sdk")
+		return err
+	}
+	out, err := exec.Command("gcutil", "whoami").CombinedOutput()
+	if err != nil {
+		fmt.Println(string(out))
+		return err
+	}
+	return nil
 }
