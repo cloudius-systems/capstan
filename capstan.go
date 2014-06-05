@@ -97,6 +97,7 @@ func main() {
 				cli.BoolFlag{"v", "verbose mode"},
 				cli.StringFlag{"b", "", "networking bridge: e.g., virbr0, vboxnet0"},
 				cli.StringSliceFlag{"f", new(cli.StringSlice), "port forwarding rules"},
+				cli.StringFlag{"gce-upload-dir", "",  "Directory to upload local image to: e.g., gs://osvimg"},
 			},
 			Action: func(c *cli.Context) {
 				config := &cmd.RunConfig{
@@ -109,6 +110,7 @@ func main() {
 					Networking:   c.String("n"),
 					Bridge:       c.String("b"),
 					NatRules:     nat.Parse(c.StringSlice("f")),
+					GCEUploadDir: c.String("gce-upload-dir"),
 				}
 				err := cmd.Run(repo, config)
 				if err != nil {

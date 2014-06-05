@@ -32,6 +32,7 @@ type RunConfig struct {
 	Networking   string
 	Bridge       string
 	NatRules     []nat.Rule
+	GCEUploadDir string
 }
 
 func Run(repo *util.Repo, config *RunConfig) error {
@@ -196,8 +197,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
 		dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", id)
-		bucket := "osvimg"
-		config := &gce.VMConfig{
+		c := &gce.VMConfig{
 			Name:             id,
 			Image:		  id,
 			Network:          "default",
@@ -207,13 +207,13 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			InstanceDir:	  dir,
 		}
 		if format == image.GCE_TARBALL {
-			config.CloudStoragePath = "gs://" + bucket + "/" + id + ".tar.gz"
-			config.Tarball = path
+			c.CloudStoragePath = strings.TrimSuffix(config.GCEUploadDir, "/") + "/" + id + ".tar.gz"
+			c.Tarball = path
 		} else {
-			config.CloudStoragePath = path
-			config.Tarball = ""
+			c.CloudStoragePath = path
+			c.Tarball = ""
 		}
-		cmd, err = gce.LaunchVM(config)
+		cmd, err = gce.LaunchVM(c)
 	case "vmw":
 		if format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
