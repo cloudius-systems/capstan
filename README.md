@@ -33,7 +33,7 @@ If you want to build your own OSv images, you need QEMU installed.
 On Fedora:
 
 ```
-$ sudo yum install qemu-system-x86
+$ sudo yum install qemu-system-x86 qemu-img
 ```
 
 On OS X:
