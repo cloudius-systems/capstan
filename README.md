@@ -23,10 +23,10 @@ OSv support.
 You can install Capstan either by downloading pre-built binaries or building it
 from sources.
 
-### Prerequisites
+### Prerequisites: local
 
 You need to have a hypervisor such as QEMU/KVM or VirtualBox installed on your
-machine to launch OSv VMs.
+machine to run local OSv VMs.
 
 If you want to build your own OSv images, you need QEMU installed.
 
@@ -41,6 +41,10 @@ On OS X:
 ```
 $ brew install qemu
 ```
+
+### Prerequisites: Google Compute Engine
+
+To run your OSv images on Google Compute Engine, you will need the `gcutil` utility, which is part of the Google Cloud SDK.  Installation instructions are on the [gcutil home page](https://developers.google.com/compute/docs/gcutil/).
 
 ### Installing Binaries
 
