@@ -131,6 +131,7 @@ func (r *Repo) DownloadFile(name string) error {
 	fmt.Printf("Downloading %s...\n", name)
 	tr := &http.Transport{
 		DisableCompression: true,
+                Proxy: http.ProxyFromEnvironment,
 	}
 	client := &http.Client{Transport: tr}
 	resp, err := client.Get(bucket_url + name)
