@@ -190,13 +190,9 @@ func StopVM(name string) error {
 
 func VBoxManage(args ...string) error {
 	cmd := exec.Command("VBoxManage", args...)
-	err := cmd.Start()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
-	}
-	err = cmd.Wait()
-	if err != nil {
-		return fmt.Errorf("VBoxManage %s", args)
+		return fmt.Errorf("%s", string(out))
 	}
 	return nil
 }
