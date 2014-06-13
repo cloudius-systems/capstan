@@ -159,7 +159,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 
 	switch config.Hypervisor {
 	case "qemu":
-		dir := filepath.Join(os.Getenv("HOME"), ".capstan/instances/qemu", id)
+		dir := filepath.Join(util.HomePath(), ".capstan/instances/qemu", id)
 		bridge := config.Bridge
 		if bridge == "" {
 			bridge = "virbr0"
