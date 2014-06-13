@@ -96,7 +96,7 @@ func (r *Repo) ListImages() {
 	for _, n := range namespaces {
 		images, _ := ioutil.ReadDir(filepath.Join(r.Path, n.Name()))
 		nrImages := 0
-                nrFiles := 0
+		nrFiles := 0
 		for _, i := range images {
 			if i.IsDir() {
 				info := MakeFileInfo(r.Path, n.Name(), i.Name())
@@ -107,8 +107,8 @@ func (r *Repo) ListImages() {
 				}
 				nrImages++
 			} else {
-                                nrFiles++
-                        }
+				nrFiles++
+			}
 		}
 		// Image is directly at repository root with no namespace:
 		if nrImages == 0 && nrFiles != 0 {
