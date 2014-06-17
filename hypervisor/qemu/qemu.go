@@ -316,7 +316,7 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 
 	StoreConfig(c)
 
-	version, err := probeVersion()
+	version, err := ProbeVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -337,19 +337,23 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-func probeVersion() (*Version, error) {
+func ProbeVersion() (*Version, error) {
 	cmd := exec.Command("qemu-system-x86_64", "-version")
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, err
 	}
-	r, err := regexp.Compile("QEMU emulator version (\\d+)\\.(\\d+)\\.(\\d+)")
+	return ParseVersion(string(out))
+}
+
+func ParseVersion(text string) (*Version, error) {
+	r, err := regexp.Compile("QEMU.*emulator version (\\d+)\\.(\\d+)\\.(\\d+)")
 	if err != nil {
 		return nil, err
 	}
-	version := r.FindStringSubmatch(string(out))
+	version := r.FindStringSubmatch(text)
 	if len(version) != 4 {
-		return nil, fmt.Errorf("unable to parse QEMU version from '%s'", string(out))
+		return nil, fmt.Errorf("unable to parse QEMU version from '%s'", text)
 	}
 	major, err := strconv.Atoi(version[1])
 	if err != nil {
