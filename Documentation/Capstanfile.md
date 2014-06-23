@@ -48,3 +48,15 @@ is the file that is picked up from the local filesystem.
 in the base image will be the same as in the rootfs directory. If rootfs is not specified
 in Capstanfile, a default rootfs directory named ROOTFS will be used. If both files and rootfs
 are specified, both will be used to amended the base image.
+
+## RPM support
+
+Capstan also supports installing RPMs with the ``rpm-base`` option:
+
+```
+rpm-base:
+  name: java-1.7.0-openjdk
+  version: 1.7.0.60
+  release: 2.4.5.0.fc19
+  arch: x86_64
+```
