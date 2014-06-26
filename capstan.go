@@ -37,7 +37,10 @@ func main() {
 					return
 				}
 				image := c.Args()[0]
-				cmd.Info(image)
+				err := cmd.Info(image)
+				if err != nil {
+					fmt.Println(err.Error())
+				}
 			},
 		},
 		{
