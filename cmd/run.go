@@ -104,7 +104,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 				if err != nil {
 					return err
 				}
-				path = string(str)
+				path = strings.Replace(string(str), "\n", "", -1)
 			}
 		} else {
 			path = config.ImageName
