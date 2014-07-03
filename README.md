@@ -52,16 +52,8 @@ To install the binaries, make sure ``$HOME/bin`` is part of the ``PATH``
 environment variable and then download the  ``capstan`` executable and place it
 in ``$HOME/bin``.
 
-On Linux:
-
 ```
-$ mkdir -p $HOME/bin && curl http://osv.capstan.s3.amazonaws.com/capstan/v0.1.1/linux_amd64/capstan -o $HOME/bin/capstan && chmod u+x $HOME/bin/capstan
-```
-
-On OS X:
-
-```
-$ mkdir -p $HOME/bin && curl http://osv.capstan.s3.amazonaws.com/capstan/v0.1.1/darwin_amd64/capstan -o $HOME/bin/capstan && chmod u+x $HOME/bin/capstan
+$ curl https://raw.githubusercontent.com/cloudius-systems/capstan/master/scripts/download | bash
 ```
 
 ### Installing from Sources
