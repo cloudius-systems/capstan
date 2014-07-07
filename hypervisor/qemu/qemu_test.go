@@ -24,8 +24,7 @@ func TestVersionParsing(t *testing.T) {
 		version, err := ParseVersion(tt.in)
 		if err != nil {
 			t.Errorf("%d. ParseVersion(%q) => error %q, want %q", i, tt.in, err, tt.out)
-		}
-		if version.Major != tt.out.Major || version.Minor != tt.out.Minor || version.Patch != tt.out.Patch {
+		} else if version.Major != tt.out.Major || version.Minor != tt.out.Minor || version.Patch != tt.out.Patch {
 			t.Errorf("%d. ParseVersion(%q) => %q, want %q", i, tt.in, version, tt.out)
 		}
 	}
