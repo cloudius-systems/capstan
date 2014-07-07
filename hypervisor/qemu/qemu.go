@@ -195,12 +195,12 @@ func ProbeVersion() (*Version, error) {
 }
 
 func ParseVersion(text string) (*Version, error) {
-	r, err := regexp.Compile("QEMU.*emulator version (\\d+)\\.(\\d+)\\.(\\d+)")
+	r, err := regexp.Compile("QEMU.*emulator version (\\d+)\\.(\\d+)(\\.)?(\\d?)?")
 	if err != nil {
 		return nil, err
 	}
 	version := r.FindStringSubmatch(text)
-	if len(version) != 4 {
+	if len(version) < 5 {
 		return nil, fmt.Errorf("unable to parse QEMU version from '%s'", text)
 	}
 	major, err := strconv.Atoi(version[1])
@@ -211,9 +211,12 @@ func ParseVersion(text string) (*Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	patch, err := strconv.Atoi(version[3])
-	if err != nil {
-		return nil, err
+	patch := 0
+	if version[4] != "" {
+		patch, err = strconv.Atoi(version[4])
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &Version{
 		Major: major,

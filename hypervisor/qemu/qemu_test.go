@@ -15,6 +15,7 @@ var parsingtests = []struct {
 	in  string
 	out *Version
 }{
+	{"QEMU emulator version 1.0 (qemu-kvm-1.0), Copyright (c) 2003-2008 Fabrice Bellard", &Version{Major: 1, Minor: 0, Patch: 0}},
 	{"QEMU emulator version 1.6.2, Copyright (c) 2003-2008 Fabrice Bellard", &Version{Major: 1, Minor: 6, Patch: 2}},
 	{"QEMU PC emulator version 0.12.1 (qemu-kvm-0.12.1.2), Copyright (c) 2003-2008 Fabrice Bellard", &Version{Major: 0, Minor: 12, Patch: 1}},
 }
