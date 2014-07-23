@@ -36,6 +36,7 @@ type VMConfig struct {
 	InstanceDir string
 	Monitor     string
 	ConfigFile  string
+	MAC         string
 }
 
 type Version struct {
@@ -250,11 +251,22 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	return args, nil
 }
 
+func (c *VMConfig) vmMAC() (net.HardwareAddr, error) {
+	if c.MAC != "" {
+		return net.ParseMAC(c.MAC)
+	}
+	return util.GenerateMAC()
+}
+
 func (c *VMConfig) vmNetworking() ([]string, error) {
 	args := make([]string, 0)
 	switch c.Networking {
 	case "bridge":
-		args = append(args, "-netdev", fmt.Sprintf("bridge,id=hn0,br=%s,helper=/usr/libexec/qemu-bridge-helper", c.Bridge), "-device", "virtio-net-pci,netdev=hn0,id=nic1")
+		mac, err := c.vmMAC()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, "-netdev", fmt.Sprintf("bridge,id=hn0,br=%s,helper=/usr/libexec/qemu-bridge-helper", c.Bridge), "-device", fmt.Sprintf("virtio-net-pci,netdev=hn0,id=nic1,mac=%s", mac.String()))
 		return args, nil
 	case "nat":
 		args = append(args, "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0")

@@ -101,6 +101,7 @@ func main() {
 				cli.StringFlag{"b", "", "networking bridge: e.g., virbr0, vboxnet0"},
 				cli.StringSliceFlag{"f", new(cli.StringSlice), "port forwarding rules"},
 				cli.StringFlag{"gce-upload-dir", "",  "Directory to upload local image to: e.g., gs://osvimg"},
+				cli.StringFlag{"mac", "", "MAC address. If not specified, the MAC address will be generated automatically."},
 			},
 			Action: func(c *cli.Context) {
 				config := &cmd.RunConfig{
@@ -114,6 +115,7 @@ func main() {
 					Bridge:       c.String("b"),
 					NatRules:     nat.Parse(c.StringSlice("f")),
 					GCEUploadDir: c.String("gce-upload-dir"),
+					MAC:          c.String("mac"),
 				}
 				err := cmd.Run(repo, config)
 				if err != nil {
