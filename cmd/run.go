@@ -34,6 +34,7 @@ type RunConfig struct {
 	Bridge       string
 	NatRules     []nat.Rule
 	GCEUploadDir string
+	MAC          string
 }
 
 func Run(repo *util.Repo, config *RunConfig) error {
@@ -177,6 +178,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			InstanceDir: dir,
 			Monitor:     filepath.Join(dir, "osv.monitor"),
 			ConfigFile:  filepath.Join(dir, "osv.config"),
+			MAC:         config.MAC,
 		}
 		cmd, err = qemu.LaunchVM(config)
 	case "vbox":
