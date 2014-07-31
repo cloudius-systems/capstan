@@ -128,6 +128,7 @@ func main() {
 			Usage: "build an image",
 			Flags: []cli.Flag{
 				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
+				cli.StringFlag{"m", "512M", "memory size"},
 				cli.BoolFlag{"v", "verbose mode"},
 			},
 			Action: func(c *cli.Context) {
@@ -140,7 +141,7 @@ func main() {
 					return
 				}
 				hypervisor := c.String("p")
-				err := cmd.Build(repo, hypervisor, image, c.Bool("v"))
+				err := cmd.Build(repo, hypervisor, image, c.Bool("v"), c.String("m"))
 				if err != nil {
 					fmt.Println(err.Error())
 				}

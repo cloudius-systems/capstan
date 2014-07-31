@@ -24,7 +24,7 @@ import (
 	"strings"
 )
 
-func Build(r *util.Repo, hypervisor string, image string, verbose bool) error {
+func Build(r *util.Repo, hypervisor string, image string, verbose bool, mem string) error {
 	config, err := util.ReadConfig("Capstanfile")
 	if err != nil {
 		return err
@@ -60,12 +60,12 @@ func Build(r *util.Repo, hypervisor string, image string, verbose bool) error {
 		return err
 	}
 	if config.RpmBase != nil {
-		err = UploadRPM(r, hypervisor, image, config, verbose)
+		err = UploadRPM(r, hypervisor, image, config, verbose, mem)
 		if err != nil {
 			return err
 		}
 	}
-	err = UploadFiles(r, hypervisor, image, config, verbose)
+	err = UploadFiles(r, hypervisor, image, config, verbose, mem)
 	if err != nil {
 		return err
 	}
@@ -91,12 +91,16 @@ func checkConfig(config *util.Config, r *util.Repo, hypervisor string) error {
 	return nil
 }
 
-func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool) error {
+func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool, mem string) error {
 	file := r.ImagePath(hypervisor, image)
+	size, err := util.ParseMemSize(mem)
+	if err != nil {
+		return err
+	}
 	vmconfig := &qemu.VMConfig{
 		Image:       file,
 		Verbose:     verbose,
-		Memory:      64,
+		Memory:      size,
 		Networking:  "nat",
 		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
@@ -138,12 +142,16 @@ func copyFile(conn net.Conn, src string, dst string) error {
 	return nil
 }
 
-func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool) error {
+func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool, mem string) error {
 	file := r.ImagePath(hypervisor, image)
+	size, err := util.ParseMemSize(mem)
+	if err != nil {
+		return err
+	}
 	vmconfig := &qemu.VMConfig{
 		Image:       file,
 		Verbose:     verbose,
-		Memory:      64,
+		Memory:      size,
 		Networking:  "nat",
 		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
