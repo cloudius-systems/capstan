@@ -61,7 +61,7 @@ func main() {
 			Name:  "pull",
 			Usage: "pull an image from a repository",
 			Flags: []cli.Flag{
-				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
+				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor"},
 			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
@@ -92,16 +92,16 @@ func main() {
 			Name:  "run",
 			Usage: "launch a VM. You may pass the image name as the first argument.",
 			Flags: []cli.Flag{
-				cli.StringFlag{"i", "", "image_name"},
-				cli.StringFlag{"p", hypervisor.Default(), "hypervisor: qemu|vbox|vmw|gce"},
-				cli.StringFlag{"m", "1G", "memory size"},
-				cli.IntFlag{"c", 2, "number of CPUs"},
-				cli.StringFlag{"n", "nat", "networking: nat|bridge"},
-				cli.BoolFlag{"v", "verbose mode"},
-				cli.StringFlag{"b", "", "networking bridge: e.g., virbr0, vboxnet0"},
-				cli.StringSliceFlag{"f", new(cli.StringSlice), "port forwarding rules"},
-				cli.StringFlag{"gce-upload-dir", "",  "Directory to upload local image to: e.g., gs://osvimg"},
-				cli.StringFlag{"mac", "", "MAC address. If not specified, the MAC address will be generated automatically."},
+				cli.StringFlag{Name: "i", Value: "", Usage: "image_name"},
+				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
+				cli.StringFlag{Name: "m", Value: "1G", Usage: "memory size"},
+				cli.IntFlag{Name: "c", Value: 2, Usage: "number of CPUs"},
+				cli.StringFlag{Name: "n", Value: "nat", Usage: "networking: nat|bridge"},
+				cli.BoolFlag{Name: "v", Usage: "verbose mode"},
+				cli.StringFlag{Name: "b", Value: "", Usage: "networking bridge: e.g., virbr0, vboxnet0"},
+				cli.StringSliceFlag{Name: "f", Value: new(cli.StringSlice), Usage: "port forwarding rules"},
+				cli.StringFlag{Name: "gce-upload-dir", Value: "",  Usage: "Directory to upload local image to: e.g., gs://osvimg"},
+				cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
 			},
 			Action: func(c *cli.Context) {
 				config := &cmd.RunConfig{
@@ -127,9 +127,9 @@ func main() {
 			Name:  "build",
 			Usage: "build an image",
 			Flags: []cli.Flag{
-				cli.StringFlag{"p", hypervisor.Default(), "hypervisor"},
-				cli.StringFlag{"m", "512M", "memory size"},
-				cli.BoolFlag{"v", "verbose mode"},
+				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor"},
+				cli.StringFlag{Name: "m", Value: "512M", Usage: "memory size"},
+				cli.BoolFlag{Name: "v", Usage: "verbose mode"},
 			},
 			Action: func(c *cli.Context) {
 				image := c.Args().First()
