@@ -44,14 +44,14 @@ func main() {
 			},
 		},
 		{
-			Name:  "push",
-			Usage: "push an image to a repository",
+			Name:  "import",
+			Usage: "import an image to the local repository",
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 2 {
-					fmt.Println("usage: capstan push [image-name] [image-file]")
+					fmt.Println("usage: capstan import [image-name] [image-file]")
 					return
 				}
-				err := repo.PushImage(c.Args()[0], c.Args()[1])
+				err := repo.ImportImage(c.Args()[0], c.Args()[1])
 				if err != nil {
 					fmt.Println(err.Error())
 				}

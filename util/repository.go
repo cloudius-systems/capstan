@@ -32,7 +32,7 @@ func NewRepo() *Repo {
 	}
 }
 
-func (r *Repo) PushImage(imageName string, file string) error {
+func (r *Repo) ImportImage(imageName string, file string) error {
 	format, err := image.Probe(file)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (r *Repo) PushImage(imageName string, file string) error {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return errors.New(fmt.Sprintf("%s: no such file", file))
 	}
-	fmt.Printf("Pushing %s...\n", imageName)
+	fmt.Printf("Importing %s...\n", imageName)
 	dir := filepath.Dir(r.ImagePath(hypervisor, imageName))
 	err = os.MkdirAll(dir, 0775)
 	if err != nil {

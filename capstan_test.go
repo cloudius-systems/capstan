@@ -51,7 +51,7 @@ func TestCommandErrors(t *testing.T) {
 	}
 }
 
-func TestPushCommand(t *testing.T) {
+func TestImportCommand(t *testing.T) {
 	root, err := ioutil.TempDir("", "capstan-root")
 	if err != nil {
 		t.Errorf("capstan: %v", err)
@@ -70,7 +70,7 @@ func TestPushCommand(t *testing.T) {
 	if err != nil {
 		t.Errorf("capstan: %v", err)
 	}
-	if g, e := string(out), "Pushing example...\n"; g != e {
+	if g, e := string(out), "Importing example...\n"; g != e {
 		t.Errorf("capstan: want %q, got %q", e, g)
 	}
 
@@ -105,7 +105,7 @@ func TestRmiCommand(t *testing.T) {
 	if err != nil {
 		t.Errorf("capstan: %v", err)
 	}
-	if g, e := string(out), "Pushing example1...\n"; g != e {
+	if g, e := string(out), "Importing example1...\n"; g != e {
 		t.Errorf("capstan: want %q, got %q", e, g)
 	}
 
@@ -114,7 +114,7 @@ func TestRmiCommand(t *testing.T) {
 	if err != nil {
 		t.Errorf("capstan: %v", err)
 	}
-	if g, e := string(out), "Pushing example2...\n"; g != e {
+	if g, e := string(out), "Importing example2...\n"; g != e {
 		t.Errorf("capstan: want %q, got %q", e, g)
 	}
 
