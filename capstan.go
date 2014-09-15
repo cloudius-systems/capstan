@@ -46,12 +46,18 @@ func main() {
 		{
 			Name:  "import",
 			Usage: "import an image to the local repository",
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "v", Value: "", Usage: "image version"},
+				cli.StringFlag{Name: "c", Value: "", Usage: "image creation date"},
+				cli.StringFlag{Name: "d", Value: "", Usage: "image description"},
+				cli.StringFlag{Name: "b", Value: "", Usage: "image build command"},
+			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 2 {
 					fmt.Println("usage: capstan import [image-name] [image-file]")
 					return
 				}
-				err := repo.ImportImage(c.Args()[0], c.Args()[1])
+				err := repo.ImportImage(c.Args()[0], c.Args()[1], c.String("v"), c.String("c"), c.String("d"), c.String("b"))
 				if err != nil {
 					fmt.Println(err.Error())
 				}

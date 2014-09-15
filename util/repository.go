@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cloudius-systems/capstan/image"
+	"gopkg.in/yaml.v1"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -32,7 +33,15 @@ func NewRepo() *Repo {
 	}
 }
 
-func (r *Repo) ImportImage(imageName string, file string) error {
+type ImageInfo struct {
+	FormatVersion string `yaml:"format_version"`
+	Version       string
+	Created       string
+	Description   string
+	Build         string
+}
+
+func (r *Repo) ImportImage(imageName string, file string, version string, created string, description string, build string) error {
 	format, err := image.Probe(file)
 	if err != nil {
 		return err
@@ -61,6 +70,21 @@ func (r *Repo) ImportImage(imageName string, file string) error {
 	dst := r.ImagePath(hypervisor, imageName)
 	cmd := CopyFile(file, dst)
 	_, err = cmd.Output()
+	if err != nil {
+		return err
+	}
+	info := ImageInfo{
+		FormatVersion: "1",
+		Version: version,
+		Created: created,
+		Description: description,
+		Build: build,
+	}
+	value, err := yaml.Marshal(info)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Join(dir, "index.yaml"), value, 0644)
 	if err != nil {
 		return err
 	}
