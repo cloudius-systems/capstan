@@ -46,7 +46,7 @@ _capstan()
 {
 	local commands="
 			info
-			push
+			import
 			pull
 			rmi
 			run

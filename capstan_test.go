@@ -33,8 +33,8 @@ func TestCommandErrors(t *testing.T) {
 		"build foo": "open Capstanfile: no such file or directory\n",
 		"build":     "usage: capstan build [image-name]\n",
 		"pull":      "usage: capstan pull [image-name]\n",
-		"push":      "usage: capstan push [image-name] [image-file]\n",
-		"push foo":  "usage: capstan push [image-name] [image-file]\n",
+		"import":      "usage: capstan import [image-name] [image-file]\n",
+		"import foo":  "usage: capstan import [image-name] [image-file]\n",
 		"rmi":       "usage: capstan rmi [image-name]\n",
 		"run foo":   "foo: no such image\n",
 		"run":       "No Capstanfile found, unable to run.\n",
@@ -65,7 +65,7 @@ func TestImportCommand(t *testing.T) {
 		t.Errorf("capstan: %v", err)
 	}
 
-	cmd = capstan([]string{"push", "example", "example.qcow2"}, root)
+	cmd = capstan([]string{"import", "example", "example.qcow2"}, root)
 	out, err = cmd.Output()
 	if err != nil {
 		t.Errorf("capstan: %v", err)
@@ -100,7 +100,7 @@ func TestRmiCommand(t *testing.T) {
 		t.Errorf("capstan: %v", err)
 	}
 
-	cmd = capstan([]string{"push", "example1", "example.qcow2"}, root)
+	cmd = capstan([]string{"import", "example1", "example.qcow2"}, root)
 	out, err = cmd.Output()
 	if err != nil {
 		t.Errorf("capstan: %v", err)
@@ -109,7 +109,7 @@ func TestRmiCommand(t *testing.T) {
 		t.Errorf("capstan: want %q, got %q", e, g)
 	}
 
-	cmd = capstan([]string{"push", "example2", "example.qcow2"}, root)
+	cmd = capstan([]string{"import", "example2", "example.qcow2"}, root)
 	out, err = cmd.Output()
 	if err != nil {
 		t.Errorf("capstan: %v", err)
