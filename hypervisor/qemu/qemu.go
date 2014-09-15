@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"runtime"
 	"strconv"
+	"syscall"
 )
 
 type VMConfig struct {
@@ -226,13 +227,26 @@ func ParseVersion(text string) (*Version, error) {
 	}, nil
 }
 
+func isDirectIOSupported(path string) bool {
+	f, err := os.OpenFile(path, syscall.O_DIRECT, 0)
+	defer f.Close()
+	return err == nil
+}
+
+func (c *VMConfig) vmDriveCache() string {
+	if isDirectIOSupported(c.Image) {
+		return "none"
+	}
+	return "unsafe"
+}
+
 func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	args := make([]string, 0)
 	args = append(args, "-display", "none")
 	args = append(args, "-m", strconv.FormatInt(c.Memory, 10))
 	args = append(args, "-smp", strconv.Itoa(c.Cpus))
 	args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")
-	args = append(args, "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=none")
+	args = append(args, "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=" + c.vmDriveCache())
 	if version.Major >= 1 && version.Minor >= 3 {
 		args = append(args, "-device", "virtio-rng-pci")
 	}
