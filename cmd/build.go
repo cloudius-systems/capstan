@@ -189,7 +189,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Con
 
 	if _, err = os.Stat(config.Rootfs); !os.IsNotExist(err) {
 		err = filepath.Walk(config.Rootfs, func(src string, info os.FileInfo, _ error) error {
-			dst := strings.Replace(src, config.Rootfs, "", -1)
+			dst := strings.Replace(src, config.Rootfs, "", 1)
 			if verbose {
 				fmt.Println(src + "  --> " + dst)
 			}
