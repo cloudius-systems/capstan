@@ -131,14 +131,34 @@ func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Confi
 	return err
 }
 
+func IsReg(m os.FileMode) bool {
+        nonreg := os.ModeDir | os.ModeSymlink | os.ModeDevice | os.ModeSocket | os.ModeCharDevice
+        return (m & nonreg) == 0
+}
+
 func copyFile(conn net.Conn, src string, dst string) error {
 	fi, err := os.Stat(src)
 	if err != nil {
 		return err
 	}
-	cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISREG, fi.Size()))
-	b, err := ioutil.ReadFile(src)
-	cpio.WritePadded(conn, b)
+
+        if fi.IsDir() {
+	        cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISDIR, 0))
+                return nil
+        }
+
+        if !IsReg(fi.Mode()) {
+                fmt.Println("skipping non-file path " + src)
+                return nil
+        } else {
+                b, err := ioutil.ReadFile(src)
+                if err != nil {
+                        return nil
+                }
+                cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISREG, fi.Size()))
+                cpio.WritePadded(conn, b)
+        }
+
 	return nil
 }
 
@@ -169,9 +189,6 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Con
 
 	if _, err = os.Stat(config.Rootfs); !os.IsNotExist(err) {
 		err = filepath.Walk(config.Rootfs, func(src string, info os.FileInfo, _ error) error {
-			if info.IsDir() {
-				return nil
-			}
 			dst := strings.Replace(src, config.Rootfs, "", -1)
 			if verbose {
 				fmt.Println(src + "  --> " + dst)

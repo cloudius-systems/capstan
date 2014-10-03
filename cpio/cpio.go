@@ -14,6 +14,7 @@ import (
 
 const (
 	C_ISREG = 0100000
+	C_ISDIR = 0040000
 )
 
 func WritePadded(c net.Conn, data []byte) {
