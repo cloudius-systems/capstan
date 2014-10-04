@@ -1,5 +1,3 @@
-// +build windows
-
 /*
  * Copyright (C) 2014 Cloudius Systems, Ltd.
  *
@@ -10,14 +8,12 @@
 package util
 
 import (
-	"github.com/natefinch/npipe"
-	"net"
+	"os"
+	"syscall"
 )
 
-func Connect(network, path string) (net.Conn, error) {
-	return npipe.Dial(path)
-}
-
 func IsDirectIOSupported(path string) bool {
-	return false
+	f, err := os.OpenFile(path, syscall.O_DIRECT, 0)
+	defer f.Close()
+	return err == nil
 }

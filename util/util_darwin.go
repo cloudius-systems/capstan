@@ -1,5 +1,3 @@
-// +build windows
-
 /*
  * Copyright (C) 2014 Cloudius Systems, Ltd.
  *
@@ -8,15 +6,6 @@
  */
 
 package util
-
-import (
-	"github.com/natefinch/npipe"
-	"net"
-)
-
-func Connect(network, path string) (net.Conn, error) {
-	return npipe.Dial(path)
-}
 
 func IsDirectIOSupported(path string) bool {
 	return false
