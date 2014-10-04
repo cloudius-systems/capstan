@@ -21,7 +21,6 @@ import (
 	"regexp"
 	"runtime"
 	"strconv"
-	"syscall"
 )
 
 type VMConfig struct {
@@ -227,14 +226,8 @@ func ParseVersion(text string) (*Version, error) {
 	}, nil
 }
 
-func isDirectIOSupported(path string) bool {
-	f, err := os.OpenFile(path, syscall.O_DIRECT, 0)
-	defer f.Close()
-	return err == nil
-}
-
 func (c *VMConfig) vmDriveCache() string {
-	if isDirectIOSupported(c.Image) {
+	if util.IsDirectIOSupported(c.Image) {
 		return "none"
 	}
 	return "unsafe"
