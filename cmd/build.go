@@ -31,14 +31,18 @@ func Build(r *util.Repo, hypervisor string, image string, verbose bool, mem stri
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Building %s...\n", image)
 	err = os.MkdirAll(filepath.Dir(r.ImagePath(hypervisor, image)), 0777)
+	if err != nil {
+		return err
+	}
+	err = checkConfig(config, r, hypervisor)
 	if err != nil {
 		return err
 	}
 	if config.RpmBase != nil {
 		config.RpmBase.Download()
 	}
+	fmt.Printf("Building %s...\n", image)
 	if config.Build != "" {
 		args := strings.Fields(config.Build)
 		cmd := exec.Command(args[0], args[1:]...)
@@ -47,10 +51,6 @@ func Build(r *util.Repo, hypervisor string, image string, verbose bool, mem stri
 			fmt.Println(string(out))
 			return err
 		}
-	}
-	err = checkConfig(config, r, hypervisor)
-	if err != nil {
-		return err
 	}
 	cmd := util.CopyFile(r.ImagePath(hypervisor, config.Base), r.ImagePath(hypervisor, image))
 	_, err = cmd.Output()
