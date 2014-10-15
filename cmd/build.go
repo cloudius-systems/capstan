@@ -11,6 +11,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/cheggaaa/pb"
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/nat"
@@ -207,20 +208,41 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Con
 		return err
 	}
 
+	rootfsFiles := make(map[string]string)
 	if _, err = os.Stat(config.Rootfs); !os.IsNotExist(err) {
 		err = filepath.Walk(config.Rootfs, func(src string, info os.FileInfo, _ error) error {
 			dst := strings.Replace(src, config.Rootfs, "", 1)
-			if verbose {
-				fmt.Println(src + "  --> " + dst)
-			}
-			return copyFile(conn, src, dst)
+			rootfsFiles[dst] = src
+			return nil
 		})
+	}
+
+	fmt.Println("Uploading files...")
+
+	bar := pb.New(len(rootfsFiles) + len(config.Files))
+
+	if !verbose {
+		bar.Start()
+	}
+
+	for dst, src := range rootfsFiles {
+		err = copyFile(conn, src, dst)
+		if verbose {
+			fmt.Println(src + "  --> " + dst)
+		} else {
+			bar.Increment()
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	for dst, src := range config.Files {
 		err = copyFile(conn, src, dst)
 		if verbose {
 			fmt.Println(src + "  --> " + dst)
+		} else {
+			bar.Increment()
 		}
 		if err != nil {
 			return err
