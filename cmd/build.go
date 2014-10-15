@@ -8,6 +8,7 @@
 package cmd
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"github.com/cloudius-systems/capstan/cpio"
@@ -176,12 +177,31 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Con
 		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
 	}
-	cmd, err := qemu.LaunchVM(vmconfig)
+	cmd, err := qemu.VMCommand(vmconfig)
 	if err != nil {
 		return err
 	}
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
 	defer cmd.Process.Kill()
-
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		text := scanner.Text()
+		if verbose {
+			fmt.Println(text)
+		}
+		if (text == "Waiting for connection from host...") {
+			break
+		}
+	}
+	if verbose {
+		go io.Copy(os.Stdout, stdout)
+	}
 	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
 	if err != nil {
 		return err

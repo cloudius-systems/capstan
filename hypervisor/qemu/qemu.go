@@ -135,7 +135,7 @@ func StoreConfig(c *VMConfig) error {
 	return ioutil.WriteFile(c.ConfigFile, data, 0644)
 }
 
-func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
+func VMCommand(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	if c.BackingFile {
 		dir := c.InstanceDir
 		err := os.MkdirAll(dir, 0775)
@@ -175,6 +175,14 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	}
 	args := append(vmArgs, extra...)
 	cmd := exec.Command("qemu-system-x86_64", args...)
+	return cmd, nil
+}
+
+func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
+	cmd, err := VMCommand(c, extra...)
+	if err != nil {
+		return nil, err
+	}
 	if c.Verbose {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
