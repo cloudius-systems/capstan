@@ -200,6 +200,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			Bridge:     bridge,
 			NatRules:   config.NatRules,
 			ConfigFile: filepath.Join(dir, "osv.config"),
+			MAC:        config.MAC,
 		}
 		cmd, err = vbox.LaunchVM(config)
 	case "gce":
