@@ -290,6 +290,13 @@ func (c *VMConfig) vmNetworking() ([]string, error) {
 			args = append(args, "-redir", redirect)
 		}
 		return args, nil
+        case "tap":
+		mac, err := c.vmMAC()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, "-netdev", fmt.Sprintf("tap,id=hn0,ifname=%s,script=no,downscript=no", c.Bridge), "-device", fmt.Sprintf("virtio-net-pci,netdev=hn0,id=nic1,mac=%s", mac.String()))
+		return args, nil
 	}
 	return nil, fmt.Errorf("%s: networking not supported", c.Networking)
 }
