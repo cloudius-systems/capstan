@@ -14,6 +14,7 @@ import (
 	"gopkg.in/yaml.v1"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,6 +34,7 @@ type VMConfig struct {
 	Bridge     string
 	NatRules   []nat.Rule
 	ConfigFile string
+	MAC        string
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
@@ -143,10 +145,23 @@ func vmCreate(c *VMConfig) error {
 	return nil
 }
 
+func (c *VMConfig) vmMAC() (net.HardwareAddr, error) {
+	if c.MAC != "" {
+		return net.ParseMAC(c.MAC)
+	}
+	return util.GenerateMAC()
+}
+
 func vmSetupNetworking(c *VMConfig) error {
 	switch c.Networking {
 	case "bridge":
 		return VBoxManage("modifyvm", c.Name, "--nic1", "bridged", "--bridgeadapter1", c.Bridge, "--nictype1", "virtio")
+	case "tap":
+		mac, err := c.vmMAC()
+		if err != nil {
+			return err
+		}
+		return VBoxManage("modifyvm", c.Name, "--nic1", "bridged", "--bridgeadapter1", c.Bridge, "--macaddress1", strings.Replace(mac.String(), ":", "", -1), "--nictype1", "virtio")
 	case "nat":
 		return vmSetupNAT(c)
 	}
