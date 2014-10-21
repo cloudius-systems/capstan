@@ -30,14 +30,14 @@ func TestCommandErrors(t *testing.T) {
 	defer os.RemoveAll(root)
 
 	m := map[string]string{
-		"build foo": "open Capstanfile: no such file or directory\n",
-		"build":     "usage: capstan build [image-name]\n",
-		"pull":      "usage: capstan pull [image-name]\n",
-		"import":      "usage: capstan import [image-name] [image-file]\n",
-		"import foo":  "usage: capstan import [image-name] [image-file]\n",
-		"rmi":       "usage: capstan rmi [image-name]\n",
-		"run foo":   "foo: no such image\n",
-		"run":       "No Capstanfile found, unable to run.\n",
+		"build foo":  "open Capstanfile: no such file or directory\n",
+		"build":      "usage: capstan build [image-name]\n",
+		"pull":       "usage: capstan pull [image-name]\n",
+		"import":     "usage: capstan import [image-name] [image-file]\n",
+		"import foo": "usage: capstan import [image-name] [image-file]\n",
+		"rmi":        "usage: capstan rmi [image-name]\n",
+		"run foo":    "foo: no such image\n",
+		"run":        "No Capstanfile found, unable to run.\n",
 	}
 	for key, value := range m {
 		cmd := runCapstan(strings.Fields(key), root)
