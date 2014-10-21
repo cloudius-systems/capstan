@@ -16,7 +16,7 @@ import (
 	"testing"
 )
 
-func capstan(command []string, root string) *exec.Cmd {
+func runCapstan(command []string, root string) *exec.Cmd {
 	c := exec.Command("capstan", command...)
 	c.Env = append(os.Environ(), fmt.Sprintf("CAPSTAN_ROOT=%s", root))
 	return c
@@ -40,7 +40,7 @@ func TestCommandErrors(t *testing.T) {
 		"run":       "No Capstanfile found, unable to run.\n",
 	}
 	for key, value := range m {
-		cmd := capstan(strings.Fields(key), root)
+		cmd := runCapstan(strings.Fields(key), root)
 		out, err := cmd.Output()
 		if err != nil {
 			t.Errorf("capstan: %v", err)
@@ -65,7 +65,7 @@ func TestImportCommand(t *testing.T) {
 		t.Errorf("capstan: %v", err)
 	}
 
-	cmd = capstan([]string{"import", "example", "example.qcow2"}, root)
+	cmd = runCapstan([]string{"import", "example", "example.qcow2"}, root)
 	out, err = cmd.Output()
 	if err != nil {
 		t.Errorf("capstan: %v", err)
@@ -74,7 +74,7 @@ func TestImportCommand(t *testing.T) {
 		t.Errorf("capstan: want %q, got %q", e, g)
 	}
 
-	cmd = capstan([]string{"images"}, root)
+	cmd = runCapstan([]string{"images"}, root)
 	out, err = cmd.Output()
 	if err != nil {
 		t.Errorf("capstan: %v", err)
@@ -100,7 +100,7 @@ func TestRmiCommand(t *testing.T) {
 		t.Errorf("capstan: %v", err)
 	}
 
-	cmd = capstan([]string{"import", "example1", "example.qcow2"}, root)
+	cmd = runCapstan([]string{"import", "example1", "example.qcow2"}, root)
 	out, err = cmd.Output()
 	if err != nil {
 		t.Errorf("capstan: %v", err)
@@ -109,7 +109,7 @@ func TestRmiCommand(t *testing.T) {
 		t.Errorf("capstan: want %q, got %q", e, g)
 	}
 
-	cmd = capstan([]string{"import", "example2", "example.qcow2"}, root)
+	cmd = runCapstan([]string{"import", "example2", "example.qcow2"}, root)
 	out, err = cmd.Output()
 	if err != nil {
 		t.Errorf("capstan: %v", err)
@@ -118,7 +118,7 @@ func TestRmiCommand(t *testing.T) {
 		t.Errorf("capstan: want %q, got %q", e, g)
 	}
 
-	cmd = capstan([]string{"images"}, root)
+	cmd = runCapstan([]string{"images"}, root)
 	out, err = cmd.Output()
 	if err != nil {
 		t.Errorf("capstan: %v", err)
@@ -129,7 +129,7 @@ func TestRmiCommand(t *testing.T) {
 
 	}
 
-	cmd = capstan([]string{"rmi", "example1"}, root)
+	cmd = runCapstan([]string{"rmi", "example1"}, root)
 	out, err = cmd.Output()
 	if err != nil {
 		t.Errorf("capstan: %v", err)
@@ -139,7 +139,7 @@ func TestRmiCommand(t *testing.T) {
 
 	}
 
-	cmd = capstan([]string{"images"}, root)
+	cmd = runCapstan([]string{"images"}, root)
 	out, err = cmd.Output()
 	if err != nil {
 		t.Errorf("capstan: %v", err)
