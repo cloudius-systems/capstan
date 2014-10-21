@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cheggaaa/pb"
+	"github.com/cloudius-systems/capstan/capstan"
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/nat"
@@ -27,22 +28,22 @@ import (
 )
 
 func Build(r *util.Repo, hypervisor string, image string, verbose bool, mem string) error {
-	config, err := util.ReadConfig("Capstanfile")
+	template, err := capstan.ReadTemplateFile("Capstanfile")
 	if err != nil {
 		return err
 	}
 	if err := os.MkdirAll(filepath.Dir(r.ImagePath(hypervisor, image)), 0777); err != nil {
 		return err
 	}
-	if err := checkConfig(config, r, hypervisor); err != nil {
+	if err := checkConfig(template, r, hypervisor); err != nil {
 		return err
 	}
-	if config.RpmBase != nil {
-		config.RpmBase.Download()
+	if template.RpmBase != nil {
+		template.RpmBase.Download()
 	}
 	fmt.Printf("Building %s...\n", image)
-	if config.Build != "" {
-		args := strings.Fields(config.Build)
+	if template.Build != "" {
+		args := strings.Fields(template.Build)
 		cmd := exec.Command(args[0], args[1:]...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
@@ -50,7 +51,7 @@ func Build(r *util.Repo, hypervisor string, image string, verbose bool, mem stri
 			return err
 		}
 	}
-	cmd := util.CopyFile(r.ImagePath(hypervisor, config.Base), r.ImagePath(hypervisor, image))
+	cmd := util.CopyFile(r.ImagePath(hypervisor, template.Base), r.ImagePath(hypervisor, image))
 	_, err = cmd.Output()
 	if err != nil {
 		return err
@@ -58,24 +59,24 @@ func Build(r *util.Repo, hypervisor string, image string, verbose bool, mem stri
 	if err := SetArgs(r, hypervisor, image, "/tools/cpiod.so"); err != nil {
 		return err
 	}
-	if config.RpmBase != nil {
-		if err := UploadRPM(r, hypervisor, image, config, verbose, mem); err != nil {
+	if template.RpmBase != nil {
+		if err := UploadRPM(r, hypervisor, image, template, verbose, mem); err != nil {
 			return err
 		}
 	}
-	if err := UploadFiles(r, hypervisor, image, config, verbose, mem); err != nil {
+	if err := UploadFiles(r, hypervisor, image, template, verbose, mem); err != nil {
 		return err
 	}
-	return SetArgs(r, hypervisor, image, config.Cmdline)
+	return SetArgs(r, hypervisor, image, template.Cmdline)
 }
 
-func checkConfig(config *util.Config, r *util.Repo, hypervisor string) error {
-	if _, err := os.Stat(r.ImagePath(hypervisor, config.Base)); os.IsNotExist(err) {
-		if err := Pull(r, hypervisor, config.Base); err != nil {
+func checkConfig(t *capstan.Template, r *util.Repo, hypervisor string) error {
+	if _, err := os.Stat(r.ImagePath(hypervisor, t.Base)); os.IsNotExist(err) {
+		if err := Pull(r, hypervisor, t.Base); err != nil {
 			return err
 		}
 	}
-	for _, value := range config.Files {
+	for _, value := range t.Files {
 		if _, err := os.Stat(value); os.IsNotExist(err) {
 			return errors.New(fmt.Sprintf("%s: no such file or directory", value))
 		}
@@ -83,7 +84,7 @@ func checkConfig(config *util.Config, r *util.Repo, hypervisor string) error {
 	return nil
 }
 
-func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool, mem string) error {
+func UploadRPM(r *util.Repo, hypervisor string, image string, template* capstan.Template, verbose bool, mem string) error {
 	file := r.ImagePath(hypervisor, image)
 	size, err := util.ParseMemSize(mem)
 	if err != nil {
@@ -108,7 +109,7 @@ func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Confi
 		return err
 	}
 
-	cmd := exec.Command("rpm2cpio", config.RpmBase.Filename())
+	cmd := exec.Command("rpm2cpio", template.RpmBase.Filename())
 	cmd.Stdout = conn
 	err = cmd.Start()
 	if err != nil {
@@ -154,7 +155,7 @@ func copyFile(conn net.Conn, src string, dst string) error {
 	return nil
 }
 
-func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Config, verbose bool, mem string) error {
+func UploadFiles(r *util.Repo, hypervisor string, image string, t *capstan.Template, verbose bool, mem string) error {
 	file := r.ImagePath(hypervisor, image)
 	size, err := util.ParseMemSize(mem)
 	if err != nil {
@@ -199,9 +200,9 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Con
 	}
 
 	rootfsFiles := make(map[string]string)
-	if _, err = os.Stat(config.Rootfs); !os.IsNotExist(err) {
-		err = filepath.Walk(config.Rootfs, func(src string, info os.FileInfo, _ error) error {
-			dst := strings.Replace(src, config.Rootfs, "", 1)
+	if _, err = os.Stat(t.Rootfs); !os.IsNotExist(err) {
+		err = filepath.Walk(t.Rootfs, func(src string, info os.FileInfo, _ error) error {
+			dst := strings.Replace(src, t.Rootfs, "", 1)
 			rootfsFiles[dst] = src
 			return nil
 		})
@@ -209,7 +210,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Con
 
 	fmt.Println("Uploading files...")
 
-	bar := pb.New(len(rootfsFiles) + len(config.Files))
+	bar := pb.New(len(rootfsFiles) + len(t.Files))
 
 	if !verbose {
 		bar.Start()
@@ -227,7 +228,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Con
 		}
 	}
 
-	for dst, src := range config.Files {
+	for dst, src := range t.Files {
 		err = copyFile(conn, src, dst)
 		if verbose {
 			fmt.Println(src + "  --> " + dst)

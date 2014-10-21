@@ -9,6 +9,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/cloudius-systems/capstan/capstan"
 	"github.com/cloudius-systems/capstan/hypervisor/gce"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
@@ -119,7 +120,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			return fmt.Errorf("No Capstanfile found, unable to run.")
 		}
 		if !repo.ImageExists(config.Hypervisor, config.ImageName) {
-			if !util.ConfigExists("Capstanfile") {
+			if !capstan.IsTemplateFile("Capstanfile") {
 				return fmt.Errorf("%s: no such image", config.ImageName)
 			}
 			err := Build(repo, config.Hypervisor, config.ImageName, config.Verbose, config.Memory)

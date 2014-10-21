@@ -5,7 +5,7 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-package util
+package capstan
 
 import (
 	"testing"
@@ -21,9 +21,9 @@ var configTests = []struct {
 	{"base: osv-base\ncmdline: foo.so\nbuild: make\n", ""},
 }
 
-func TestConfig(t *testing.T) {
+func TestTemplate(t *testing.T) {
 	for _, test := range configTests {
-		_, err := ParseConfig([]byte(test.Spec))
+		_, err := ParseTemplate([]byte(test.Spec))
 		var got string
 		switch err {
 		case nil:

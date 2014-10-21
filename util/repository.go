@@ -10,6 +10,7 @@ package util
 import (
 	"errors"
 	"fmt"
+	"github.com/cloudius-systems/capstan/capstan"
 	"github.com/cloudius-systems/capstan/image"
 	"gopkg.in/yaml.v1"
 	"io/ioutil"
@@ -142,7 +143,7 @@ func (r *Repo) ListImages() {
 }
 
 func (r *Repo) DefaultImage() string {
-	if !ConfigExists("Capstanfile") {
+	if !capstan.IsTemplateFile("Capstanfile") {
 		return ""
 	}
 	pwd, err := os.Getwd()
