@@ -131,15 +131,18 @@ To show a list of locally installed images, type:
 $ capstan images
 ```
 
+## Examples
+
+Check out the following example projects to get you going:
+
+* [Node.js](https://github.com/cloudius-systems/capstan-example-nodejs)
+* [Java](https://github.com/cloudius-systems/capstan-example-java)
+* [Clojure](https://github.com/cloudius-systems/capstan-example-clojure)
+* [Linux binaries](https://github.com/cloudius-systems/capstan-example)
+
 ## Documentation
 
 * [Capstanfile](Documentation/Capstanfile.md)
-
-## Examples
-
-* [Running native Linux apps on OSv](https://github.com/cloudius-systems/capstan-example)
-* [Running Java on OSv](https://github.com/penberg/capstan-example-java)
-* [Running Clojure on OSv](https://github.com/tzach/capstan-example-clojure)
 
 ## License
 
