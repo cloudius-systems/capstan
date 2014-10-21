@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v1"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
-	"os"
 )
 
 type Config struct {
@@ -39,8 +39,7 @@ func ReadConfig(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = c.substituteVars()
-	if err != nil {
+	if err := c.substituteVars(); err != nil {
 		return nil, err
 	}
 	return c, nil
@@ -48,8 +47,7 @@ func ReadConfig(filename string) (*Config, error) {
 
 func ParseConfig(data []byte) (*Config, error) {
 	c := Config{}
-	err := yaml.Unmarshal(data, &c)
-	if err != nil {
+	if err := yaml.Unmarshal(data, &c); err != nil {
 		return nil, err
 	}
 	if c.Cmdline == "" {

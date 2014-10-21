@@ -31,12 +31,10 @@ func Build(r *util.Repo, hypervisor string, image string, verbose bool, mem stri
 	if err != nil {
 		return err
 	}
-	err = os.MkdirAll(filepath.Dir(r.ImagePath(hypervisor, image)), 0777)
-	if err != nil {
+	if err := os.MkdirAll(filepath.Dir(r.ImagePath(hypervisor, image)), 0777); err != nil {
 		return err
 	}
-	err = checkConfig(config, r, hypervisor)
-	if err != nil {
+	if err := checkConfig(config, r, hypervisor); err != nil {
 		return err
 	}
 	if config.RpmBase != nil {
@@ -57,31 +55,23 @@ func Build(r *util.Repo, hypervisor string, image string, verbose bool, mem stri
 	if err != nil {
 		return err
 	}
-	err = SetArgs(r, hypervisor, image, "/tools/cpiod.so")
-	if err != nil {
+	if err := SetArgs(r, hypervisor, image, "/tools/cpiod.so"); err != nil {
 		return err
 	}
 	if config.RpmBase != nil {
-		err = UploadRPM(r, hypervisor, image, config, verbose, mem)
-		if err != nil {
+		if err := UploadRPM(r, hypervisor, image, config, verbose, mem); err != nil {
 			return err
 		}
 	}
-	err = UploadFiles(r, hypervisor, image, config, verbose, mem)
-	if err != nil {
+	if err := UploadFiles(r, hypervisor, image, config, verbose, mem); err != nil {
 		return err
 	}
-	err = SetArgs(r, hypervisor, image, config.Cmdline)
-	if err != nil {
-		return err
-	}
-	return nil
+	return SetArgs(r, hypervisor, image, config.Cmdline)
 }
 
 func checkConfig(config *util.Config, r *util.Repo, hypervisor string) error {
 	if _, err := os.Stat(r.ImagePath(hypervisor, config.Base)); os.IsNotExist(err) {
-		err := Pull(r, hypervisor, config.Base)
-		if err != nil {
+		if err := Pull(r, hypervisor, config.Base); err != nil {
 			return err
 		}
 	}
@@ -134,8 +124,8 @@ func UploadRPM(r *util.Repo, hypervisor string, image string, config *util.Confi
 }
 
 func IsReg(m os.FileMode) bool {
-        nonreg := os.ModeDir | os.ModeSymlink | os.ModeDevice | os.ModeSocket | os.ModeCharDevice
-        return (m & nonreg) == 0
+	nonreg := os.ModeDir | os.ModeSymlink | os.ModeDevice | os.ModeSocket | os.ModeCharDevice
+	return (m & nonreg) == 0
 }
 
 func copyFile(conn net.Conn, src string, dst string) error {
@@ -144,22 +134,22 @@ func copyFile(conn net.Conn, src string, dst string) error {
 		return err
 	}
 
-        if fi.IsDir() {
-	        cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISDIR, 0))
-                return nil
-        }
+	if fi.IsDir() {
+		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISDIR, 0))
+		return nil
+	}
 
-        if !IsReg(fi.Mode()) {
-                fmt.Println("skipping non-file path " + src)
-                return nil
-        } else {
-                b, err := ioutil.ReadFile(src)
-                if err != nil {
-                        return nil
-                }
-                cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISREG, fi.Size()))
-                cpio.WritePadded(conn, b)
-        }
+	if !IsReg(fi.Mode()) {
+		fmt.Println("skipping non-file path " + src)
+		return nil
+	} else {
+		contents, err := ioutil.ReadFile(src)
+		if err != nil {
+			return nil
+		}
+		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISREG, fi.Size()))
+		cpio.WritePadded(conn, contents)
+	}
 
 	return nil
 }
@@ -196,7 +186,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, config *util.Con
 		if verbose {
 			fmt.Println(text)
 		}
-		if (text == "Waiting for connection from host...") {
+		if text == "Waiting for connection from host..." {
 			break
 		}
 	}

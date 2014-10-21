@@ -16,11 +16,11 @@ import (
 	"github.com/cloudius-systems/capstan/image"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/util"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"io/ioutil"
 )
 
 type RunConfig struct {
@@ -49,7 +49,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 
 			fmt.Printf("Created instance: %s\n", instanceName)
 			// Do not set RawTerm for gce
-			if (instancePlatform != "gce") {
+			if instancePlatform != "gce" {
 				util.RawTerm()
 				defer util.ResetTerm()
 			}
@@ -84,8 +84,8 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			config.InstanceName = strings.Replace(config.InstanceName, "/", "-", -1)
 			return Run(repo, config)
 		}
-	// Both ImageName and InstanceName are specified
 	} else if config.ImageName != "" && config.InstanceName != "" {
+		// Both ImageName and InstanceName are specified
 		if _, err := os.Stat(config.ImageName); os.IsNotExist(err) {
 			if repo.ImageExists(config.Hypervisor, config.ImageName) {
 				path = repo.ImagePath(config.Hypervisor, config.ImageName)
@@ -100,7 +100,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			} else {
 				return fmt.Errorf("%s: no such image", config.ImageName)
 			}
-			if config.Hypervisor == "gce"  && !image.IsCloudImage(config.ImageName) {
+			if config.Hypervisor == "gce" && !image.IsCloudImage(config.ImageName) {
 				str, err := ioutil.ReadFile(path)
 				if err != nil {
 					return err
@@ -111,9 +111,8 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			path = config.ImageName
 		}
 		deleteInstance(config.InstanceName)
-
-	// Valid only when Capstanfile is present
 	} else if config.ImageName == "" && config.InstanceName == "" {
+		// Valid only when Capstanfile is present
 		config.ImageName = repo.DefaultImage()
 		config.InstanceName = config.ImageName
 		if config.ImageName == "" {
@@ -130,9 +129,8 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		}
 		path = repo.ImagePath(config.Hypervisor, config.ImageName)
 		deleteInstance(config.InstanceName)
-
-		// Cmdline option is not valid
 	} else {
+		// Cmdline option is not valid
 		usage()
 		return nil
 	}
@@ -153,7 +151,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 	id := config.InstanceName
 	fmt.Printf("Created instance: %s\n", id)
 	// Do not set RawTerm for gce
-	if (config.Hypervisor != "gce") {
+	if config.Hypervisor != "gce" {
 		util.RawTerm()
 		defer util.ResetTerm()
 	}
@@ -209,13 +207,13 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		}
 		dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", id)
 		c := &gce.VMConfig{
-			Name:             id,
-			Image:		  id,
-			Network:          "default",
-			MachineType:      "n1-standard-1",
-			Zone:             "us-central1-a",
-			ConfigFile:	  filepath.Join(dir, "osv.config"),
-			InstanceDir:	  dir,
+			Name:        id,
+			Image:       id,
+			Network:     "default",
+			MachineType: "n1-standard-1",
+			Zone:        "us-central1-a",
+			ConfigFile:  filepath.Join(dir, "osv.config"),
+			InstanceDir: dir,
 		}
 		if format == image.GCE_TARBALL {
 			c.CloudStoragePath = strings.TrimSuffix(config.GCEUploadDir, "/") + "/" + id + ".tar.gz"
