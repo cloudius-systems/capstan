@@ -107,7 +107,7 @@ func main() {
 				cli.BoolFlag{Name: "v", Usage: "verbose mode"},
 				cli.StringFlag{Name: "b", Value: "", Usage: "networking device (bridge or tap): e.g., virbr0, vboxnet0, tap0"},
 				cli.StringSliceFlag{Name: "f", Value: new(cli.StringSlice), Usage: "port forwarding rules"},
-				cli.StringFlag{Name: "gce-upload-dir", Value: "",  Usage: "Directory to upload local image to: e.g., gs://osvimg"},
+				cli.StringFlag{Name: "gce-upload-dir", Value: "", Usage: "Directory to upload local image to: e.g., gs://osvimg"},
 				cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
 			},
 			Action: func(c *cli.Context) {
@@ -148,20 +148,25 @@ func main() {
 					return
 				}
 				hypervisor := c.String("p")
-				image := &capstan.Image {
+				image := &capstan.Image{
 					Name:       imageName,
 					Hypervisor: hypervisor,
 				}
-				err := cmd.Build(repo, image, c.Bool("v"), c.String("m"))
+				template, err := capstan.ReadTemplateFile("Capstanfile")
 				if err != nil {
 					fmt.Println(err.Error())
+					return
+				}
+				if err := cmd.Build(repo, image, template, c.Bool("v"), c.String("m")); err != nil {
+					fmt.Println(err.Error())
+					return
 				}
 			},
 		},
 		{
-			Name:  "images",
+			Name:      "images",
 			ShortName: "i",
-			Usage: "list images",
+			Usage:     "list images",
 			Action: func(c *cli.Context) {
 				repo.ListImages()
 			},
@@ -178,9 +183,9 @@ func main() {
 			},
 		},
 		{
-			Name:  "instances",
+			Name:      "instances",
 			ShortName: "I",
-			Usage: "list instances",
+			Usage:     "list instances",
 			Action: func(c *cli.Context) {
 				cmd.Instances()
 			},

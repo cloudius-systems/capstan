@@ -27,11 +27,7 @@ import (
 	"strings"
 )
 
-func Build(r *util.Repo, image *capstan.Image, verbose bool, mem string) error {
-	template, err := capstan.ReadTemplateFile("Capstanfile")
-	if err != nil {
-		return err
-	}
+func Build(r *util.Repo, image *capstan.Image, template *capstan.Template, verbose bool, mem string) error {
 	if err := os.MkdirAll(filepath.Dir(r.ImagePath(image.Hypervisor, image.Name)), 0777); err != nil {
 		return err
 	}
@@ -52,7 +48,7 @@ func Build(r *util.Repo, image *capstan.Image, verbose bool, mem string) error {
 		}
 	}
 	cmd := util.CopyFile(r.ImagePath(image.Hypervisor, template.Base), r.ImagePath(image.Hypervisor, image.Name))
-	_, err = cmd.Output()
+	_, err := cmd.Output()
 	if err != nil {
 		return err
 	}
@@ -84,7 +80,7 @@ func checkConfig(t *capstan.Template, r *util.Repo, hypervisor string) error {
 	return nil
 }
 
-func UploadRPM(r *util.Repo, hypervisor string, image string, template* capstan.Template, verbose bool, mem string) error {
+func UploadRPM(r *util.Repo, hypervisor string, image string, template *capstan.Template, verbose bool, mem string) error {
 	file := r.ImagePath(hypervisor, image)
 	size, err := util.ParseMemSize(mem)
 	if err != nil {

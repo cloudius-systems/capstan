@@ -127,8 +127,11 @@ func Run(repo *util.Repo, config *RunConfig) error {
 				Name:       config.ImageName,
 				Hypervisor: config.Hypervisor,
 			}
-			err := Build(repo, image, config.Verbose, config.Memory)
+			template, err := capstan.ReadTemplateFile("Capstanfile")
 			if err != nil {
+				return err
+			}
+			if err := Build(repo, image, template, config.Verbose, config.Memory); err != nil {
 				return err
 			}
 		}
