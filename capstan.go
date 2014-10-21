@@ -9,6 +9,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/cloudius-systems/capstan/capstan"
 	"github.com/cloudius-systems/capstan/cmd"
 	"github.com/cloudius-systems/capstan/hypervisor"
 	"github.com/cloudius-systems/capstan/nat"
@@ -138,16 +139,20 @@ func main() {
 				cli.BoolFlag{Name: "v", Usage: "verbose mode"},
 			},
 			Action: func(c *cli.Context) {
-				image := c.Args().First()
+				imageName := c.Args().First()
 				if len(c.Args()) != 1 {
-					image = repo.DefaultImage()
+					imageName = repo.DefaultImage()
 				}
-				if image == "" {
+				if imageName == "" {
 					fmt.Println("usage: capstan build [image-name]")
 					return
 				}
 				hypervisor := c.String("p")
-				err := cmd.Build(repo, hypervisor, image, c.Bool("v"), c.String("m"))
+				image := &capstan.Image {
+					Name:       imageName,
+					Hypervisor: hypervisor,
+				}
+				err := cmd.Build(repo, image, c.Bool("v"), c.String("m"))
 				if err != nil {
 					fmt.Println(err.Error())
 				}

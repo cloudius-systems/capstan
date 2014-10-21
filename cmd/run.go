@@ -123,7 +123,11 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			if !capstan.IsTemplateFile("Capstanfile") {
 				return fmt.Errorf("%s: no such image", config.ImageName)
 			}
-			err := Build(repo, config.Hypervisor, config.ImageName, config.Verbose, config.Memory)
+			image := &capstan.Image{
+				Name:       config.ImageName,
+				Hypervisor: config.Hypervisor,
+			}
+			err := Build(repo, image, config.Verbose, config.Memory)
 			if err != nil {
 				return err
 			}

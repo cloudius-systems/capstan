@@ -27,21 +27,21 @@ import (
 	"strings"
 )
 
-func Build(r *util.Repo, hypervisor string, image string, verbose bool, mem string) error {
+func Build(r *util.Repo, image *capstan.Image, verbose bool, mem string) error {
 	template, err := capstan.ReadTemplateFile("Capstanfile")
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(r.ImagePath(hypervisor, image)), 0777); err != nil {
+	if err := os.MkdirAll(filepath.Dir(r.ImagePath(image.Hypervisor, image.Name)), 0777); err != nil {
 		return err
 	}
-	if err := checkConfig(template, r, hypervisor); err != nil {
+	if err := checkConfig(template, r, image.Hypervisor); err != nil {
 		return err
 	}
 	if template.RpmBase != nil {
 		template.RpmBase.Download()
 	}
-	fmt.Printf("Building %s...\n", image)
+	fmt.Printf("Building %s...\n", image.Name)
 	if template.Build != "" {
 		args := strings.Fields(template.Build)
 		cmd := exec.Command(args[0], args[1:]...)
@@ -51,23 +51,23 @@ func Build(r *util.Repo, hypervisor string, image string, verbose bool, mem stri
 			return err
 		}
 	}
-	cmd := util.CopyFile(r.ImagePath(hypervisor, template.Base), r.ImagePath(hypervisor, image))
+	cmd := util.CopyFile(r.ImagePath(image.Hypervisor, template.Base), r.ImagePath(image.Hypervisor, image.Name))
 	_, err = cmd.Output()
 	if err != nil {
 		return err
 	}
-	if err := SetArgs(r, hypervisor, image, "/tools/cpiod.so"); err != nil {
+	if err := SetArgs(r, image.Hypervisor, image.Name, "/tools/cpiod.so"); err != nil {
 		return err
 	}
 	if template.RpmBase != nil {
-		if err := UploadRPM(r, hypervisor, image, template, verbose, mem); err != nil {
+		if err := UploadRPM(r, image.Hypervisor, image.Name, template, verbose, mem); err != nil {
 			return err
 		}
 	}
-	if err := UploadFiles(r, hypervisor, image, template, verbose, mem); err != nil {
+	if err := UploadFiles(r, image.Hypervisor, image.Name, template, verbose, mem); err != nil {
 		return err
 	}
-	return SetArgs(r, hypervisor, image, template.Cmdline)
+	return SetArgs(r, image.Hypervisor, image.Name, template.Cmdline)
 }
 
 func checkConfig(t *capstan.Template, r *util.Repo, hypervisor string) error {
