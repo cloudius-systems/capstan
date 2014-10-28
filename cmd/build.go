@@ -132,7 +132,12 @@ func copyFile(conn net.Conn, src string, dst string) error {
 	}
 
 	if fi.IsDir() {
-		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISDIR, 0))
+		fi, err := os.Stat(src)
+		if err != nil {
+			return err
+		}
+		perm := uint64(fi.Mode()) & 0777
+		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISDIR | perm, 0))
 		return nil
 	}
 
@@ -144,7 +149,12 @@ func copyFile(conn net.Conn, src string, dst string) error {
 		if err != nil {
 			return nil
 		}
-		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISREG, fi.Size()))
+		fi, err := os.Stat(src)
+		if err != nil {
+			return err
+		}
+		perm := uint64(fi.Mode()) & 0777
+		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISREG | perm, fi.Size()))
 		cpio.WritePadded(conn, contents)
 	}
 
