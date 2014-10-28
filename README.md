@@ -109,11 +109,8 @@ $ capstan run -f "10022:22" cloudius/osv
 To bridging OSv vNIC to Host bridge interface, type:
 
 ```
-On Fedora:
+On Linux:
 $ capstan run -n bridge cloudius/osv
-
-On Debian:
-$ capstan run -b <manually defined bridge name> cloudius/osv
 
 On OS X with VirtualBox:
 $ capstan run -n bridge -b <physical NIC name> cloudius/osv
