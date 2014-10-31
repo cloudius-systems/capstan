@@ -209,7 +209,9 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *capstan.Templ
 	if _, err = os.Stat(t.Rootfs); !os.IsNotExist(err) {
 		err = filepath.Walk(t.Rootfs, func(src string, info os.FileInfo, _ error) error {
 			dst := strings.Replace(src, t.Rootfs, "", 1)
-			rootfsFiles[dst] = src
+			if dst != "" {
+				rootfsFiles[dst] = src
+			}
 			return nil
 		})
 	}
