@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -109,7 +110,15 @@ func Run(repo *util.Repo, config *RunConfig) error {
 				path = strings.Replace(string(str), "\n", "", -1)
 			}
 		} else {
-			path = config.ImageName
+			if strings.HasSuffix(config.ImageName, ".jar") {
+				config, err = buildJarImage(repo, config)
+				if err != nil {
+					return err
+				}
+				path = repo.ImagePath(config.Hypervisor, config.ImageName)
+			} else {
+				path = config.ImageName
+			}
 		}
 		deleteInstance(config.InstanceName)
 	} else if config.ImageName == "" && config.InstanceName == "" {
@@ -260,6 +269,36 @@ func Run(repo *util.Repo, config *RunConfig) error {
 	} else {
 		return nil
 	}
+}
+
+func buildJarImage(repo *util.Repo, config *RunConfig) (*RunConfig, error) {
+	jarPath := config.ImageName
+	imageName, jarName := parseJarNames(jarPath)
+	image := &capstan.Image{
+		Name:       imageName,
+		Hypervisor: config.Hypervisor,
+	}
+	targetJarPath := "/" + jarName
+	template := &capstan.Template{
+		Base:    "cloudius/osv-openjdk",
+		Cmdline: fmt.Sprintf("/java.so -jar %s", targetJarPath),
+		Files: map[string]string{
+			targetJarPath: jarPath,
+		},
+	}
+	if err := Build(repo, image, template, config.Verbose, config.Memory); err != nil {
+		return nil, err
+	}
+	newConfig := *config
+	newConfig.ImageName = imageName
+	newConfig.InstanceName = imageName
+	return &newConfig, nil
+}
+
+func parseJarNames(filename string) (string, string) {
+	jarName := path.Base(filename)
+	imageName := strings.TrimSuffix(jarName, ".jar")
+	return imageName, jarName
 }
 
 func usage() {
