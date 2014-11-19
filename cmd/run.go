@@ -59,16 +59,28 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			var err error
 			switch instancePlatform {
 			case "qemu":
-				c, _ := qemu.LoadConfig(instanceName)
+				c, err := qemu.LoadConfig(instanceName)
+				if err != nil {
+					return err
+				}
 				cmd, err = qemu.LaunchVM(c)
 			case "vbox":
-				c, _ := vbox.LoadConfig(instanceName)
+				c, err := vbox.LoadConfig(instanceName)
+				if err != nil {
+					return err
+				}
 				cmd, err = vbox.LaunchVM(c)
 			case "vmw":
-				c, _ := vmw.LoadConfig(instanceName)
+				c, err := vmw.LoadConfig(instanceName)
+				if err != nil {
+					return err
+				}
 				cmd, err = vmw.LaunchVM(c)
 			case "gce":
-				c, _ := gce.LoadConfig(instanceName)
+				c, err := gce.LoadConfig(instanceName)
+				if err != nil {
+					return err
+				}
 				cmd, err = gce.LaunchVM(c)
 			}
 
