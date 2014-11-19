@@ -4,4 +4,5 @@ package=github.com/cloudius-systems/capstan
 version=$(scripts/version)
 
 go get $package
-go install -ldflags "-X main.VERSION '$version'" $package
+go build -ldflags "-X main.VERSION '$version'" $package
+go install $package
