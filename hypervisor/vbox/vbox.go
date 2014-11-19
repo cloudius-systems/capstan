@@ -189,10 +189,12 @@ func DeleteVM(name string) error {
 		ConfigFile: filepath.Join(dir, "osv.config"),
 	}
 
-	cmd := exec.Command("rm", "-f", c.ConfigFile)
+	sockFile := filepath.Join(dir, name + ".sock")
+
+	cmd := exec.Command("rm", "-f", c.ConfigFile, " ", sockFile)
 	_, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("Failed to delete: %s", c.ConfigFile)
+		fmt.Printf("Failed to delete: %s, %s", c.ConfigFile, sockFile)
 		return err
 	}
 
