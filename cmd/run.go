@@ -9,7 +9,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan/capstan"
+	"github.com/cloudius-systems/capstan/core"
 	"github.com/cloudius-systems/capstan/hypervisor/gce"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
@@ -141,14 +141,14 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			return fmt.Errorf("No Capstanfile found, unable to run.")
 		}
 		if !repo.ImageExists(config.Hypervisor, config.ImageName) {
-			if !capstan.IsTemplateFile("Capstanfile") {
+			if !core.IsTemplateFile("Capstanfile") {
 				return fmt.Errorf("%s: no such image", config.ImageName)
 			}
-			image := &capstan.Image{
+			image := &core.Image{
 				Name:       config.ImageName,
 				Hypervisor: config.Hypervisor,
 			}
-			template, err := capstan.ReadTemplateFile("Capstanfile")
+			template, err := core.ReadTemplateFile("Capstanfile")
 			if err != nil {
 				return err
 			}
@@ -286,12 +286,12 @@ func Run(repo *util.Repo, config *RunConfig) error {
 func buildJarImage(repo *util.Repo, config *RunConfig) (*RunConfig, error) {
 	jarPath := config.ImageName
 	imageName, jarName := parseJarNames(jarPath)
-	image := &capstan.Image{
+	image := &core.Image{
 		Name:       imageName,
 		Hypervisor: config.Hypervisor,
 	}
 	targetJarPath := "/" + jarName
-	template := &capstan.Template{
+	template := &core.Template{
 		Base:    "cloudius/osv-openjdk",
 		Cmdline: fmt.Sprintf("/java.so -jar %s", targetJarPath),
 		Files: map[string]string{
