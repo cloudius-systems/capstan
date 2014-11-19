@@ -5,7 +5,7 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-package capstan
+package core
 
 type Image struct {
 	Name       string

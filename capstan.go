@@ -9,8 +9,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan/capstan"
 	"github.com/cloudius-systems/capstan/cmd"
+	"github.com/cloudius-systems/capstan/core"
 	"github.com/cloudius-systems/capstan/hypervisor"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/util"
@@ -148,11 +148,11 @@ func main() {
 					return
 				}
 				hypervisor := c.String("p")
-				image := &capstan.Image{
+				image := &core.Image{
 					Name:       imageName,
 					Hypervisor: hypervisor,
 				}
-				template, err := capstan.ReadTemplateFile("Capstanfile")
+				template, err := core.ReadTemplateFile("Capstanfile")
 				if err != nil {
 					fmt.Println(err.Error())
 					return

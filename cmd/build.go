@@ -12,8 +12,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cheggaaa/pb"
-	"github.com/cloudius-systems/capstan/capstan"
 	"github.com/cloudius-systems/capstan/cpio"
+	"github.com/cloudius-systems/capstan/core"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/nbd"
@@ -27,7 +27,7 @@ import (
 	"strings"
 )
 
-func Build(r *util.Repo, image *capstan.Image, template *capstan.Template, verbose bool, mem string) error {
+func Build(r *util.Repo, image *core.Image, template *core.Template, verbose bool, mem string) error {
 	if err := os.MkdirAll(filepath.Dir(r.ImagePath(image.Hypervisor, image.Name)), 0777); err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func Build(r *util.Repo, image *capstan.Image, template *capstan.Template, verbo
 	return SetArgs(r, image.Hypervisor, image.Name, template.Cmdline)
 }
 
-func checkConfig(t *capstan.Template, r *util.Repo, hypervisor string) error {
+func checkConfig(t *core.Template, r *util.Repo, hypervisor string) error {
 	if _, err := os.Stat(r.ImagePath(hypervisor, t.Base)); os.IsNotExist(err) {
 		if err := Pull(r, hypervisor, t.Base); err != nil {
 			return err
@@ -80,7 +80,7 @@ func checkConfig(t *capstan.Template, r *util.Repo, hypervisor string) error {
 	return nil
 }
 
-func UploadRPM(r *util.Repo, hypervisor string, image string, template *capstan.Template, verbose bool, mem string) error {
+func UploadRPM(r *util.Repo, hypervisor string, image string, template *core.Template, verbose bool, mem string) error {
 	file := r.ImagePath(hypervisor, image)
 	size, err := util.ParseMemSize(mem)
 	if err != nil {
@@ -161,7 +161,7 @@ func copyFile(conn net.Conn, src string, dst string) error {
 	return nil
 }
 
-func UploadFiles(r *util.Repo, hypervisor string, image string, t *capstan.Template, verbose bool, mem string) error {
+func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template, verbose bool, mem string) error {
 	file := r.ImagePath(hypervisor, image)
 	size, err := util.ParseMemSize(mem)
 	if err != nil {
