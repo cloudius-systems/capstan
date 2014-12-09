@@ -68,14 +68,19 @@ func main() {
 			Name:  "pull",
 			Usage: "pull an image from a repository",
 			Flags: []cli.Flag{
-				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor"},
+				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
 			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
 					fmt.Println("usage: capstan pull [image-name]")
 					return
 				}
-				err := cmd.Pull(repo, c.String("p"), c.Args().First())
+				hypervisor := c.String("p")
+				if !isValidHypervisor(hypervisor) {
+					fmt.Printf("error: '%s' is not a supported hypervisor\n", c.String("p"))
+					return
+				}
+				err := cmd.Pull(repo, hypervisor, c.Args().First())
 				if err != nil {
 					fmt.Println(err.Error())
 				}
@@ -124,6 +129,10 @@ func main() {
 					GCEUploadDir: c.String("gce-upload-dir"),
 					MAC:          c.String("mac"),
 				}
+				if !isValidHypervisor(config.Hypervisor) {
+					fmt.Printf("error: '%s' is not a supported hypervisor\n", config.Hypervisor)
+					return
+				}
 				err := cmd.Run(repo, config)
 				if err != nil {
 					fmt.Println(err.Error())
@@ -134,7 +143,7 @@ func main() {
 			Name:  "build",
 			Usage: "build an image",
 			Flags: []cli.Flag{
-				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor"},
+				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
 				cli.StringFlag{Name: "m", Value: "512M", Usage: "memory size"},
 				cli.BoolFlag{Name: "v", Usage: "verbose mode"},
 			},
@@ -148,6 +157,10 @@ func main() {
 					return
 				}
 				hypervisor := c.String("p")
+				if !isValidHypervisor(hypervisor) {
+					fmt.Printf("error: '%s' is not a supported hypervisor\n", c.String("p"))
+					return
+				}
 				image := &core.Image{
 					Name:       imageName,
 					Hypervisor: hypervisor,
@@ -216,4 +229,13 @@ func main() {
 		},
 	}
 	app.Run(os.Args)
+}
+
+func isValidHypervisor(hypervisor string) bool {
+	switch hypervisor {
+	case "qemu", "vbox", "vmw", "gce":
+		return true
+	default:
+		return false
+	}
 }
