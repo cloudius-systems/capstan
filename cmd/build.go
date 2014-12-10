@@ -52,6 +52,10 @@ func Build(r *util.Repo, image *core.Image, template *core.Template, verbose boo
 	if err != nil {
 		return err
 	}
+	cmdline := "/tools/cpiod.so"
+	if verbose {
+		cmdline = "--verbose" + cmdline
+	}
 	if err := SetArgs(r, image.Hypervisor, image.Name, "/tools/cpiod.so"); err != nil {
 		return err
 	}
