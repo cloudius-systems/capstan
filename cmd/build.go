@@ -31,12 +31,6 @@ func Build(r *util.Repo, image *core.Image, template *core.Template, verbose boo
 	if err := os.MkdirAll(filepath.Dir(r.ImagePath(image.Hypervisor, image.Name)), 0777); err != nil {
 		return err
 	}
-	if err := checkConfig(template, r, image.Hypervisor); err != nil {
-		return err
-	}
-	if template.RpmBase != nil {
-		template.RpmBase.Download()
-	}
 	fmt.Printf("Building %s...\n", image.Name)
 	if template.Build != "" {
 		args := strings.Fields(template.Build)
@@ -46,6 +40,12 @@ func Build(r *util.Repo, image *core.Image, template *core.Template, verbose boo
 			fmt.Println(string(out))
 			return err
 		}
+	}
+	if err := checkConfig(template, r, image.Hypervisor); err != nil {
+		return err
+	}
+	if template.RpmBase != nil {
+		template.RpmBase.Download()
 	}
 	cmd := util.CopyFile(r.ImagePath(image.Hypervisor, template.Base), r.ImagePath(image.Hypervisor, image.Name))
 	_, err := cmd.Output()
