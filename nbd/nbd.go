@@ -26,9 +26,16 @@ const (
 	NBD_CMD_TRIM  = 4
 )
 
+const (
+	NBD_FLAG_HAS_FLAGS  = (1 << 0)
+	NBD_FLAG_SEND_FLUSH = (1 << 2)
+)
+
 type NbdSession struct {
 	Conn   net.Conn
 	Handle uint64
+	Size   uint64
+	Flags  uint32
 }
 
 type NbdRequest struct {
@@ -62,7 +69,14 @@ func (session *NbdSession) Handshake() error {
 	if string(nbd_magic) != "NBDMAGIC" {
 		return fmt.Errorf("NBD magic missing!")
 	}
-	session.Conn.Read(make([]byte, 8+8+4))
+	buf := make([]byte, 8+8+4)
+	session.Conn.Read(buf)
+	magic := binary.BigEndian.Uint64(buf)
+	if magic != 0x00420281861253 {
+		return fmt.Errorf("Bad magic: %x", magic)
+	}
+	session.Size = binary.BigEndian.Uint64(buf)
+	session.Flags = binary.BigEndian.Uint32(buf)
 	session.Conn.Read(make([]byte, 124))
 	session.Handle += 1
 	return nil
@@ -83,19 +97,27 @@ func (session *NbdSession) Write(from uint64, data []byte) error {
 	return session.Recv()
 }
 
+func (session *NbdSession) needFlush() bool {
+	return (session.Flags&NBD_FLAG_HAS_FLAGS == NBD_FLAG_HAS_FLAGS) && (session.Flags&NBD_FLAG_SEND_FLUSH == NBD_FLAG_SEND_FLUSH)
+}
+
 func (session *NbdSession) Flush() error {
-	req := &NbdRequest{
-		Magic:  NBD_REQUEST_MAGIC,
-		Type:   NBD_CMD_FLUSH,
-		Handle: session.Handle,
-		From:   0,
-		Len:    0,
+	if session.needFlush() {
+		req := &NbdRequest{
+			Magic:  NBD_REQUEST_MAGIC,
+			Type:   NBD_CMD_FLUSH,
+			Handle: session.Handle,
+			From:   0,
+			Len:    0,
+		}
+		_, err := session.Conn.Write(req.ToWireFormat())
+		if err != nil {
+			return err
+		}
+		return session.Recv()
+	} else {
+		return nil
 	}
-	_, err := session.Conn.Write(req.ToWireFormat())
-	if err != nil {
-		return err
-	}
-	return session.Recv()
 }
 
 func (session *NbdSession) Disconnect() error {
