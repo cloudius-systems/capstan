@@ -187,6 +187,10 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 	if err != nil {
 		return err
 	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
 	if err := cmd.Start(); err != nil {
 		return err
 	}
@@ -203,6 +207,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 	}
 	if verbose {
 		go io.Copy(os.Stdout, stdout)
+		go io.Copy(os.Stderr, stderr)
 	}
 	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
 	if err != nil {
