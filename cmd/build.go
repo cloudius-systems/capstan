@@ -260,7 +260,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 
 func SetArgs(r *util.Repo, hypervisor, image string, args string) error {
 	file := r.ImagePath(hypervisor, image)
-	cmd := exec.Command("qemu-nbd", file)
+	cmd := exec.Command("qemu-nbd", "-p", "10809", file)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
