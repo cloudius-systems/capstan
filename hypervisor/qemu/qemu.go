@@ -174,7 +174,11 @@ func VMCommand(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 		return nil, err
 	}
 	args := append(vmArgs, extra...)
-	cmd := exec.Command("qemu-system-x86_64", args...)
+	path, err := qemuExecutable()
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command(path, args...)
 	return cmd, nil
 }
 
@@ -195,7 +199,11 @@ func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 }
 
 func ProbeVersion() (*Version, error) {
-	cmd := exec.Command("qemu-system-x86_64", "-version")
+	path, err := qemuExecutable()
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command(path, "-version")
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, err
@@ -299,4 +307,21 @@ func (c *VMConfig) vmNetworking() ([]string, error) {
 		return args, nil
 	}
 	return nil, fmt.Errorf("%s: networking not supported", c.Networking)
+}
+
+func qemuExecutable() (string, error) {
+	paths := []string{
+		"/usr/bin/qemu-system-x86_64",
+		"/usr/libexec/qemu-kvm",
+	}
+	path := os.Getenv("CAPSTAN_QEMU_PATH")
+	if len(path) > 0 {
+		paths = append([]string{path}, paths...)
+	}
+	for _, path = range paths {
+		if _, err := os.Stat(path); err == nil {
+			return path, nil
+		}
+	}
+	return "", fmt.Errorf("No QEMU installation found. Use the CAPSTAN_QEMU_PATH environment variable to specify its path.")
 }
