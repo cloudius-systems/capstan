@@ -251,7 +251,7 @@ func (c *VMConfig) vmDriveCache() string {
 
 func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	args := make([]string, 0)
-	args = append(args, "-display", "none")
+	args = append(args, "-nographic")
 	args = append(args, "-m", strconv.FormatInt(c.Memory, 10))
 	args = append(args, "-smp", strconv.Itoa(c.Cpus))
 	args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")
