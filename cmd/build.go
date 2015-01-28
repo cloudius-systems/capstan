@@ -208,6 +208,9 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 	if verbose {
 		go io.Copy(os.Stdout, stdout)
 		go io.Copy(os.Stderr, stderr)
+	} else {
+		go io.Copy(ioutil.Discard, stdout)
+		go io.Copy(ioutil.Discard, stderr)
 	}
 	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
 	if err != nil {
