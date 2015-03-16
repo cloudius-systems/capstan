@@ -313,6 +313,7 @@ func qemuExecutable() (string, error) {
 	paths := []string{
 		"/usr/bin/qemu-system-x86_64",
 		"/usr/libexec/qemu-kvm",
+		"/usr/local/bin/qemu-system-x86_64",
 	}
 	path := os.Getenv("CAPSTAN_QEMU_PATH")
 	if len(path) > 0 {
