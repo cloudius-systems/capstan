@@ -23,7 +23,7 @@ var (
 )
 
 const (
-	DEFAULT_REPO_URL = "http://osv.capstan.s3.amazonaws.com/"
+	DEFAULT_REPO_URL = "https://s3.amazonaws.com/osv.capstan/"
 )
 
 func main() {
