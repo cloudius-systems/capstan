@@ -12,8 +12,8 @@ import (
 )
 
 func Pull(r *util.Repo, hypervisor string, image string) error {
-	if util.IsRemoteImage(image) {
-		return r.DownloadImage(hypervisor, image)
+	if util.IsRemoteImage(r.URL, image) {
+		return r.DownloadImage(r.URL, hypervisor, image)
 	}
 	return r.PullImage(image)
 }

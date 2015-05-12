@@ -21,8 +21,6 @@ import (
 	"strings"
 )
 
-const bucket_url = "http://osv.capstan.s3.amazonaws.com/"
-
 type FileInfo struct {
 	Namespace   string
 	Name        string
@@ -69,8 +67,8 @@ func MakeFileInfo(path, ns, name string) *FileInfo {
 	return &f
 }
 
-func RemoteFileInfo(path string) *FileInfo {
-	resp, err := http.Get(bucket_url + path)
+func RemoteFileInfo(repo_url string, path string) *FileInfo {
+	resp, err := http.Get(repo_url + path)
 	if err != nil {
 		return nil
 	}
@@ -94,8 +92,8 @@ func RemoteFileInfo(path string) *FileInfo {
 	return &f
 }
 
-func QueryRemote() *Query {
-	resp, err := http.Get(bucket_url)
+func QueryRemote(repo_url string) *Query {
+	resp, err := http.Get(repo_url)
 	if err != nil {
 		return nil
 	}
@@ -109,19 +107,19 @@ func QueryRemote() *Query {
 	return &q
 }
 
-func ListImagesRemote(search string) {
+func ListImagesRemote(repo_url string, search string) {
 	fmt.Println(FileInfoHeader())
-	q := QueryRemote()
+	q := QueryRemote(repo_url)
 	for _, content := range q.ContentsList {
 		if strings.HasSuffix(content.Key, "index.yaml") {
-			if img := RemoteFileInfo(content.Key); img != nil && strings.Contains(img.Name, search) {
+			if img := RemoteFileInfo(repo_url, content.Key); img != nil && strings.Contains(img.Name, search) {
 				fmt.Println(img.String())
 			}
 		}
 	}
 }
 
-func (r *Repo) DownloadFile(name string) error {
+func (r *Repo) DownloadFile(repo_url string, name string) error {
 	compressed := strings.HasSuffix(name, ".gz")
 	output, err := os.Create(filepath.Join(r.Path, strings.TrimSuffix(name, ".gz")))
 	if err != nil {
@@ -134,7 +132,7 @@ func (r *Repo) DownloadFile(name string) error {
                 Proxy: http.ProxyFromEnvironment,
 	}
 	client := &http.Client{Transport: tr}
-	resp, err := client.Get(bucket_url + name)
+	resp, err := client.Get(repo_url + name)
 	if err != nil {
 		return err
 	}
@@ -158,7 +156,7 @@ func (r *Repo) DownloadFile(name string) error {
 	return nil
 }
 
-func (r *Repo) DownloadImage(hypervisor string, path string) error {
+func (r *Repo) DownloadImage(repo_url, hypervisor string, path string) error {
 	parts := strings.Split(path, "/")
 	if len(parts) < 2 {
 		return fmt.Errorf("%s: wrong name format", path)
@@ -167,15 +165,15 @@ func (r *Repo) DownloadImage(hypervisor string, path string) error {
 	if err != nil {
 		return err
 	}
-	err = r.DownloadFile(fmt.Sprintf("%s/index.yaml", path))
+	err = r.DownloadFile(repo_url, fmt.Sprintf("%s/index.yaml", path))
 	if err != nil {
 		return err
 	}
-	return r.DownloadFile(fmt.Sprintf("%s/%s.%s.gz", path, parts[1], hypervisor))
+	return r.DownloadFile(repo_url, fmt.Sprintf("%s/%s.%s.gz", path, parts[1], hypervisor))
 }
 
-func IsRemoteImage(name string) bool {
-	q := QueryRemote()
+func IsRemoteImage(repo_url, name string) bool {
+	q := QueryRemote(repo_url)
 	for _, content := range q.ContentsList {
 		if strings.HasPrefix(content.Key, name+"/") {
 			return true

@@ -22,8 +22,11 @@ var (
 	VERSION string
 )
 
+const (
+	DEFAULT_REPO_URL = "http://osv.capstan.s3.amazonaws.com/"
+)
+
 func main() {
-	repo := util.NewRepo()
 	app := cli.NewApp()
 	app.Name = "capstan"
 	app.Version = VERSION
@@ -52,12 +55,14 @@ func main() {
 				cli.StringFlag{Name: "c", Value: "", Usage: "image creation date"},
 				cli.StringFlag{Name: "d", Value: "", Usage: "image description"},
 				cli.StringFlag{Name: "b", Value: "", Usage: "image build command"},
+				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
 			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 2 {
 					fmt.Println("usage: capstan import [image-name] [image-file]")
 					return
 				}
+				repo := util.NewRepo(c.String("u"))
 				err := repo.ImportImage(c.Args()[0], c.Args()[1], c.String("v"), c.String("c"), c.String("d"), c.String("b"))
 				if err != nil {
 					fmt.Println(err.Error())
@@ -69,6 +74,7 @@ func main() {
 			Usage: "pull an image from a repository",
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
+				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
 			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
@@ -80,6 +86,7 @@ func main() {
 					fmt.Printf("error: '%s' is not a supported hypervisor\n", c.String("p"))
 					return
 				}
+				repo := util.NewRepo(c.String("u"))
 				err := cmd.Pull(repo, hypervisor, c.Args().First())
 				if err != nil {
 					fmt.Println(err.Error())
@@ -89,11 +96,15 @@ func main() {
 		{
 			Name:  "rmi",
 			Usage: "delete an image from a repository",
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
+			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
 					fmt.Println("usage: capstan rmi [image-name]")
 					return
 				}
+				repo := util.NewRepo(c.String("u"))
 				err := repo.RemoveImage(c.Args().First())
 				if err != nil {
 					fmt.Println(err.Error())
@@ -114,6 +125,7 @@ func main() {
 				cli.StringSliceFlag{Name: "f", Value: new(cli.StringSlice), Usage: "port forwarding rules"},
 				cli.StringFlag{Name: "gce-upload-dir", Value: "", Usage: "Directory to upload local image to: e.g., gs://osvimg"},
 				cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
+				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
 			},
 			Action: func(c *cli.Context) {
 				config := &cmd.RunConfig{
@@ -133,6 +145,7 @@ func main() {
 					fmt.Printf("error: '%s' is not a supported hypervisor\n", config.Hypervisor)
 					return
 				}
+				repo := util.NewRepo(c.String("u"))
 				err := cmd.Run(repo, config)
 				if err != nil {
 					fmt.Println(err.Error())
@@ -146,9 +159,11 @@ func main() {
 				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
 				cli.StringFlag{Name: "m", Value: "512M", Usage: "memory size"},
 				cli.BoolFlag{Name: "v", Usage: "verbose mode"},
+				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
 			},
 			Action: func(c *cli.Context) {
 				imageName := c.Args().First()
+				repo := util.NewRepo(c.String("u"))
 				if len(c.Args()) != 1 {
 					imageName = repo.DefaultImage()
 				}
@@ -180,19 +195,26 @@ func main() {
 			Name:      "images",
 			ShortName: "i",
 			Usage:     "list images",
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
+			},
 			Action: func(c *cli.Context) {
+				repo := util.NewRepo(c.String("u"))
 				repo.ListImages()
 			},
 		},
 		{
 			Name:  "search",
 			Usage: "search a remote images",
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
+			},
 			Action: func(c *cli.Context) {
 				image := ""
 				if len(c.Args()) > 0 {
 					image = c.Args()[0]
 				}
-				util.ListImagesRemote(image)
+				util.ListImagesRemote(c.String("u"), image)
 			},
 		},
 		{
