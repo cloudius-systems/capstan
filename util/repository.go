@@ -78,10 +78,10 @@ func (r *Repo) ImportImage(imageName string, file string, version string, create
 	}
 	info := ImageInfo{
 		FormatVersion: "1",
-		Version: version,
-		Created: created,
-		Description: description,
-		Build: build,
+		Version:       version,
+		Created:       created,
+		Description:   description,
+		Build:         build,
 	}
 	value, err := yaml.Marshal(info)
 	if err != nil {

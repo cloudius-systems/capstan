@@ -8,13 +8,13 @@
 package gce
 
 import (
+	"fmt"
 	"github.com/cloudius-systems/capstan/util"
 	"gopkg.in/yaml.v1"
 	"io/ioutil"
-	"path/filepath"
-	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -27,9 +27,9 @@ type VMConfig struct {
 	Zone             string
 	CloudStoragePath string
 	Tarball          string
-	ConfigFile	 string
-	InstanceDir	 string
-	BootDisk	 string
+	ConfigFile       string
+	InstanceDir      string
+	BootDisk         string
 }
 
 func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
@@ -67,7 +67,7 @@ func vmCreate(c *VMConfig) error {
 		err = gcUtil("addinstance", "--image", c.Image, "--network", c.Network, "--machine_type", c.MachineType, "--zone", c.Zone, c.Name)
 		c.BootDisk = c.Image
 	} else {
-		err = gcUtil("addinstance", "--disk", c.BootDisk + ",boot", "--network", c.Network, "--machine_type", c.MachineType, "--zone", c.Zone, c.Name)
+		err = gcUtil("addinstance", "--disk", c.BootDisk+",boot", "--network", c.Network, "--machine_type", c.MachineType, "--zone", c.Zone, c.Name)
 	}
 	if err != nil {
 		return err
@@ -156,7 +156,7 @@ func vmPrintInfo(c *VMConfig) error {
 func DeleteVM(name string) error {
 	gcUtil("deleteinstance", "--delete_boot_pd", "-f", name)
 
-	gcUtil("deletedisk", "-f",  name)
+	gcUtil("deletedisk", "-f", name)
 
 	dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", name)
 	c := &VMConfig{
@@ -253,7 +253,7 @@ func LoadConfig(name string) (*VMConfig, error) {
 	return &c, nil
 }
 
-func LoginCheck() (error) {
+func LoginCheck() error {
 	_, err := exec.LookPath("gcutil")
 	if err != nil {
 		fmt.Println("gcutil is not found. Please install Google Cloud SDK:")

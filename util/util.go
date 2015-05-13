@@ -10,12 +10,12 @@ package util
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"time"
-	"net"
 )
 
 func HomePath() string {

@@ -9,10 +9,10 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/cloudius-systems/capstan/hypervisor/gce"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
 	"github.com/cloudius-systems/capstan/hypervisor/vmw"
-	"github.com/cloudius-systems/capstan/hypervisor/gce"
 	"github.com/cloudius-systems/capstan/util"
 )
 

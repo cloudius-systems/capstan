@@ -189,7 +189,7 @@ func DeleteVM(name string) error {
 		ConfigFile: filepath.Join(dir, "osv.config"),
 	}
 
-	sockFile := filepath.Join(dir, name + ".sock")
+	sockFile := filepath.Join(dir, name+".sock")
 
 	cmd := exec.Command("rm", "-f", c.ConfigFile, " ", sockFile)
 	_, err := cmd.Output()

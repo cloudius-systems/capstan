@@ -255,7 +255,7 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	args = append(args, "-m", strconv.FormatInt(c.Memory, 10))
 	args = append(args, "-smp", strconv.Itoa(c.Cpus))
 	args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")
-	args = append(args, "-drive", "file=" + c.Image + ",if=none,id=hd0,aio=native,cache=" + c.vmDriveCache())
+	args = append(args, "-drive", "file="+c.Image+",if=none,id=hd0,aio=native,cache="+c.vmDriveCache())
 	if version.Major >= 1 && version.Minor >= 3 {
 		args = append(args, "-device", "virtio-rng-pci")
 	}
@@ -298,7 +298,7 @@ func (c *VMConfig) vmNetworking() ([]string, error) {
 			args = append(args, "-redir", redirect)
 		}
 		return args, nil
-        case "tap":
+	case "tap":
 		mac, err := c.vmMAC()
 		if err != nil {
 			return nil, err

@@ -12,8 +12,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cheggaaa/pb"
-	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/core"
+	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/nbd"
@@ -141,7 +141,7 @@ func copyFile(conn net.Conn, src string, dst string) error {
 			return err
 		}
 		perm := uint64(fi.Mode()) & 0777
-		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISDIR | perm, 0))
+		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISDIR|perm, 0))
 		return nil
 	}
 
@@ -158,7 +158,7 @@ func copyFile(conn net.Conn, src string, dst string) error {
 			return err
 		}
 		perm := uint64(fi.Mode()) & 0777
-		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISREG | perm, fi.Size()))
+		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISREG|perm, fi.Size()))
 		cpio.WritePadded(conn, contents)
 	}
 

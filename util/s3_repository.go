@@ -109,7 +109,7 @@ func QueryRemote(repo_url string) (*Query, error) {
 
 func ListImagesRemote(repo_url string, search string) error {
 	q, err := QueryRemote(repo_url)
-	if (err != nil) {
+	if err != nil {
 		return err
 	}
 	fmt.Println(FileInfoHeader())
@@ -133,7 +133,7 @@ func (r *Repo) DownloadFile(repo_url string, name string) error {
 	fmt.Printf("Downloading %s...\n", name)
 	tr := &http.Transport{
 		DisableCompression: true,
-                Proxy: http.ProxyFromEnvironment,
+		Proxy:              http.ProxyFromEnvironment,
 	}
 	client := &http.Client{Transport: tr}
 	resp, err := client.Get(repo_url + name)
