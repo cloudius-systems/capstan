@@ -12,7 +12,11 @@ import (
 )
 
 func Pull(r *util.Repo, hypervisor string, image string) error {
-	if util.IsRemoteImage(r.URL, image) {
+	remote, err := util.IsRemoteImage(r.URL, image)
+	if err != nil {
+		return err
+	}
+	if remote {
 		return r.DownloadImage(r.URL, hypervisor, image)
 	}
 	return r.PullImage(image)

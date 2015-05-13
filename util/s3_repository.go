@@ -92,24 +92,27 @@ func RemoteFileInfo(repo_url string, path string) *FileInfo {
 	return &f
 }
 
-func QueryRemote(repo_url string) *Query {
+func QueryRemote(repo_url string) (*Query, error) {
 	resp, err := http.Get(repo_url)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	var q Query
 	xml.Unmarshal(body, &q)
-	return &q
+	return &q, nil
 }
 
-func ListImagesRemote(repo_url string, search string) {
+func ListImagesRemote(repo_url string, search string) error {
+	q, err := QueryRemote(repo_url)
+	if (err != nil) {
+		return err
+	}
 	fmt.Println(FileInfoHeader())
-	q := QueryRemote(repo_url)
 	for _, content := range q.ContentsList {
 		if strings.HasSuffix(content.Key, "index.yaml") {
 			if img := RemoteFileInfo(repo_url, content.Key); img != nil && strings.Contains(img.Name, search) {
@@ -117,6 +120,7 @@ func ListImagesRemote(repo_url string, search string) {
 			}
 		}
 	}
+	return nil
 }
 
 func (r *Repo) DownloadFile(repo_url string, name string) error {
@@ -172,12 +176,15 @@ func (r *Repo) DownloadImage(repo_url, hypervisor string, path string) error {
 	return r.DownloadFile(repo_url, fmt.Sprintf("%s/%s.%s.gz", path, parts[1], hypervisor))
 }
 
-func IsRemoteImage(repo_url, name string) bool {
-	q := QueryRemote(repo_url)
+func IsRemoteImage(repo_url, name string) (bool, error) {
+	q, err := QueryRemote(repo_url)
+	if err != nil {
+		return false, err
+	}
 	for _, content := range q.ContentsList {
 		if strings.HasPrefix(content.Key, name+"/") {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }

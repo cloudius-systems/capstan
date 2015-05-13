@@ -214,7 +214,10 @@ func main() {
 				if len(c.Args()) > 0 {
 					image = c.Args()[0]
 				}
-				util.ListImagesRemote(c.String("u"), image)
+				err := util.ListImagesRemote(c.String("u"), image)
+				if err != nil {
+					fmt.Println(err.Error())
+				}
 			},
 		},
 		{

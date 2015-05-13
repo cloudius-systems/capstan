@@ -105,14 +105,20 @@ func Run(repo *util.Repo, config *RunConfig) error {
 				path = repo.ImagePath(config.Hypervisor, config.ImageName)
 			} else if image.IsCloudImage(config.ImageName) {
 				path = config.ImageName
-			} else if util.IsRemoteImage(repo.URL, config.ImageName) {
-				err := Pull(repo, config.Hypervisor, config.ImageName)
+			} else {
+				remote, err := util.IsRemoteImage(repo.URL, config.ImageName)
 				if err != nil {
 					return err
 				}
-				path = repo.ImagePath(config.Hypervisor, config.ImageName)
-			} else {
-				return fmt.Errorf("%s: no such image", config.ImageName)
+				if remote {
+					err := Pull(repo, config.Hypervisor, config.ImageName)
+					if err != nil {
+						return err
+					}
+					path = repo.ImagePath(config.Hypervisor, config.ImageName)
+				} else {
+					return fmt.Errorf("%s: no such image", config.ImageName)
+				}
 			}
 			if config.Hypervisor == "gce" && !image.IsCloudImage(config.ImageName) {
 				str, err := ioutil.ReadFile(path)
