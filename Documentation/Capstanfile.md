@@ -5,7 +5,7 @@ The ``Capstanfile`` is a YAML config file for specifying Capstan images.
 An minimal file looks as follows:
 
 ```
-base: osv-base
+base: cloudius/osv-base
 
 cmdline: /tools/hello.so
 
@@ -15,7 +15,7 @@ files:
   /tools/hello.so: hello.so
 ```
 
-``base`` specifies the base image that is amended with ``files``.
+``base`` specifies the base image that is amended with ``files`` use ``capstan search`` (remote images) or ``capstan images`` (local images) for a list of available images.
 
 ``cmdline`` is the startup command line passed to OSv.
 
