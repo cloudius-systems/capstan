@@ -36,6 +36,7 @@ type NbdSession struct {
 	Handle uint64
 	Size   uint64
 	Flags  uint32
+	Req    *NbdRequest
 }
 
 type NbdRequest struct {
@@ -87,13 +88,37 @@ func (session *NbdSession) Write(from uint64, data []byte) error {
 		Magic:  NBD_REQUEST_MAGIC,
 		Type:   NBD_CMD_WRITE,
 		Handle: session.Handle,
-		From:   512,
+		From:   from,
 		Len:    uint32(len(data)),
 	}
+
+	session.Req = req
+
 	_, err := session.Conn.Write(append(req.ToWireFormat(), data...))
 	if err != nil {
 		return err
 	}
+
+	_, err = session.Recv()
+	return err
+}
+
+func (session *NbdSession) Read(offset uint64, length uint32) ([]byte, error) {
+	req := &NbdRequest{
+		Magic:  NBD_REQUEST_MAGIC,
+		Type:   NBD_CMD_READ,
+		Handle: session.Handle,
+		From:   offset,
+		Len:    length,
+	}
+
+	session.Req = req
+
+	_, err := session.Conn.Write(req.ToWireFormat())
+	if err != nil {
+		return nil, err
+	}
+
 	return session.Recv()
 }
 
@@ -114,7 +139,10 @@ func (session *NbdSession) Flush() error {
 		if err != nil {
 			return err
 		}
-		return session.Recv()
+
+		_, err = session.Recv()
+
+		return err
 	} else {
 		return nil
 	}
@@ -132,8 +160,19 @@ func (session *NbdSession) Disconnect() error {
 	return err
 }
 
-func (session *NbdSession) Recv() error {
+func (session *NbdSession) Recv() ([]byte, error) {
 	_, err := session.Conn.Read(make([]byte, 4+4+8))
 	session.Handle += 1
-	return err
+
+	if session.Req.Type == NBD_CMD_READ {
+		data := make([]byte, session.Req.Len)
+		_, err := session.Conn.Read(data)
+		if err != nil {
+			return nil, err
+		}
+
+		return data, nil
+	}
+
+	return nil, err
 }

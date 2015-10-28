@@ -268,50 +268,22 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 
 func SetArgs(r *util.Repo, hypervisor, image string, args string) error {
 	file := r.ImagePath(hypervisor, image)
-	cmd := exec.Command("qemu-nbd", "-p", "10809", file)
-	stdout, err := cmd.StdoutPipe()
+	nbdFile, err := nbd.NewFile(file)
 	if err != nil {
-		return err
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return err
-	}
-	err = cmd.Start()
-	if err != nil {
-		return err
-	}
-	go io.Copy(os.Stdout, stdout)
-	go io.Copy(os.Stderr, stderr)
-
-	conn, err := util.ConnectAndWait("tcp", "localhost:10809")
-	if err != nil {
-		return err
-	}
-
-	session := &nbd.NbdSession{
-		Conn:   conn,
-		Handle: 0,
-	}
-	if err := session.Handshake(); err != nil {
 		return err
 	}
 
 	padding := 512 - (len(args) % 512)
 
 	data := append([]byte(args), make([]byte, padding)...)
+	if err := nbdFile.Write(512, data); err != nil {
+		return err
+	}
 
-	if err := session.Write(512, data); err != nil {
+	// Close the image file.
+	if err := nbdFile.Close(); err != nil {
 		return err
 	}
-	if err := session.Flush(); err != nil {
-		return err
-	}
-	if err := session.Disconnect(); err != nil {
-		return err
-	}
-	conn.Close()
-	cmd.Wait()
 
 	return nil
 }
