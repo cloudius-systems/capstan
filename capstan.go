@@ -126,6 +126,7 @@ func main() {
 				cli.StringFlag{Name: "gce-upload-dir", Value: "", Usage: "Directory to upload local image to: e.g., gs://osvimg"},
 				cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
 				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
+				cli.StringFlag{Name: "execute,e", Usage: "set the command line to execute"},
 			},
 			Action: func(c *cli.Context) {
 				config := &cmd.RunConfig{
@@ -140,6 +141,7 @@ func main() {
 					NatRules:     nat.Parse(c.StringSlice("f")),
 					GCEUploadDir: c.String("gce-upload-dir"),
 					MAC:          c.String("mac"),
+					Cmd:          c.String("execute"),
 				}
 				if !isValidHypervisor(config.Hypervisor) {
 					fmt.Printf("error: '%s' is not a supported hypervisor\n", config.Hypervisor)

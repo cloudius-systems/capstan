@@ -37,6 +37,7 @@ type RunConfig struct {
 	NatRules     []nat.Rule
 	GCEUploadDir string
 	MAC          string
+	Cmd          string
 }
 
 func Run(repo *util.Repo, config *RunConfig) error {
@@ -60,6 +61,9 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			switch instancePlatform {
 			case "qemu":
 				c, err := qemu.LoadConfig(instanceName)
+				// Also pass the command line to the instance (note that this is not stored in the config)
+				c.Cmd = config.Cmd
+
 				if err != nil {
 					return err
 				}
@@ -212,7 +216,9 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			Monitor:     filepath.Join(dir, "osv.monitor"),
 			ConfigFile:  filepath.Join(dir, "osv.config"),
 			MAC:         config.MAC,
+			Cmd:         config.Cmd,
 		}
+
 		cmd, err = qemu.LaunchVM(config)
 	case "vbox":
 		if format != image.VDI && format != image.VMDK {
