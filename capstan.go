@@ -254,6 +254,53 @@ func main() {
 				cmd.Delete(instance)
 			},
 		},
+		{
+			Name:  "package",
+			Usage: "package manipulation tools",
+			Subcommands: []cli.Command{
+				{
+					Name:      "init",
+					Usage:     "initialise package structure",
+					ArgsUsage: "package name",
+					Flags: []cli.Flag{
+						cli.StringFlag{Name: "l", Usage: "long package name"},
+						cli.StringFlag{Name: "author,a", Usage: "package author"},
+						cli.StringFlag{Name: "version,v", Usage: "package version"},
+					},
+					Action: func(c *cli.Context) {
+						if len(c.Args()) != 1 {
+							fmt.Println("usage: capstan package init [package_name]")
+							return
+						}
+
+						// Author is a mandatory field.
+						if c.String("author") == "" {
+							fmt.Println("You must provide the author of the package (--author or -a)")
+							return
+						}
+
+						// This is the name of the directory that will be created when
+						// initialising the package.
+						packageName := c.Args()[0]
+
+						// Initialise the package structure. The version may be empty as it is not
+						// mandatory field.
+						p := &core.Package{
+							Name:    c.String("l"),
+							Author:  c.String("author"),
+							Version: c.String("version"),
+						}
+
+						// If long package name was not provided, use the package name.
+						if p.Name == "" {
+							p.Name = packageName
+						}
+
+						cmd.InitPackage(packageName, p)
+					},
+				},
+			},
+		},
 	}
 	app.Run(os.Args)
 }
