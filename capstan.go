@@ -194,6 +194,41 @@ func main() {
 			},
 		},
 		{
+			Name:  "compose",
+			Usage: "compose the image from a folder or a file",
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "loader_image, l", Value: "mike/osv-launcher", Usage: "the base loader image"},
+				cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
+				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
+			},
+			Action: func(c *cli.Context) {
+				if len(c.Args()) != 2 {
+					fmt.Println("Usage: capstan compose [image-name] [path-to-upload]")
+					return
+				}
+
+				// Name of the application (or image) that will be used in the internal repository.
+				appName := c.Args()[0]
+				// File or directory path that needs to be uploaded
+				uploadPath := c.Args()[1]
+
+				repo := util.NewRepo(c.String("u"))
+
+				loaderImage := c.String("l")
+
+				imageSize, err := util.ParseMemSize(c.String("size"))
+				if err != nil {
+					fmt.Printf("Incorrect image size format: %s\n", err)
+					return
+				}
+
+				if err := cmd.Compose(repo, loaderImage, imageSize, uploadPath, appName); err != nil {
+					fmt.Println(err.Error())
+					return
+				}
+			},
+		},
+		{
 			Name:      "images",
 			ShortName: "i",
 			Usage:     "list images",

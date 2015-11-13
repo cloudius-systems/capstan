@@ -129,7 +129,7 @@ func IsReg(m os.FileMode) bool {
 	return (m & nonreg) == 0
 }
 
-func copyFile(conn net.Conn, src string, dst string) error {
+func CopyFile(conn net.Conn, src string, dst string) error {
 	fi, err := os.Stat(src)
 	if err != nil {
 		return err
@@ -237,7 +237,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 	}
 
 	for dst, src := range rootfsFiles {
-		err = copyFile(conn, src, dst)
+		err = CopyFile(conn, src, dst)
 		if verbose {
 			fmt.Println(src + "  --> " + dst)
 		} else {
@@ -249,7 +249,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 	}
 
 	for dst, src := range t.Files {
-		err = copyFile(conn, src, dst)
+		err = CopyFile(conn, src, dst)
 		if verbose {
 			fmt.Println(src + "  --> " + dst)
 		} else {

@@ -54,6 +54,8 @@ func (r *Repo) ImportImage(imageName string, file string, version string, create
 		hypervisor = "vbox"
 	case image.QCOW2:
 		hypervisor = "qemu"
+	case image.RAW:
+		hypervisor = "raw"
 	case image.VMDK:
 		hypervisor = "vmware"
 	default:
