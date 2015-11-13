@@ -31,6 +31,9 @@ func main() {
 	app.Name = "capstan"
 	app.Version = VERSION
 	app.Usage = "pack, ship, and run applications in light-weight VMs"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
+	}
 	app.Commands = []cli.Command{
 		{
 			Name:  "info",
@@ -55,14 +58,13 @@ func main() {
 				cli.StringFlag{Name: "c", Value: "", Usage: "image creation date"},
 				cli.StringFlag{Name: "d", Value: "", Usage: "image description"},
 				cli.StringFlag{Name: "b", Value: "", Usage: "image build command"},
-				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
 			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 2 {
 					fmt.Println("usage: capstan import [image-name] [image-file]")
 					return
 				}
-				repo := util.NewRepo(c.String("u"))
+				repo := util.NewRepo(c.GlobalString("u"))
 				err := repo.ImportImage(c.Args()[0], c.Args()[1], c.String("v"), c.String("c"), c.String("d"), c.String("b"))
 				if err != nil {
 					fmt.Println(err.Error())
@@ -74,7 +76,6 @@ func main() {
 			Usage: "pull an image from a repository",
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
-				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
 			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
@@ -86,7 +87,7 @@ func main() {
 					fmt.Printf("error: '%s' is not a supported hypervisor\n", c.String("p"))
 					return
 				}
-				repo := util.NewRepo(c.String("u"))
+				repo := util.NewRepo(c.GlobalString("u"))
 				err := cmd.Pull(repo, hypervisor, c.Args().First())
 				if err != nil {
 					fmt.Println(err.Error())
@@ -96,15 +97,12 @@ func main() {
 		{
 			Name:  "rmi",
 			Usage: "delete an image from a repository",
-			Flags: []cli.Flag{
-				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
-			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 1 {
 					fmt.Println("usage: capstan rmi [image-name]")
 					return
 				}
-				repo := util.NewRepo(c.String("u"))
+				repo := util.NewRepo(c.GlobalString("u"))
 				err := repo.RemoveImage(c.Args().First())
 				if err != nil {
 					fmt.Println(err.Error())
@@ -125,7 +123,6 @@ func main() {
 				cli.StringSliceFlag{Name: "f", Value: new(cli.StringSlice), Usage: "port forwarding rules"},
 				cli.StringFlag{Name: "gce-upload-dir", Value: "", Usage: "Directory to upload local image to: e.g., gs://osvimg"},
 				cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
-				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
 				cli.StringFlag{Name: "execute,e", Usage: "set the command line to execute"},
 			},
 			Action: func(c *cli.Context) {
@@ -147,7 +144,7 @@ func main() {
 					fmt.Printf("error: '%s' is not a supported hypervisor\n", config.Hypervisor)
 					return
 				}
-				repo := util.NewRepo(c.String("u"))
+				repo := util.NewRepo(c.GlobalString("u"))
 				err := cmd.Run(repo, config)
 				if err != nil {
 					fmt.Println(err.Error())
@@ -161,11 +158,10 @@ func main() {
 				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
 				cli.StringFlag{Name: "m", Value: "512M", Usage: "memory size"},
 				cli.BoolFlag{Name: "v", Usage: "verbose mode"},
-				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
 			},
 			Action: func(c *cli.Context) {
 				imageName := c.Args().First()
-				repo := util.NewRepo(c.String("u"))
+				repo := util.NewRepo(c.GlobalString("u"))
 				if len(c.Args()) != 1 {
 					imageName = repo.DefaultImage()
 				}
@@ -199,7 +195,6 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "loader_image, l", Value: "mike/osv-launcher", Usage: "the base loader image"},
 				cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
-				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
 			},
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 2 {
@@ -212,7 +207,7 @@ func main() {
 				// File or directory path that needs to be uploaded
 				uploadPath := c.Args()[1]
 
-				repo := util.NewRepo(c.String("u"))
+				repo := util.NewRepo(c.GlobalString("u"))
 
 				loaderImage := c.String("l")
 
@@ -232,26 +227,20 @@ func main() {
 			Name:      "images",
 			ShortName: "i",
 			Usage:     "list images",
-			Flags: []cli.Flag{
-				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
-			},
 			Action: func(c *cli.Context) {
-				repo := util.NewRepo(c.String("u"))
+				repo := util.NewRepo(c.GlobalString("u"))
 				repo.ListImages()
 			},
 		},
 		{
 			Name:  "search",
 			Usage: "search a remote images",
-			Flags: []cli.Flag{
-				cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
-			},
 			Action: func(c *cli.Context) {
 				image := ""
 				if len(c.Args()) > 0 {
 					image = c.Args()[0]
 				}
-				err := util.ListImagesRemote(c.String("u"), image)
+				err := util.ListImagesRemote(c.GlobalString("u"), image)
 				if err != nil {
 					fmt.Println(err.Error())
 				}
