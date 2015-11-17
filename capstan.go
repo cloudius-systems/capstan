@@ -323,6 +323,18 @@ func main() {
 						cmd.InitPackage(packageName, p)
 					},
 				},
+				{
+					Name:  "compose",
+					Usage: "composes the package and all its dependencies into OSv image",
+					Action: func(c *cli.Context) {
+						packageDir, _ := os.Getwd()
+
+						if err := cmd.ComposePackage(packageDir); err != nil {
+							fmt.Println(err)
+							os.Exit(1)
+						}
+					},
+				},
 			},
 		},
 	}
