@@ -20,6 +20,10 @@ import (
 	"time"
 )
 
+const (
+	DefaultRepositoryUrl = "https://s3.amazonaws.com/osv.capstan/"
+)
+
 type Repo struct {
 	URL  string
 	Path string
@@ -28,7 +32,7 @@ type Repo struct {
 func NewRepo(url string) *Repo {
 	root := os.Getenv("CAPSTAN_ROOT")
 	if root == "" {
-		root = filepath.Join(HomePath(), "/.capstan/repository/")
+		root = filepath.Join(HomePath(), "/.capstan/")
 	}
 	return &Repo{
 		URL:  url,
@@ -115,7 +119,11 @@ func (r *Repo) RemoveImage(image string) error {
 }
 
 func (r *Repo) ImagePath(hypervisor string, image string) string {
-	return filepath.Join(r.Path, image, fmt.Sprintf("%s.%s", filepath.Base(image), hypervisor))
+	return filepath.Join(r.Path, "repository", image, fmt.Sprintf("%s.%s", filepath.Base(image), hypervisor))
+}
+
+func (r *Repo) PackagePath(packageName string) string {
+	return filepath.Join(r.Path, "packages", packageName)
 }
 
 func (r *Repo) ListImages() {

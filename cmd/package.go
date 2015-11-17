@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/cloudius-systems/capstan/core"
+	"github.com/cloudius-systems/capstan/util"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -36,14 +37,49 @@ func InitPackage(packageName string, p *core.Package) error {
 	return nil
 }
 
-func ComposePackage(packageDir string) error {
+func ComposePackage(repo *util.Repo, imageSize int64, packageDir string, appName string) error {
+	// If all is well, we have to start preparing the files for upload.
+	paths := make(map[string]string)
+
+	// We have to include the "bootstrap" package
+	bootstrap := repo.PackagePath("bootstrap")
+	if err := CollectDirectoryContents(paths, bootstrap, repo); err != nil {
+		return err
+	}
+
+	if err := CollectDirectoryContents(paths, packageDir, repo); err != nil {
+		return err
+	}
+
+	// Initialize an empty image based on the provided loader image. imageSize is used to
+	// determine the size of the user partition. Use default loader image.
+	if err := repo.InitializeImage("", appName, imageSize); err != nil {
+		return fmt.Errorf("Failed to initialize empty image named %s", appName)
+	}
+
+	// Get the path of imported image.
+	imagePath := repo.ImagePath("qemu", appName)
+
+	// Upload the specified path onto virtual image.
+	if err := UploadPackageContents(imagePath, paths); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CollectDirectoryContents(contents map[string]string, packageDir string, repo *util.Repo) error {
+	if _, err := os.Stat(packageDir); os.IsNotExist(err) {
+		return fmt.Errorf("%s does not exist", packageDir)
+	}
+
 	packageDir, err := filepath.Abs(packageDir)
 
 	// First, look for the package metadata.
 	pkgMetadata := filepath.Join(packageDir, "meta", "package.yaml")
 
 	if _, err := os.Stat(pkgMetadata); os.IsNotExist(err) {
-		return fmt.Errorf("%s does not seem to be a package (missing meta/package.yaml file)", packageDir)
+		return fmt.Errorf("%s is missing package description in meta/package.yaml", packageDir)
 	}
 
 	// If the file exists, try to parse it.
@@ -58,21 +94,13 @@ func ComposePackage(packageDir string) error {
 		return err
 	}
 
-	// If all is well, we have to start preparing the files for upload.
-	paths := make(map[string]string)
-	if err := CollectPackageContents(paths, packageDir); err != nil {
-		return err
+	for _, requiredPackage := range pkg.Require {
+		requiredPath := repo.PackagePath(requiredPackage)
+
+		CollectDirectoryContents(contents, requiredPath, repo)
 	}
 
-	return nil
-}
-
-func CollectPackageContents(contents map[string]string, packageDir string) error {
-	if _, err := os.Stat(packageDir); os.IsNotExist(err) {
-		return fmt.Errorf("%s does not exist", packageDir)
-	}
-
-	err := filepath.Walk(packageDir, func(path string, info os.FileInfo, _ error) error {
+	err = filepath.Walk(packageDir, func(path string, info os.FileInfo, _ error) error {
 		relPath := strings.TrimPrefix(path, packageDir)
 		// Ignore package's meta data
 		if relPath != "" && !strings.HasPrefix(relPath, "/meta") {

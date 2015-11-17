@@ -21,21 +21,20 @@ func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath strin
 	// Get the path of imported image.
 	imagePath := r.ImagePath("qemu", appName)
 
+	paths, err := CollectPathContents(uploadPath)
+	if err != nil {
+		return err
+	}
+
 	// Upload the specified path onto virtual image.
-	if err = UploadPath(imagePath, uploadPath); err != nil {
+	if err = UploadPackageContents(imagePath, paths); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func UploadPath(appImage string, uploadPath string) error {
-	_, err := os.Stat(uploadPath)
-	if os.IsNotExist(err) {
-		fmt.Printf("The given path (%s) does not exist\n", uploadPath)
-		return err
-	}
-
+func UploadPackageContents(appImage string, uploadPaths map[string]string) error {
 	// Specify the VM properties. Use the app image as the source to start.
 	vmconfig := &qemu.VMConfig{
 		Image:       appImage,
@@ -88,22 +87,20 @@ func UploadPath(appImage string, uploadPath string) error {
 	go io.Copy(os.Stderr, stderr)
 
 	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
+	defer conn.Close()
 	if err != nil {
 		return err
 	}
 
-	paths, err := CollectPathContents(uploadPath)
-	if err != nil {
-		return err
-	}
-
-	for src, dest := range paths {
+	for src, dest := range uploadPaths {
 		err = CopyFile(conn, src, dest)
+		if err != nil {
+			return err
+		}
 	}
 
 	cpio.WritePadded(conn, cpio.ToWireFormat("TRAILER!!!", 0, 0))
 
-	conn.Close()
 	return cmd.Wait()
 }
 

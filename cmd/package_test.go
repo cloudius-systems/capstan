@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/cloudius-systems/capstan/cmd"
 	"github.com/cloudius-systems/capstan/core"
+	"github.com/cloudius-systems/capstan/util"
 	. "gopkg.in/check.v1"
 	"io/ioutil"
 	"os"
@@ -90,7 +91,11 @@ func (*suite) TestComposeNonPackageFails(c *C) {
 	tmp, _ := ioutil.TempDir("", "pkg")
 	defer os.RemoveAll(tmp)
 
-	err := cmd.ComposePackage(tmp)
+	repo := util.NewRepo(util.DefaultRepositoryUrl)
+	imageSize, _ := util.ParseMemSize("64M")
+	appName := "test-app"
+
+	err := cmd.ComposePackage(repo, imageSize, tmp, appName)
 
 	c.Assert(err, NotNil)
 }
@@ -107,11 +112,15 @@ func (*suite) TestComposeCorruptPackageFails(c *C) {
 	err := ioutil.WriteFile(filepath.Join(metaPath, "package.yaml"), []byte("illegal package"), 0644)
 	c.Assert(err, IsNil)
 
-	err = cmd.ComposePackage(tmp)
+	repo := util.NewRepo(util.DefaultRepositoryUrl)
+	imageSize, _ := util.ParseMemSize("64M")
+	appName := "test-app"
+
+	err = cmd.ComposePackage(repo, imageSize, tmp, appName)
 	c.Assert(err, NotNil)
 }
 
-func (*suite) TestCollectPackageContents(c *C) {
+func (*suite) TestCollectDirectoryContents(c *C) {
 	// We are going to create an empty temp directory.
 	tmp, _ := ioutil.TempDir("", "pkg")
 	defer os.RemoveAll(tmp)
@@ -134,14 +143,18 @@ func (*suite) TestCollectPackageContents(c *C) {
 	ioutil.WriteFile(filepath.Join(tmp, "usr", "lib", "file4"), []byte("file4"), 0644)
 	ioutil.WriteFile(filepath.Join(tmp, "usr", "lib", "file5"), []byte("file5"), 0644)
 
+	repo := util.NewRepo(util.DefaultRepositoryUrl)
+	//imageSize, _ := util.ParseMemSize("64M")
+	//appName := "test-app"
+
 	m := make(map[string]string)
-	err = cmd.CollectPackageContents(m, tmp)
+	err = cmd.CollectDirectoryContents(m, tmp, repo)
 	c.Assert(err, IsNil)
 
 	c.Assert(len(m), Equals, 8)
 	c.Assert(m[filepath.Join(tmp, "file1")], Equals, "/file1")
 	c.Assert(m[filepath.Join(tmp, "usr", "bin", "file2")], Equals, "/usr/bin/file2")
 
-	err = cmd.ComposePackage(tmp)
-	c.Assert(err, IsNil)
+	//err = cmd.ComposePackage(repo, imageSize, tmp, appName)
+	//c.Assert(err, IsNil)
 }

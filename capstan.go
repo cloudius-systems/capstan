@@ -324,8 +324,40 @@ func main() {
 					},
 				},
 				{
-					Name:  "compose",
-					Usage: "composes the package and all its dependencies into OSv image",
+					Name:      "compose",
+					Usage:     "composes the package and all its dependencies into OSv image",
+					ArgsUsage: "image-name",
+					Flags: []cli.Flag{
+						cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
+					},
+					Action: func(c *cli.Context) {
+						if len(c.Args()) != 1 {
+							fmt.Println("Usage: capstan package compose [image-name]")
+							return
+						}
+
+						// Use the provided repository.
+						repo := util.NewRepo(c.GlobalString("u"))
+
+						// Get the name of the application to be imported into Capstan's repository.
+						appName := c.Args().First()
+
+						// Parse image size descriptor.
+						imageSize, err := util.ParseMemSize(c.String("size"))
+						if err != nil {
+							fmt.Printf("Incorrect image size format: %s\n", err)
+							return
+						}
+
+						// Always use the current directory for the package to compose.
+						packageDir, _ := os.Getwd()
+
+						if err := cmd.ComposePackage(repo, imageSize, packageDir, appName); err != nil {
+							fmt.Println(err)
+							os.Exit(1)
+						}
+					},
+				},
 					Action: func(c *cli.Context) {
 						packageDir, _ := os.Getwd()
 
