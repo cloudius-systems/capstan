@@ -68,6 +68,58 @@ func ComposePackage(repo *util.Repo, imageSize int64, packageDir string, appName
 	return nil
 }
 
+func CollectPackage(repo *util.Repo, packageDir string) error {
+	paths := make(map[string]string)
+
+	bootstrap := repo.PackagePath("bootstrap")
+	if err := CollectDirectoryContents(paths, bootstrap, repo); err != nil {
+		return err
+	}
+
+	if err := CollectDirectoryContents(paths, packageDir, repo); err != nil {
+		return err
+	}
+
+	os.Mkdir("capstan-pkg", 0755)
+	rootPath, _ := filepath.Abs(filepath.Join(packageDir, "capstan-pkg"))
+
+	for src, dest := range paths {
+		// Check the source file.
+		fi, err := os.Stat(src)
+		if err != nil {
+			return err
+		}
+
+		// Get the absolute path of the destination file/dir
+		d := filepath.Join(rootPath, dest)
+
+		// destDir is the absolute directory in which the destination file should be placed.
+		var destDir string
+		// If
+		if fi.Mode().IsRegular() {
+			// If source is actually a file, we have to get the name of the folder containing the file
+			destDir = filepath.Dir(d)
+		} else {
+			// Otherwise if it is already a directory, use that
+			destDir = d
+		}
+
+		// Make target directory if it doesn't exist
+		if _, err := os.Stat(destDir); err != nil {
+			if err = os.MkdirAll(destDir, 0755); err != nil {
+				return err
+			}
+		}
+
+		// Finally, if source path is a file, copy the file.
+		if fi.Mode().IsRegular() {
+			util.CopyLocalFile(d, src)
+		}
+	}
+
+	return nil
+}
+
 func CollectDirectoryContents(contents map[string]string, packageDir string, repo *util.Repo) error {
 	if _, err := os.Stat(packageDir); os.IsNotExist(err) {
 		return fmt.Errorf("%s does not exist", packageDir)

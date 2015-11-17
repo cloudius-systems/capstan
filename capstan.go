@@ -358,10 +358,14 @@ func main() {
 						}
 					},
 				},
+				{
+					Name:  "collect",
+					Usage: "collects contents of this package and all required packages",
 					Action: func(c *cli.Context) {
+						repo := util.NewRepo(c.GlobalString("u"))
 						packageDir, _ := os.Getwd()
 
-						if err := cmd.ComposePackage(packageDir); err != nil {
+						if err := cmd.CollectPackage(repo, packageDir); err != nil {
 							fmt.Println(err)
 							os.Exit(1)
 						}
