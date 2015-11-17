@@ -11,7 +11,6 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/cloudius-systems/capstan/nat"
-	"github.com/cloudius-systems/capstan/nbd"
 	"github.com/cloudius-systems/capstan/util"
 	"gopkg.in/yaml.v1"
 	"io/ioutil"
@@ -166,7 +165,7 @@ func VMCommand(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	}
 
 	if c.Cmd != "" {
-		nbd.SetCmdLine(c.Image, c.Cmd)
+		util.SetCmdLine(c.Image, c.Cmd)
 	}
 
 	StoreConfig(c)

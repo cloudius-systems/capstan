@@ -16,7 +16,6 @@ import (
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/nat"
-	"github.com/cloudius-systems/capstan/nbd"
 	"github.com/cloudius-systems/capstan/util"
 	"io"
 	"io/ioutil"
@@ -268,7 +267,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 
 func SetArgs(r *util.Repo, hypervisor, image string, args string) error {
 	file := r.ImagePath(hypervisor, image)
-	nbdFile, err := nbd.NewFile(file)
+	nbdFile, err := util.NewNbdFile(file)
 	if err != nil {
 		return err
 	}

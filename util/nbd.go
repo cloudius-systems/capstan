@@ -5,12 +5,16 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-package nbd
+package util
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"net"
+	"os"
+	"os/exec"
 )
 
 const (
@@ -30,6 +34,11 @@ const (
 	NBD_FLAG_HAS_FLAGS  = (1 << 0)
 	NBD_FLAG_SEND_FLUSH = (1 << 2)
 )
+
+type NbdFile struct {
+	Cmd     *exec.Cmd
+	Session *NbdSession
+}
 
 type NbdSession struct {
 	Conn   net.Conn
@@ -51,6 +60,113 @@ type NbdReply struct {
 	Magic  uint32
 	Error  uint32
 	Handle uint64
+}
+
+func NewNbdFile(imagePath string) (*NbdFile, error) {
+	cmd := exec.Command("qemu-nbd", "-p", "10809", imagePath)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+	err = cmd.Start()
+	if err != nil {
+		return nil, err
+	}
+	go io.Copy(os.Stdout, stdout)
+	go io.Copy(os.Stderr, stderr)
+
+	conn, err := ConnectAndWait("tcp", "localhost:10809")
+	if err != nil {
+		return nil, err
+	}
+
+	session := &NbdSession{
+		Conn:   conn,
+		Handle: 0,
+	}
+
+	if err := session.Handshake(); err != nil {
+		return nil, err
+	}
+
+	return &NbdFile{cmd, session}, nil
+}
+
+func (file *NbdFile) Write(offset uint64, data []byte) error {
+	count := uint64(len(data))
+	sectStart := (offset / 512) * 512
+	offsetInSect := offset % 512
+
+	size := offsetInSect + count
+	sectSize := ((size / 512) + 1) * 512
+
+	readData, err := file.Session.Read(sectStart, uint32(sectSize))
+	if err != nil {
+		return err
+	}
+
+	buf := append(append(readData[0:offsetInSect], data...), readData[offsetInSect+count:]...)
+	err = file.Session.Write(sectStart, buf)
+	if err != nil {
+		return err
+	}
+
+	return file.Session.Flush()
+}
+
+func (file *NbdFile) WriteByte(offset uint64, b byte) error {
+	buf := bytes.Buffer{}
+
+	err := binary.Write(&buf, binary.LittleEndian, b)
+	if err != nil {
+		return err
+	}
+
+	return file.Write(offset, buf.Bytes())
+}
+
+func (file *NbdFile) WriteShort(offset uint64, s uint16) error {
+	buf := bytes.Buffer{}
+
+	err := binary.Write(&buf, binary.LittleEndian, s)
+	if err != nil {
+		return err
+	}
+
+	return file.Write(offset, buf.Bytes())
+}
+
+func (file *NbdFile) WriteInt(offset uint64, i uint32) error {
+	buf := bytes.Buffer{}
+
+	err := binary.Write(&buf, binary.LittleEndian, i)
+	if err != nil {
+		return err
+	}
+
+	return file.Write(offset, buf.Bytes())
+}
+
+func (file *NbdFile) Wait() {
+	file.Cmd.Wait()
+}
+
+func (file *NbdFile) Close() error {
+	if err := file.Session.Flush(); err != nil {
+		return err
+	}
+	if err := file.Session.Disconnect(); err != nil {
+		return err
+	}
+	file.Session.Conn.Close()
+	file.Wait()
+
+	return nil
 }
 
 func (msg *NbdRequest) ToWireFormat() []byte {

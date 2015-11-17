@@ -17,6 +17,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 )
 
 type Repo struct {
@@ -154,4 +155,63 @@ func (r *Repo) DefaultImage() string {
 	}
 	image := path.Base(pwd)
 	return image
+}
+
+func (r *Repo) InitializeImage(loaderImage string, imageName string, imageSize int64) error {
+	// Temporarily use the mike/osv-launcher image. Note that in order for this to work
+	// one has to actually import mike/osv-launcher image first!
+	//
+	// capstan import mike/osv-launcher /path/to/osv/build/release/loader.img
+	if loaderImage == "" {
+		loaderImage = "mike/osv-launcher"
+	}
+
+	// Get the actual path of the launcher image.
+	loaderImagePath := r.ImagePath("raw", loaderImage)
+	// Check whether the base launcher image exists
+	loaderInfo, err := os.Stat(loaderImagePath)
+	if os.IsNotExist(err) {
+		fmt.Printf("The specified loader image (%s) does not exist.\n", loaderImagePath)
+		return err
+	}
+
+	// Create temporary folder in which the image will be composed.
+	tmp, _ := ioutil.TempDir("", "capstan")
+	// Once this function is finished, remove temporary file.
+	defer os.RemoveAll(tmp)
+	imagePath := path.Join(tmp, "application.img")
+
+	// Copy the OSv base iamge into application image
+	if err := CopyLocalFile(imagePath, loaderImagePath); err != nil {
+		return err
+	}
+
+	// Get the size of the loader image, then round that to the closest 2MB to start the user
+	// ZFS partition.
+	zfsStart := (loaderInfo.Size() + 2097151) & ^2097151
+	// Make filesystem size in bytes
+	zfsSize := int64(imageSize * 1024 * 1024)
+
+	// Make sure the image is in QCOW2 format. This is to make sure that the
+	// image in the next step does not grow in size in case the input image is
+	// in RAW format.
+	if err := SetPartition(imagePath, 2, uint64(zfsStart), uint64(zfsSize)); err != nil {
+		fmt.Printf("Setting the ZFS partition failed for %s\n", imagePath)
+		return err
+	}
+
+	// Convert the image to QCOW2 format. This will prevent the image file from
+	// becoming to large in the next step when we actually resize it.
+	if err := ConvertImageToQCOW2(imagePath); err != nil {
+		return err
+	}
+
+	// Now that the partition has been created, resize the virtual image size.
+	if err := ResizeImage(imagePath, uint64(zfsSize+zfsStart)); err != nil {
+		fmt.Printf("Failed to set the target size (%db) of the image %s\n", (zfsSize + zfsStart), imagePath)
+		return err
+	}
+
+	// The image can now be imported into Capstan's repository.
+	return r.ImportImage(imageName, imagePath, "", time.Now().Format(time.RFC3339), "", "")
 }

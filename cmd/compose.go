@@ -6,87 +6,31 @@ import (
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/nat"
-	"github.com/cloudius-systems/capstan/nbd"
 	"github.com/cloudius-systems/capstan/util"
 	"io"
-	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath string, appName string) error {
-	loaderImagePath := r.ImagePath("raw", loaderImage)
-	// Check whether the base launcher image exists
-	loaderInfo, err := os.Stat(loaderImagePath)
-	if os.IsNotExist(err) {
-		fmt.Println("The specified loader image (%s) does not exist.", loaderImagePath)
-		return err
-	}
+	// Initialize an empty image based on the provided loader image. imageSize is used to
+	// determine the size of the user partition.
+	err := r.InitializeImage(loaderImage, appName, imageSize)
 
-	// Create temporary folder in which the image will be composed.
-	tmp, _ := ioutil.TempDir("", "capstan")
-	imagePath := path.Join(tmp, "application.img")
+	// Get the path of imported image.
+	imagePath := r.ImagePath("qemu", appName)
 
-	// Copy the OSv base iamge into application image
-	if err := util.CopyLocalFile(imagePath, loaderImagePath); err != nil {
-		return err
-	}
-
-	// Get the size of the loader image, then round that to the closest 2MB to start the user
-	// ZFS partition.
-	zfsStart := (loaderInfo.Size() + 2097151) & ^2097151
-	// Make filesystem size in bytes
-	zfsSize := int64(imageSize * 1024 * 1024)
-
-	// Make sure the image is in QCOW2 format. This is to make sure that the
-	// image in the next step does not grow in size in case the input image is
-	// in RAW format.
-	if err := nbd.SetPartition(imagePath, 2, uint64(zfsStart), uint64(zfsSize)); err != nil {
-		fmt.Printf("Setting the ZFS partition failed for %s\n", imagePath)
-		return err
-	}
-
-	// Now that the partition has been created, resize the virtual image size.
-	if err := util.ConvertImageToQCOW2(imagePath); err != nil {
-		return err
-	}
-
-	// Now that the partition has been created, resize the virtual image size.
-	if err := util.ResizeImage(imagePath, uint64(zfsSize+zfsStart)); err != nil {
-		fmt.Printf("Failed to set the target size (%db) of the image %s\n", (zfsSize + zfsStart), imagePath)
-		return err
-	}
-
-	// Set the command to initialize the ZFS partition created above and start listening for CPIOD requests.
-	if err := nbd.SetCmdLine(imagePath, "--norandom --nomount --noinit /tools/mkfs.so; /tools/cpiod.so --prefix /zfs/zfs; /zfs.so set compression=off osv"); err != nil {
-		fmt.Printf("Setting the command line to initialize the VM failed")
-		return err
-	}
-
+	// Upload the specified path onto virtual image.
 	if err = UploadPath(imagePath, uploadPath); err != nil {
 		return err
-	}
-
-	// The image is now composed and we can move it into the repository.
-	r.ImportImage(appName, imagePath, "", time.Now().Format(time.RFC3339), "", "")
-
-	if err = os.RemoveAll(tmp); err != nil {
-		fmt.Println(err)
 	}
 
 	return nil
 }
 
 func UploadPath(appImage string, uploadPath string) error {
-	// Make sure that the upload path is absolute. This will also make sure that any trailing slashes
-	// are properly handled.
-	uploadPath, err := filepath.Abs(uploadPath)
-
-	fi, err := os.Stat(uploadPath)
-
+	_, err := os.Stat(uploadPath)
 	if os.IsNotExist(err) {
 		fmt.Printf("The given path (%s) does not exist\n", uploadPath)
 		return err
@@ -100,6 +44,10 @@ func UploadPath(appImage string, uploadPath string) error {
 		Networking:  "nat",
 		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
+		// It is asumed that the UploadPath is the first command executed by this virtual image. Thus
+		// we also create the filesystem and start the 'cpiod' daemon responsible for copying files
+		// to target VM.
+		Cmd: "--norandom --nomount --noinit /tools/mkfs.so; /tools/cpiod.so --prefix /zfs/zfs; /zfs.so set compression=off osv",
 	}
 
 	// TODO Have to come up with a better error handling if necessary. Be more verbose on errors.
@@ -144,35 +92,53 @@ func UploadPath(appImage string, uploadPath string) error {
 		return err
 	}
 
-	var pathPrefix string
-	files := make([]string, 0)
-	// Check whether the upload path is file or folder.
-	switch {
-	case fi.Mode().IsDir():
-		pathPrefix = uploadPath
-		// Look into the upload folder and add all files from there to the list.
-		err = filepath.Walk(uploadPath, func(path string, info os.FileInfo, _ error) error {
-			if path != uploadPath {
-				files = append(files, path)
-			}
-
-			return nil
-		})
-
-	case fi.Mode().IsRegular():
-		pathPrefix = path.Dir(uploadPath)
-		// If it is just the file, add it to the list alone.
-		files = append(files, uploadPath)
+	paths, err := CollectPathContents(uploadPath)
+	if err != nil {
+		return err
 	}
 
-	for _, file := range files {
-		destFile := strings.TrimPrefix(file, pathPrefix)
-		//fmt.Printf("%s --> %s\n", file, destFile)
-		err = CopyFile(conn, file, destFile)
+	for src, dest := range paths {
+		err = CopyFile(conn, src, dest)
 	}
 
 	cpio.WritePadded(conn, cpio.ToWireFormat("TRAILER!!!", 0, 0))
 
 	conn.Close()
 	return cmd.Wait()
+}
+
+func CollectPathContents(path string) (map[string]string, error) {
+	fi, err := os.Stat(path)
+
+	// Check that path exists.
+	if os.IsNotExist(err) {
+		return nil, fmt.Errorf("%s does not exist", path)
+	}
+
+	// Make sure that the upload path is absolute. This will also make sure that any trailing slashes
+	// are properly handled.
+	path, err = filepath.Abs(path)
+
+	contents := make(map[string]string)
+
+	switch {
+	case fi.Mode().IsDir():
+		// Look into the upload folder and add all files from there to the list.
+		err = filepath.Walk(path, func(p string, info os.FileInfo, _ error) error {
+			if p != path {
+				contents[p] = strings.TrimPrefix(p, path)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+	case fi.Mode().IsRegular():
+		contents[path] = "/" + filepath.Base(path)
+	}
+
+	return contents, nil
 }
