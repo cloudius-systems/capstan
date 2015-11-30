@@ -100,7 +100,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		}
 	} else if config.ImageName != "" && config.InstanceName != "" {
 		// Both ImageName and InstanceName are specified
-		if _, err := os.Stat(config.ImageName); os.IsNotExist(err) {
+		if f, err := os.Stat(config.ImageName); f.IsDir() || os.IsNotExist(err) {
 			if repo.ImageExists(config.Hypervisor, config.ImageName) {
 				path = repo.ImagePath(config.Hypervisor, config.ImageName)
 			} else if image.IsCloudImage(config.ImageName) {
