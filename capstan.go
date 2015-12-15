@@ -16,6 +16,7 @@ import (
 	"github.com/cloudius-systems/capstan/util"
 	"github.com/codegangsta/cli"
 	"os"
+	"runtime"
 )
 
 var (
@@ -164,7 +165,7 @@ func main() {
 			Action: func(c *cli.Context) {
 				imageName := c.Args().First()
 				repo := util.NewRepo(c.String("u"))
-				if len(c.Args()) != 1 {
+				if len(c.Args()) != 1 && runtime.GOOS != "windows" {
 					imageName = repo.DefaultImage()
 				}
 				if imageName == "" {
