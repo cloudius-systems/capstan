@@ -184,7 +184,7 @@ func vmSetupNAT(c *VMConfig) error {
 }
 
 func DeleteVM(name string) error {
-	dir := filepath.Join(util.HomePath(), ".capstan/instances/vbox", name)
+	dir := filepath.Join(util.ConfigDir(), "instances/vbox", name)
 	c := &VMConfig{
 		ConfigFile: filepath.Join(dir, "osv.config"),
 	}
@@ -233,7 +233,7 @@ func (c *VMConfig) storagePath() string {
 }
 
 func LoadConfig(name string) (*VMConfig, error) {
-	dir := filepath.Join(util.HomePath(), ".capstan/instances/vbox", name)
+	dir := filepath.Join(util.ConfigDir(), "instances/vbox", name)
 	file := filepath.Join(dir, "osv.config")
 	c := VMConfig{}
 

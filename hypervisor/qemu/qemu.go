@@ -46,7 +46,7 @@ type Version struct {
 }
 
 func DeleteVM(name string) error {
-	dir := filepath.Join(util.HomePath(), ".capstan/instances/qemu", name)
+	dir := filepath.Join(util.ConfigDir(), "instances/qemu", name)
 	c := &VMConfig{
 		InstanceDir: dir,
 		Monitor:     filepath.Join(dir, "osv.monitor"),
@@ -71,7 +71,7 @@ func DeleteVM(name string) error {
 }
 
 func StopVM(name string) error {
-	dir := filepath.Join(util.HomePath(), ".capstan/instances/qemu", name)
+	dir := filepath.Join(util.ConfigDir(), "instances/qemu", name)
 	c := &VMConfig{
 		Monitor: filepath.Join(dir, "osv.monitor"),
 	}
@@ -110,7 +110,7 @@ func GetVMStatus(name, dir string) (string, error) {
 }
 
 func LoadConfig(name string) (*VMConfig, error) {
-	dir := filepath.Join(util.HomePath(), ".capstan/instances/qemu", name)
+	dir := filepath.Join(util.ConfigDir(), "instances/qemu", name)
 	file := filepath.Join(dir, "osv.config")
 	c := VMConfig{}
 

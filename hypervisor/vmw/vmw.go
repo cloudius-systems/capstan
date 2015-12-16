@@ -100,7 +100,7 @@ func LaunchVM(c *VMConfig) (*exec.Cmd, error) {
 }
 
 func DeleteVM(name string) error {
-	dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", name)
+	dir := filepath.Join(util.ConfigDir(), "instances/vmw", name)
 	c := &VMConfig{
 		VMXFile:    filepath.Join(dir, "osv.vmx"),
 		ConfigFile: filepath.Join(dir, "osv.config"),
@@ -127,7 +127,7 @@ func DeleteVM(name string) error {
 }
 
 func StopVM(name string) error {
-	dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", name)
+	dir := filepath.Join(util.ConfigDir(), "instances/vmw", name)
 	c := &VMConfig{
 		VMXFile: filepath.Join(dir, "osv.vmx"),
 	}
@@ -225,7 +225,7 @@ func vmCreateVMXFile(c *VMConfig) error {
 }
 
 func LoadConfig(name string) (*VMConfig, error) {
-	dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", name)
+	dir := filepath.Join(util.ConfigDir(), "instances/vmw", name)
 	file := filepath.Join(dir, "osv.config")
 	c := VMConfig{}
 

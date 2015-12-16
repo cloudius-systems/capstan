@@ -21,7 +21,7 @@ import (
 func Instances() error {
 	header := fmt.Sprintf("%-35s %-10s %-10s %-15s", "Name", "Platform", "Status", "Image")
 	fmt.Println(header)
-	rootDir := filepath.Join(util.HomePath(), ".capstan", "instances")
+	rootDir := filepath.Join(util.ConfigDir(), "instances")
 	platforms, _ := ioutil.ReadDir(rootDir)
 	for _, platform := range platforms {
 		if platform.IsDir() {

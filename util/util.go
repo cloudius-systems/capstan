@@ -18,6 +18,10 @@ import (
 	"time"
 )
 
+func ConfigDir() string {
+	return filepath.Join(HomePath(), ".capstan")
+}
+
 func HomePath() string {
 	if runtime.GOOS == "windows" {
 		return filepath.Join(os.Getenv("HOMEDRIVE"), os.Getenv("HOMEPATH"))
@@ -43,7 +47,7 @@ func CopyFile(src, dst string) *exec.Cmd {
 func SearchInstance(name string) (instanceName, instancePlatform string) {
 	instanceName = ""
 	instancePlatform = ""
-	rootDir := filepath.Join(HomePath(), ".capstan", "instances")
+	rootDir := filepath.Join(ConfigDir(), "instances")
 	platforms, _ := ioutil.ReadDir(rootDir)
 	for _, platform := range platforms {
 		if !platform.IsDir() {

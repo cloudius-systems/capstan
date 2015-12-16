@@ -158,7 +158,7 @@ func DeleteVM(name string) error {
 
 	gcUtil("deletedisk", "-f", name)
 
-	dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", name)
+	dir := filepath.Join(util.ConfigDir(), "instances/gce", name)
 	c := &VMConfig{
 		InstanceDir: dir,
 		ConfigFile:  filepath.Join(dir, "osv.config"),
@@ -236,7 +236,7 @@ func StoreConfig(c *VMConfig) error {
 }
 
 func LoadConfig(name string) (*VMConfig, error) {
-	dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", name)
+	dir := filepath.Join(util.ConfigDir(), "instances/gce", name)
 	file := filepath.Join(dir, "osv.config")
 	c := VMConfig{}
 

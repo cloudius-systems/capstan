@@ -27,7 +27,7 @@ type Repo struct {
 func NewRepo(url string) *Repo {
 	root := os.Getenv("CAPSTAN_ROOT")
 	if root == "" {
-		root = filepath.Join(HomePath(), "/.capstan/repository/")
+		root = filepath.Join(ConfigDir(), "repository")
 	}
 	return &Repo{
 		URL:  url,

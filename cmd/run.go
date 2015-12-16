@@ -193,7 +193,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 
 	switch config.Hypervisor {
 	case "qemu":
-		dir := filepath.Join(util.HomePath(), ".capstan/instances/qemu", id)
+		dir := filepath.Join(util.ConfigDir(), "instances/qemu", id)
 		bridge := config.Bridge
 		if bridge == "" {
 			bridge = "virbr0"
@@ -218,14 +218,14 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		if format != image.VDI && format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
-		dir := filepath.Join(util.HomePath(), ".capstan/instances/vbox", id)
+		dir := filepath.Join(util.ConfigDir(), "instances/vbox", id)
 		bridge := config.Bridge
 		if bridge == "" {
 			bridge = "vboxnet0"
 		}
 		config := &vbox.VMConfig{
 			Name:       id,
-			Dir:        filepath.Join(util.HomePath(), ".capstan/instances/vbox"),
+			Dir:        filepath.Join(util.ConfigDir(), "instances/vbox"),
 			Image:      path,
 			Memory:     size,
 			Cpus:       config.Cpus,
@@ -240,7 +240,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		if format != image.GCE_TARBALL && format != image.GCE_GS {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
-		dir := filepath.Join(util.HomePath(), ".capstan/instances/gce", id)
+		dir := filepath.Join(util.ConfigDir(), "instances/gce", id)
 		c := &gce.VMConfig{
 			Name:        id,
 			Image:       id,
@@ -262,7 +262,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		if format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
-		dir := filepath.Join(util.HomePath(), ".capstan/instances/vmw", id)
+		dir := filepath.Join(util.ConfigDir(), "instances/vmw", id)
 		config := &vmw.VMConfig{
 			Name:         id,
 			Dir:          dir,
