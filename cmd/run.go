@@ -20,7 +20,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -314,7 +313,7 @@ func buildJarImage(repo *util.Repo, config *RunConfig) (*RunConfig, error) {
 }
 
 func parseJarNames(filename string) (string, string) {
-	jarName := path.Base(filename)
+	jarName := filepath.Base(filename)
 	imageName := strings.TrimSuffix(jarName, ".jar")
 	return imageName, jarName
 }

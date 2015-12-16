@@ -15,7 +15,6 @@ import (
 	"gopkg.in/yaml.v1"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -150,6 +149,6 @@ func (r *Repo) DefaultImage() string {
 	if err != nil {
 		return ""
 	}
-	image := path.Base(pwd)
+	image := filepath.Base(pwd)
 	return image
 }
