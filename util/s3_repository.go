@@ -125,7 +125,7 @@ func ListImagesRemote(repo_url string, search string) error {
 
 func (r *Repo) DownloadFile(repo_url string, name string) error {
 	compressed := strings.HasSuffix(name, ".gz")
-	output, err := os.Create(filepath.Join(r.Path, strings.TrimSuffix(name, ".gz")))
+	output, err := os.Create(filepath.Join(r.RepoPath(), strings.TrimSuffix(name, ".gz")))
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (r *Repo) DownloadImage(repo_url, hypervisor string, path string) error {
 	if len(parts) < 2 {
 		return fmt.Errorf("%s: wrong name format", path)
 	}
-	err := os.MkdirAll(filepath.Join(r.Path, path), os.ModePerm)
+	err := os.MkdirAll(filepath.Join(r.RepoPath(), path), os.ModePerm)
 	if err != nil {
 		return err
 	}

@@ -77,6 +77,7 @@ func (r *Repo) ImportImage(imageName string, file string, version string, create
 	}
 
 	dst := r.ImagePath(hypervisor, imageName)
+	fmt.Printf("Importing into %s", dst)
 	cmd := CopyFile(file, dst)
 	_, err = cmd.Output()
 	if err != nil {
@@ -109,7 +110,7 @@ func (r *Repo) ImageExists(hypervisor, image string) bool {
 }
 
 func (r *Repo) RemoveImage(image string) error {
-	path := filepath.Join(r.Path, image)
+	path := filepath.Join(r.RepoPath(), image)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return errors.New(fmt.Sprintf("%s: no such image\n", image))
 	}
@@ -118,8 +119,12 @@ func (r *Repo) RemoveImage(image string) error {
 	return err
 }
 
+func (r *Repo) RepoPath() string {
+	return filepath.Join(r.Path, "repository")
+}
+
 func (r *Repo) ImagePath(hypervisor string, image string) string {
-	return filepath.Join(r.Path, "repository", image, fmt.Sprintf("%s.%s", filepath.Base(image), hypervisor))
+	return filepath.Join(r.RepoPath(), image, fmt.Sprintf("%s.%s", filepath.Base(image), hypervisor))
 }
 
 func (r *Repo) PackagePath(packageName string) string {
@@ -128,14 +133,14 @@ func (r *Repo) PackagePath(packageName string) string {
 
 func (r *Repo) ListImages() {
 	fmt.Println(FileInfoHeader())
-	namespaces, _ := ioutil.ReadDir(r.Path)
+	namespaces, _ := ioutil.ReadDir(r.RepoPath())
 	for _, n := range namespaces {
-		images, _ := ioutil.ReadDir(filepath.Join(r.Path, n.Name()))
+		images, _ := ioutil.ReadDir(filepath.Join(r.RepoPath(), n.Name()))
 		nrImages := 0
 		nrFiles := 0
 		for _, i := range images {
 			if i.IsDir() {
-				info := MakeFileInfo(r.Path, n.Name(), i.Name())
+				info := MakeFileInfo(r.RepoPath(), n.Name(), i.Name())
 				if info == nil {
 					fmt.Println(n.Name() + "/" + i.Name())
 				} else {
