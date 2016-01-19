@@ -42,6 +42,11 @@ func CopyFile(src, dst string) *exec.Cmd {
 }
 
 func CopyLocalFile(dst, src string) error {
+	fi, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
 	s, err := os.Open(src)
 	if err != nil {
 		return err
@@ -50,6 +55,8 @@ func CopyLocalFile(dst, src string) error {
 	// we need from the filesystem, so nothing can go wrong now.
 	defer s.Close()
 	d, err := os.Create(dst)
+	// Ensure the target file has the same mode as source
+	d.Chmod(fi.Mode())
 	if err != nil {
 		return err
 	}
