@@ -193,7 +193,7 @@ func main() {
 			Name:  "compose",
 			Usage: "compose the image from a folder or a file",
 			Flags: []cli.Flag{
-				cli.StringFlag{Name: "loader_image, l", Value: "mike/osv-launcher", Usage: "the base loader image"},
+				cli.StringFlag{Name: "loader_image, l", Value: "mike/osv-loader", Usage: "the base loader image"},
 				cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
 			},
 			Action: func(c *cli.Context) {

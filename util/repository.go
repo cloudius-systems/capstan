@@ -171,17 +171,17 @@ func (r *Repo) DefaultImage() string {
 }
 
 func (r *Repo) InitializeImage(loaderImage string, imageName string, imageSize int64) error {
-	// Temporarily use the mike/osv-launcher image. Note that in order for this to work
-	// one has to actually import mike/osv-launcher image first!
+	// Temporarily use the mike/osv-loader image. Note that in order for this to work
+	// one has to actually import mike/osv-loader image first!
 	//
-	// capstan import mike/osv-launcher /path/to/osv/build/release/loader.img
+	// capstan import mike/osv-loader /path/to/osv/build/release/loader.img
 	if loaderImage == "" {
-		loaderImage = "mike/osv-launcher"
+		loaderImage = "mike/osv-loader"
 	}
 
-	// Get the actual path of the launcher image.
+	// Get the actual path of the loader image.
 	loaderImagePath := r.ImagePath("raw", loaderImage)
-	// Check whether the base launcher image exists
+	// Check whether the base loader image exists
 	loaderInfo, err := os.Stat(loaderImagePath)
 	if os.IsNotExist(err) {
 		fmt.Printf("The specified loader image (%s) does not exist.\n", loaderImagePath)
