@@ -324,6 +324,19 @@ func main() {
 					},
 				},
 				{
+					Name:  "build",
+					Usage: "builds the package into a compressed file",
+					Action: func(c *cli.Context) {
+						packageDir, _ := os.Getwd()
+
+						_, err := cmd.BuildPackage(packageDir)
+						if err != nil {
+							fmt.Println(err)
+							os.Exit(1)
+						}
+					},
+				},
+				{
 					Name:      "compose",
 					Usage:     "composes the package and all its dependencies into OSv image",
 					ArgsUsage: "image-name",
@@ -366,6 +379,25 @@ func main() {
 						packageDir, _ := os.Getwd()
 
 						if err := cmd.CollectPackage(repo, packageDir); err != nil {
+							fmt.Println(err)
+							os.Exit(1)
+						}
+					},
+				},
+				{
+					Name:  "import",
+					Usage: "builds the package at the given path and imports it into a chosen repository",
+					Action: func(c *cli.Context) {
+						// Use the provided repository.
+						repo := util.NewRepo(c.GlobalString("u"))
+
+						packageDir, err := os.Getwd()
+						if err != nil {
+							fmt.Println(err)
+							os.Exit(1)
+						}
+
+						if err = cmd.ImportPackage(repo, packageDir); err != nil {
 							fmt.Println(err)
 							os.Exit(1)
 						}

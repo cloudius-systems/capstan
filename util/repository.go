@@ -12,11 +12,13 @@ import (
 	"fmt"
 	"github.com/cloudius-systems/capstan/core"
 	"github.com/cloudius-systems/capstan/image"
-	"gopkg.in/yaml.v1"
+	"gopkg.in/yaml.v2"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -128,7 +130,11 @@ func (r *Repo) ImagePath(hypervisor string, image string) string {
 }
 
 func (r *Repo) PackagePath(packageName string) string {
-	return filepath.Join(r.Path, "packages", packageName)
+	return filepath.Join(r.Path, "packages", fmt.Sprintf("%s.mpm", packageName))
+}
+
+func (r *Repo) PackageManifest(packageName string) string {
+	return filepath.Join(r.Path, "packages", fmt.Sprintf("%s.yaml", packageName))
 }
 
 func (r *Repo) ListImages() {
@@ -227,4 +233,107 @@ func (r *Repo) InitializeImage(loaderImage string, imageName string, imageSize i
 
 	// The image can now be imported into Capstan's repository.
 	return r.ImportImage(imageName, imagePath, "", time.Now().Format(time.RFC3339), "", "")
+}
+
+func (r *Repo) ImportPackage(pkg core.Package, packagePath string) error {
+	fmt.Printf("Importing package %s...\n", packagePath)
+
+	// Get the root of the packages dir.
+	dir := filepath.Join(r.Path, "packages")
+
+	// Make sure the path exists by creating the entire directory structure.
+	err := os.MkdirAll(dir, 0775)
+	if err != nil {
+		return fmt.Errorf("%s: mkdir failed", dir)
+	}
+
+	// Get the filename of the package...
+	packageFileName := filepath.Base(packagePath)
+	// ... and prepare the target file name.
+	target := filepath.Join(dir, packageFileName)
+
+	// Copy the package into the repository.
+	err = CopyLocalFile(target, packagePath)
+	if err != nil {
+		fmt.Printf("Failed to import package into %s\n", packagePath)
+		return err
+	}
+
+	// Store package metadata descriptor into the repository.
+	d, err := yaml.Marshal(pkg)
+	if err != nil {
+		// Since there was en error exporting YAML file, remove the package file.
+		os.Remove(target)
+
+		return err
+	}
+
+	manifestFile := strings.TrimSuffix(packageFileName, filepath.Ext(packageFileName))
+	err = ioutil.WriteFile(filepath.Join(dir, fmt.Sprintf("%s.yaml", manifestFile)), d, 0644)
+	if err != nil {
+		// Since there was en error exporting YAML file, remove the package file.
+		os.Remove(target)
+
+		return err
+	}
+
+	fmt.Printf("Package %s successfully imported into repository %s\n", packageFileName, dir)
+	return nil
+}
+
+func (r *Repo) GetPackage(pkgname string) (io.Reader, error) {
+	pkgpath := r.PackagePath(pkgname)
+
+	// Make sure the package does exist.
+	if _, err := os.Stat(pkgpath); os.IsNotExist(err) {
+		return nil, err
+	}
+
+	return os.Open(pkgpath)
+}
+
+func (r *Repo) GetPackageDependencies(pkg core.Package) ([]core.Package, error) {
+	// Bootstrap is a required package for every other package.
+	bootstrap, err := core.ParsePackageManifest(r.PackageManifest("eu.mikelangelo-project.osv.bootstrap"))
+	if err != nil {
+		return nil, err
+	}
+
+	dependencies := []core.Package{bootstrap}
+
+	for _, requiredPackage := range pkg.Require {
+		rpkg, err := core.ParsePackageManifest(r.PackageManifest(requiredPackage))
+		if err != nil {
+			return nil, err
+		}
+
+		rdeps, err := r.GetPackageDependencies(rpkg)
+		if err != nil {
+			return nil, err
+		}
+
+		dependencies = append(dependencies, rpkg)
+		dependencies = append(dependencies, rdeps...)
+	}
+
+	return dependencies, nil
+}
+
+func mergeDependencies(existing []core.Package, additional []core.Package) []core.Package {
+	for _, newpkg := range additional {
+		// Check if the package has already been added as a dependency.
+		exists := false
+		for _, existingpkg := range existing {
+			if existingpkg.Name == newpkg.Name {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			existing = append(existing, newpkg)
+		}
+	}
+
+	return existing
 }

@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"archive/tar"
 	"fmt"
 	"github.com/cloudius-systems/capstan/core"
 	"github.com/cloudius-systems/capstan/util"
 	"gopkg.in/yaml.v2"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -37,17 +39,86 @@ func InitPackage(packageName string, p *core.Package) error {
 	return nil
 }
 
-func ComposePackage(repo *util.Repo, imageSize int64, packageDir string, appName string) error {
-	// If all is well, we have to start preparing the files for upload.
-	paths := make(map[string]string)
+func BuildPackage(packageDir string) (string, error) {
+	fmt.Println("Building package")
 
-	// We have to include the "bootstrap" package
-	bootstrap := repo.PackagePath("bootstrap")
-	if err := CollectDirectoryContents(paths, bootstrap, repo); err != nil {
+	pkg, err := core.ParsePackageManifest(filepath.Join(packageDir, "meta", "package.yaml"))
+	if err != nil {
+		return "", err
+	}
+
+	mpmname := fmt.Sprintf("%s.mpm", pkg.Name)
+	target := filepath.Join(packageDir, mpmname)
+	mpmfile, err := os.Create(target)
+	if err != nil {
+		return "", err
+	}
+
+	defer mpmfile.Close()
+
+	tarball := tar.NewWriter(mpmfile)
+	defer tarball.Close()
+
+	err = filepath.Walk(packageDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath := strings.TrimPrefix(path, packageDir)
+
+		// Skip the MPM package file or the collected package content..
+		if filepath.Base(path) == mpmname || strings.HasPrefix(relPath, "/mpm-pkg") {
+			return nil
+		}
+
+		header, err := tar.FileInfoHeader(info, info.Name())
+		if err != nil {
+			return err
+		}
+
+		header.Name = relPath
+
+		if err := tarball.WriteHeader(header); err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+
+		defer file.Close()
+		_, err = io.Copy(tarball, file)
+		return err
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("Package built and stored in %s\n", target)
+
+	return target, nil
+}
+
+func ComposePackage(repo *util.Repo, imageSize int64, packageDir string, appName string) error {
+	targetPath := filepath.Join(packageDir, "mpm-pkg")
+	// Remove collected directory afterwards.
+	defer os.Remove(targetPath)
+
+	// First, collect the contents of the package.
+	err := CollectPackage(repo, packageDir)
+	if err != nil {
 		return err
 	}
 
-	if err := CollectDirectoryContents(paths, packageDir, repo); err != nil {
+	// If all is well, we have to start preparing the files for upload.
+	paths, err := collectDirectoryContents(targetPath)
+	if err != nil {
 		return err
 	}
 
@@ -69,88 +140,71 @@ func ComposePackage(repo *util.Repo, imageSize int64, packageDir string, appName
 }
 
 func CollectPackage(repo *util.Repo, packageDir string) error {
-	paths := make(map[string]string)
-
-	bootstrap := repo.PackagePath("bootstrap")
-	if err := CollectDirectoryContents(paths, bootstrap, repo); err != nil {
+	// Get the manifest file of the given package.
+	pkg, err := core.ParsePackageManifest(filepath.Join(packageDir, "meta", "package.yaml"))
+	if err != nil {
 		return err
 	}
 
-	if err := CollectDirectoryContents(paths, packageDir, repo); err != nil {
+	// Look for all dependencies and make sure they are all available in the repository.
+	requiredPackages, err := repo.GetPackageDependencies(pkg)
+	if err != nil {
 		return err
 	}
 
-	os.Mkdir("capstan-pkg", 0755)
-	rootPath, _ := filepath.Abs(filepath.Join(packageDir, "capstan-pkg"))
+	targetPath := filepath.Join(packageDir, "mpm-pkg")
+	if err = os.MkdirAll(targetPath, 0775); err != nil {
+		return err
+	}
 
-	for src, dest := range paths {
-		// Check the source file.
-		fi, err := os.Stat(src)
+	err = filepath.Walk(packageDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Get the absolute path of the destination file/dir
-		d := filepath.Join(rootPath, dest)
+		relPath := strings.TrimPrefix(path, packageDir)
+		if relPath != "" && !strings.HasPrefix(relPath, "/meta") && !strings.HasPrefix(relPath, "/mpm-pkg") {
+			// If the current path is a directory, create target directory and skip to the next path.
+			if info.IsDir() {
+				if err = os.MkdirAll(filepath.Join(targetPath, relPath), info.Mode()); err != nil {
+					return err
+				}
 
-		// destDir is the absolute directory in which the destination file should be placed.
-		var destDir string
-		// If
-		if fi.Mode().IsRegular() {
-			// If source is actually a file, we have to get the name of the folder containing the file
-			destDir = filepath.Dir(d)
-		} else {
-			// Otherwise if it is already a directory, use that
-			destDir = d
-		}
+				return nil
+			}
 
-		// Make target directory if it doesn't exist
-		if _, err := os.Stat(destDir); err != nil {
-			if err = os.MkdirAll(destDir, 0755); err != nil {
+			err = util.CopyLocalFile(filepath.Join(targetPath, relPath), path)
+			if err != nil {
 				return err
 			}
 		}
 
-		// Finally, if source path is a file, copy the file.
-		if fi.Mode().IsRegular() {
-			util.CopyLocalFile(d, src)
+		return nil
+	})
+
+	for _, req := range requiredPackages {
+		reqpkg, err := repo.GetPackage(req.Name)
+		if err != nil {
+			return err
+		}
+
+		err = extractPackageContent(reqpkg, targetPath)
+		if err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func CollectDirectoryContents(contents map[string]string, packageDir string, repo *util.Repo) error {
-	if _, err := os.Stat(packageDir); os.IsNotExist(err) {
-		return fmt.Errorf("%s does not exist", packageDir)
-	}
-
+func collectDirectoryContents(packageDir string) (map[string]string, error) {
 	packageDir, err := filepath.Abs(packageDir)
 
-	// First, look for the package metadata.
-	pkgMetadata := filepath.Join(packageDir, "meta", "package.yaml")
-
-	if _, err := os.Stat(pkgMetadata); os.IsNotExist(err) {
-		return fmt.Errorf("%s is missing package description in meta/package.yaml", packageDir)
+	if _, err := os.Stat(packageDir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("%s does not exist", packageDir)
 	}
 
-	// If the file exists, try to parse it.
-	d, err := ioutil.ReadFile(pkgMetadata)
-	if err != nil {
-		return err
-	}
-
-	// Now parse the package descriptior.
-	var pkg core.Package
-	if err := pkg.Parse(d); err != nil {
-		return err
-	}
-
-	for _, requiredPackage := range pkg.Require {
-		requiredPath := repo.PackagePath(requiredPackage)
-
-		CollectDirectoryContents(contents, requiredPath, repo)
-	}
+	contents := make(map[string]string)
 
 	err = filepath.Walk(packageDir, func(path string, info os.FileInfo, _ error) error {
 		relPath := strings.TrimPrefix(path, packageDir)
@@ -161,5 +215,64 @@ func CollectDirectoryContents(contents map[string]string, packageDir string, rep
 		return nil
 	})
 
-	return err
+	return contents, err
+}
+
+func ImportPackage(repo *util.Repo, packageDir string) error {
+	packagePath, err := BuildPackage(packageDir)
+	if err != nil {
+		return err
+	}
+
+	pkg, err := core.ParsePackageManifest(filepath.Join(packageDir, "meta", "package.yaml"))
+	if err != nil {
+		return err
+	}
+
+	defer os.Remove(packagePath)
+
+	// Import the package into the current repository.
+	return repo.ImportPackage(pkg, packagePath)
+}
+
+func extractPackageContent(pkgreader io.Reader, target string) error {
+	tarReader := tar.NewReader(pkgreader)
+
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			// Have we reached till the end of the tar?
+			break
+		} else if err != nil {
+			return err
+		}
+
+		// Skip manifest data.
+		if strings.HasPrefix(header.Name, "/meta") {
+			continue
+		}
+
+		path := filepath.Join(target, header.Name)
+		info := header.FileInfo()
+		if info.IsDir() {
+			if err = os.MkdirAll(path, info.Mode()); err != nil {
+				return err
+			}
+
+			continue
+		}
+
+		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
+		if err != nil {
+			return err
+		}
+
+		defer file.Close()
+		_, err = io.Copy(file, tarReader)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
