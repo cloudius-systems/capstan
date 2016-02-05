@@ -21,12 +21,12 @@ func (p *Package) Parse(data []byte) error {
 		return err
 	}
 
-	if p.Title == "" {
-		return fmt.Errorf("'title' must be provided for the package")
-	}
-
 	if p.Name == "" {
 		return fmt.Errorf("'name' must be provided for the package")
+	}
+
+	if p.Title == "" {
+		return fmt.Errorf("'title' must be provided for the package")
 	}
 
 	if p.Author == "" {

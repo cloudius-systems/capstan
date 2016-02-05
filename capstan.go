@@ -285,15 +285,35 @@ func main() {
 				{
 					Name:      "init",
 					Usage:     "initialise package structure",
-					ArgsUsage: "package name",
+					ArgsUsage: "[path]",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "l", Usage: "long package name"},
+						cli.StringFlag{Name: "name,n", Usage: "package name"},
+						cli.StringFlag{Name: "title,t", Usage: "package title"},
 						cli.StringFlag{Name: "author,a", Usage: "package author"},
 						cli.StringFlag{Name: "version,v", Usage: "package version"},
 					},
 					Action: func(c *cli.Context) {
-						if len(c.Args()) != 1 {
-							fmt.Println("usage: capstan package init [package_name]")
+						if len(c.Args()) > 1 {
+							fmt.Println("usage: capstan package init [path]")
+							return
+						}
+
+						// The package path is the current working dir...
+						packagePath, _ := os.Getwd()
+						// ... unless the user has provided the exact location.
+						if len(c.Args()) == 1 {
+							packagePath = c.Args()[0]
+						}
+
+						// Author is a mandatory field.
+						if c.String("name") == "" {
+							fmt.Println("You must provide the name of the package (--name or -n)")
+							return
+						}
+
+						// Author is a mandatory field.
+						if c.String("title") == "" {
+							fmt.Println("You must provide the title of the package (--title or -t)")
 							return
 						}
 
@@ -303,24 +323,16 @@ func main() {
 							return
 						}
 
-						// This is the name of the directory that will be created when
-						// initialising the package.
-						packageName := c.Args()[0]
-
 						// Initialise the package structure. The version may be empty as it is not
 						// mandatory field.
 						p := &core.Package{
-							Name:    c.String("l"),
+							Name:    c.String("name"),
+							Title:   c.String("title"),
 							Author:  c.String("author"),
 							Version: c.String("version"),
 						}
 
-						// If long package name was not provided, use the package name.
-						if p.Name == "" {
-							p.Name = packageName
-						}
-
-						cmd.InitPackage(packageName, p)
+						cmd.InitPackage(packagePath, p)
 					},
 				},
 				{

@@ -13,9 +13,9 @@ import (
 	"strings"
 )
 
-func InitPackage(packageName string, p *core.Package) error {
+func InitPackage(packagePath string, p *core.Package) error {
 	// We have to create hte package directory and it's metadata directory.
-	metaPath := filepath.Join(packageName, "meta")
+	metaPath := filepath.Join(packagePath, "meta")
 
 	fmt.Printf("Initializing package in %s\n", metaPath)
 
