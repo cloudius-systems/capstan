@@ -291,6 +291,7 @@ func main() {
 						cli.StringFlag{Name: "title,t", Usage: "package title"},
 						cli.StringFlag{Name: "author,a", Usage: "package author"},
 						cli.StringFlag{Name: "version,v", Usage: "package version"},
+						cli.StringSliceFlag{Name: "require", Usage: "specify package dependency"},
 					},
 					Action: func(c *cli.Context) {
 						if len(c.Args()) > 1 {
@@ -330,6 +331,7 @@ func main() {
 							Title:   c.String("title"),
 							Author:  c.String("author"),
 							Version: c.String("version"),
+							Require: c.StringSlice("require"),
 						}
 
 						cmd.InitPackage(packagePath, p)
