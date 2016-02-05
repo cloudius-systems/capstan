@@ -359,6 +359,7 @@ func main() {
 						cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
 						cli.BoolFlag{Name: "update", Usage: "updates the existing target VM by uploading only modified files"},
 						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
 					},
 					Action: func(c *cli.Context) {
 						if len(c.Args()) != 1 {
@@ -381,11 +382,12 @@ func main() {
 
 						updatePackage := c.Bool("update")
 						verbose := c.Bool("verbose")
+						runCmd := c.String("run")
 
 						// Always use the current directory for the package to compose.
 						packageDir, _ := os.Getwd()
 
-						if err := cmd.ComposePackage(repo, imageSize, updatePackage, verbose, packageDir, appName); err != nil {
+						if err := cmd.ComposePackage(repo, imageSize, updatePackage, verbose, runCmd, packageDir, appName); err != nil {
 							fmt.Println(err)
 							os.Exit(1)
 						}

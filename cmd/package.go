@@ -139,15 +139,17 @@ func BuildPackage(packageDir string) (string, error) {
 // by comparing previous MD5 hashes to the ones in the current package
 // directory. Only modified files are uploaded and no file deletions are
 // possible at this time.
-func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbose bool, packageDir string, appName string) error {
+func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbose bool, runCmd string, packageDir string, appName string) error {
 
 	// Package content should be collected in a subdirectory called mpm-pkg.
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
 	// Remove collected directory afterwards.
 	defer os.RemoveAll(targetPath)
 
+	// Default command line is the one passed by the user.
+	commandLine := runCmd
+
 	// If it is a Java application, we have to set the VMs command line.
-	var commandLine string
 	if core.IsJavaPackage(packageDir) {
 		java, err := core.ParseJavaConfig(packageDir)
 		// If it is a Java application, failure to parse the config should be
