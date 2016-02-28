@@ -3,6 +3,14 @@
 package=github.com/cloudius-systems/capstan
 version=$(scripts/version)
 
+IFS=' ' read -a ver <<< "$(go version)"
+IFS='.' read -a ver <<< ${ver[2]}
+if [[ ver[1] -gt 4 ]]; then
+    link_operator="="
+else
+    link_operator=" "
+fi
+
 go get $package
-go build -ldflags "-X main.VERSION '$version'" $package
+go build -ldflags "-X main.VERSION$link_operator'$version'" $package
 go install $package
