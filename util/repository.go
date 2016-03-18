@@ -79,7 +79,7 @@ func (r *Repo) ImportImage(imageName string, file string, version string, create
 	}
 
 	dst := r.ImagePath(hypervisor, imageName)
-	fmt.Printf("Importing into %s", dst)
+	fmt.Printf("Importing into %s\n", dst)
 	cmd := CopyFile(file, dst)
 	_, err = cmd.Output()
 	if err != nil {
@@ -125,6 +125,10 @@ func (r *Repo) RepoPath() string {
 	return filepath.Join(r.Path, "repository")
 }
 
+func (r *Repo) PackagesPath() string {
+	return filepath.Join(r.Path, "packages")
+}
+
 func (r *Repo) ImagePath(hypervisor string, image string) string {
 	return filepath.Join(r.RepoPath(), image, fmt.Sprintf("%s.%s", filepath.Base(image), hypervisor))
 }
@@ -160,6 +164,22 @@ func (r *Repo) ListImages() {
 		// Image is directly at repository root with no namespace:
 		if nrImages == 0 && nrFiles != 0 {
 			fmt.Println(n.Name())
+		}
+	}
+}
+
+func (r *Repo) ListPackages() {
+	fmt.Println(FileInfoHeader())
+	packages, _ := ioutil.ReadDir(r.PackagesPath())
+	for _, p := range packages {
+		if filepath.Ext(p.Name()) == ".yaml" {
+			pkg, err := core.ParsePackageManifest(filepath.Join(r.PackagesPath(), p.Name()))
+
+			if err != nil {
+				continue
+			}
+
+			fmt.Printf("%-50s %-50s %-25s %-15s\n", pkg.Name, pkg.Title, pkg.Version, p.ModTime().Format(time.RFC3339))
 		}
 	}
 }

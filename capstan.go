@@ -399,6 +399,15 @@ func main() {
 					},
 				},
 				{
+					Name:  "list",
+					Usage: "lists the available packages",
+					Action: func(c *cli.Context) {
+						repo := util.NewRepo(c.GlobalString("u"))
+
+						repo.ListPackages()
+					},
+				},
+				{
 					Name:  "import",
 					Usage: "builds the package at the given path and imports it into a chosen repository",
 					Action: func(c *cli.Context) {

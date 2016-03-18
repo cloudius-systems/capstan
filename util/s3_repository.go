@@ -45,11 +45,11 @@ type FilesInfo struct {
 }
 
 func FileInfoHeader() string {
-	return fmt.Sprintf("%-30s %-50s %-25s %-15s", "Name", "Description", "Version", "Created")
+	return fmt.Sprintf("%-50s %-50s %-25s %-15s", "Name", "Description", "Version", "Created")
 }
 
 func (f *FileInfo) String() string {
-	return fmt.Sprintf("%-30s %-50s %-25s %-15s", f.Namespace+"/"+f.Name, f.Description, f.Version, f.Created)
+	return fmt.Sprintf("%-50s %-50s %-25s %-15s", f.Namespace+"/"+f.Name, f.Description, f.Version, f.Created)
 }
 
 func MakeFileInfo(path, ns, name string) *FileInfo {
