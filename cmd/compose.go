@@ -7,7 +7,6 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/util"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -60,11 +59,6 @@ func UploadPackageContents(appImage string, uploadPaths map[string]string) error
 		return err
 	}
 
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return err
-	}
-
 	// Finally, let's start the command: launch the VM
 	if err := cmd.Start(); err != nil {
 		return err
@@ -82,9 +76,6 @@ func UploadPackageContents(appImage string, uploadPaths map[string]string) error
 			break
 		}
 	}
-
-	go io.Copy(os.Stdout, stdout)
-	go io.Copy(os.Stderr, stderr)
 
 	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
 	defer conn.Close()
