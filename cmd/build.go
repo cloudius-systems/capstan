@@ -129,12 +129,32 @@ func IsReg(m os.FileMode) bool {
 }
 
 func CopyFile(conn net.Conn, src string, dst string) error {
-	fi, err := os.Stat(src)
+	fi, err := os.Lstat(src)
 	if err != nil {
 		return err
 	}
 
-	if fi.IsDir() {
+	switch {
+	case fi.Mode()&os.ModeSymlink == os.ModeSymlink:
+		linkTarget, _ := os.Readlink(src)
+
+		if strings.HasPrefix(linkTarget, "/") || strings.HasPrefix(linkTarget, "..") {
+			srcDir := filepath.Dir(src)
+
+			if linkTarget, err = filepath.Abs(filepath.Join(srcDir, linkTarget)); err != nil {
+				return err
+			}
+
+			linkTarget = strings.TrimPrefix(linkTarget, strings.TrimSuffix(src, dst))
+		}
+
+		perm := uint64(fi.Mode()) & 0777
+		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISLNK|perm, int64(len(linkTarget))))
+		cpio.WritePadded(conn, []byte(linkTarget))
+
+		return nil
+
+	case fi.Mode().IsDir():
 		fi, err := os.Stat(src)
 		if err != nil {
 			return err
@@ -142,12 +162,8 @@ func CopyFile(conn net.Conn, src string, dst string) error {
 		perm := uint64(fi.Mode()) & 0777
 		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISDIR|perm, 0))
 		return nil
-	}
 
-	if !IsReg(fi.Mode()) {
-		fmt.Println("skipping non-file path " + src)
-		return nil
-	} else {
+	case fi.Mode().IsRegular():
 		contents, err := ioutil.ReadFile(src)
 		if err != nil {
 			return nil
@@ -159,6 +175,10 @@ func CopyFile(conn net.Conn, src string, dst string) error {
 		perm := uint64(fi.Mode()) & 0777
 		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISREG|perm, fi.Size()))
 		cpio.WritePadded(conn, contents)
+
+	default:
+		fmt.Println("skipping non-file path " + src)
+		return nil
 	}
 
 	return nil

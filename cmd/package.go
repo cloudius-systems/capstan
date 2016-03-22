@@ -71,29 +71,56 @@ func BuildPackage(packageDir string) (string, error) {
 			return nil
 		}
 
-		header, err := tar.FileInfoHeader(info, info.Name())
+		link := ""
+		// Check whether the current path is a link
+		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
+			// Get the link target. It is relative to the link.
+			//if link, err = filepath.EvalSymlinks(path); err != nil {
+			if link, err = os.Readlink(path); err != nil {
+				return err
+			}
+		}
+
+		// Link is an empty string in case the path represents a regular file or dir.
+		header, err := tar.FileInfoHeader(info, link)
 		if err != nil {
 			return err
 		}
 
-		header.Name = relPath
+		// Since the default initialisation uses only the basename for the name
+		// we have to use a path relative to the package in order to presserve
+		// hierarchy.
+		if info.IsDir() {
+			header.Name = relPath + "/"
+		} else {
+			header.Name = relPath
+		}
 
 		if err := tarball.WriteHeader(header); err != nil {
 			return err
 		}
 
-		if info.IsDir() {
+		switch {
+		case info.Mode()&os.ModeSymlink == os.ModeSymlink:
 			return nil
-		}
 
-		file, err := os.Open(path)
-		if err != nil {
+		case info.Mode().IsDir():
+			return nil
+
+		case info.Mode().IsRegular():
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+
+			defer file.Close()
+			_, err = io.Copy(tarball, file)
+
 			return err
-		}
 
-		defer file.Close()
-		_, err = io.Copy(tarball, file)
-		return err
+		default:
+			return fmt.Errorf("File %s has unsupported mode %v", path, info.Mode())
+		}
 	})
 
 	if err != nil {
@@ -162,25 +189,41 @@ func CollectPackage(repo *util.Repo, packageDir string) error {
 			return err
 		}
 
-		relPath := strings.TrimPrefix(path, packageDir)
-		if relPath != "" && !strings.HasPrefix(relPath, "/meta") && !strings.HasPrefix(relPath, "/mpm-pkg") {
-			// If the current path is a directory, create target directory and skip to the next path.
-			if info.IsDir() {
-				if err = os.MkdirAll(filepath.Join(targetPath, relPath), info.Mode()); err != nil {
-					return err
-				}
-
-				return nil
-			}
-
-			err = util.CopyLocalFile(filepath.Join(targetPath, relPath), path)
-			if err != nil {
+		link := ""
+		// Check whether the current path is a link
+		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
+			// Get the link target. It is relative to the link.
+			//if link, err = filepath.EvalSymlinks(path); err != nil {
+			if link, err = os.Readlink(path); err != nil {
 				return err
 			}
 		}
 
+		relPath := strings.TrimPrefix(path, packageDir)
+		if relPath != "" && !strings.HasPrefix(relPath, "/meta") && !strings.HasPrefix(relPath, "/mpm-pkg") {
+
+			switch {
+			case info.Mode()&os.ModeSymlink == os.ModeSymlink:
+				return os.Symlink(link, filepath.Join(targetPath, relPath))
+
+			case info.IsDir():
+				return os.MkdirAll(filepath.Join(targetPath, relPath), info.Mode())
+
+			case info.Mode().IsRegular():
+				return util.CopyLocalFile(filepath.Join(targetPath, relPath), path)
+
+			default:
+				return fmt.Errorf("File %s has unsupported mode %v", path, info.Mode())
+			}
+
+		}
+
 		return nil
 	})
+
+	if err != nil {
+		return err
+	}
 
 	for _, req := range requiredPackages {
 		reqpkg, err := repo.GetPackage(req.Name)
@@ -254,23 +297,32 @@ func extractPackageContent(pkgreader io.Reader, target string) error {
 
 		path := filepath.Join(target, header.Name)
 		info := header.FileInfo()
-		if info.IsDir() {
+
+		switch {
+		case info.Mode()&os.ModeSymlink == os.ModeSymlink:
+			if err = os.Symlink(header.Linkname, path); err != nil {
+				return err
+			}
+
+		case info.IsDir():
 			if err = os.MkdirAll(path, info.Mode()); err != nil {
 				return err
 			}
 
-			continue
-		}
+		case info.Mode().IsRegular():
+			file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
+			if err != nil {
+				return err
+			}
 
-		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
-		if err != nil {
-			return err
-		}
+			defer file.Close()
+			_, err = io.Copy(file, tarReader)
+			if err != nil {
+				return err
+			}
 
-		defer file.Close()
-		_, err = io.Copy(file, tarReader)
-		if err != nil {
-			return err
+		default:
+			return fmt.Errorf("File %s has unsupported mode %v", path, info.Mode())
 		}
 	}
 

@@ -14,6 +14,7 @@ import (
 
 const (
 	C_ISREG = 0100000
+	C_ISLNK = 0120000
 	C_ISDIR = 0040000
 )
 
