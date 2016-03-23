@@ -135,7 +135,20 @@ func BuildPackage(packageDir string) (string, error) {
 func ComposePackage(repo *util.Repo, imageSize int64, packageDir string, appName string) error {
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
 	// Remove collected directory afterwards.
-	defer os.Remove(targetPath)
+	defer os.RemoveAll(targetPath)
+
+	// If it is a Java application, we have to set the VMs command line.
+	var commandLine string
+	if core.IsJavaPackage(packageDir) {
+		java, err := core.ParseJavaConfig(packageDir)
+		// If it is a Java application, failure to parse the config should be
+		// treated as an error and should fail package composition process.
+		if err != nil {
+			return err
+		}
+
+		commandLine = fmt.Sprintf("java.so %s io.osv.MultiJarLoader -mains /etc/javamains", java.GetVmArgs())
+	}
 
 	// First, collect the contents of the package.
 	err := CollectPackage(repo, packageDir)
@@ -161,6 +174,14 @@ func ComposePackage(repo *util.Repo, imageSize int64, packageDir string, appName
 	// Upload the specified path onto virtual image.
 	if err := UploadPackageContents(imagePath, paths); err != nil {
 		return err
+	}
+
+	if commandLine != "" {
+		if err = util.SetCmdLine(imagePath, commandLine); err != nil {
+			return err
+		}
+
+		fmt.Printf("Command line set to: %s\n", commandLine)
 	}
 
 	return nil
@@ -223,6 +244,25 @@ func CollectPackage(repo *util.Repo, packageDir string) error {
 
 	if err != nil {
 		return err
+	}
+
+	if core.IsJavaPackage(packageDir) {
+		// Check if /etc folder is already available. This is where we are going to store
+		// Java launch definition.
+		etcDir := filepath.Join(targetPath, "etc")
+		if _, err := os.Stat(etcDir); os.IsNotExist(err) {
+			os.MkdirAll(etcDir, 0777)
+		}
+
+		java, err := core.ParseJavaConfig(packageDir)
+		if err != nil {
+			return err
+		}
+
+		err = ioutil.WriteFile(filepath.Join(etcDir, "javamains"), []byte(java.GetCommandLine()), 0644)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, req := range requiredPackages {
