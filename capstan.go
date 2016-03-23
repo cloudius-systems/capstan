@@ -110,8 +110,9 @@ func main() {
 			},
 		},
 		{
-			Name:  "run",
-			Usage: "launch a VM. You may pass the image name as the first argument.",
+			Name:      "run",
+			Usage:     "launch a VM. You may pass the image name as the first argument.",
+			ArgsUsage: "instance-name",
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "i", Value: "", Usage: "image_name"},
 				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
