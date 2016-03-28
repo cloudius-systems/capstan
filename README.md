@@ -10,7 +10,7 @@ OSv support.
 ## Features
 
 * Run multiple VMs of an image as copy-on-write
-* Linux, OS X, and Windows support
+* Linux, FreeBSD, OS X, and Windows support
 * Hypervisors:
     * QEMU/KVM
     * VirtualBox
@@ -40,6 +40,12 @@ On OS X:
 
 ```
 $ brew install qemu
+```
+
+On FreeBSD:
+
+```
+$ sudo pkg install qemu
 ```
 
 ### Prerequisites: Google Compute Engine
