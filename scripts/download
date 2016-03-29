@@ -7,6 +7,7 @@ VERSION="v0.1.8"
 case "$OSTYPE" in
   darwin*)  OS="darwin" ;; 
   linux*)   OS="linux"  ;;
+  freebsd*) OS="freebsd";;
   *)        echo "Your operating system ('$OSTYPE') is not supported by Capstan. Exiting." && exit 1 ;;
 esac
 

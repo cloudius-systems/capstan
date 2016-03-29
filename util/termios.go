@@ -1,4 +1,4 @@
-// +build linux darwin
+// +build darwin freebsd linux
 
 /*
  * Copyright (C) 2014 Cloudius Systems, Ltd.
