@@ -205,6 +205,21 @@ func CollectPackage(repo *util.Repo, packageDir string) error {
 		return err
 	}
 
+	// First collect everything from the required packages.
+	for _, req := range requiredPackages {
+		reqpkg, err := repo.GetPackage(req.Name)
+		if err != nil {
+			return err
+		}
+
+		err = extractPackageContent(reqpkg, targetPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Now we need to append the content of the current package into the target directory.
+	// This should override any file from the required packages.
 	err = filepath.Walk(packageDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -260,18 +275,6 @@ func CollectPackage(repo *util.Repo, packageDir string) error {
 		}
 
 		err = ioutil.WriteFile(filepath.Join(etcDir, "javamains"), []byte(java.GetCommandLine()), 0644)
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, req := range requiredPackages {
-		reqpkg, err := repo.GetPackage(req.Name)
-		if err != nil {
-			return err
-		}
-
-		err = extractPackageContent(reqpkg, targetPath)
 		if err != nil {
 			return err
 		}
