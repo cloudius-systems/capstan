@@ -3,6 +3,16 @@
 package=github.com/cloudius-systems/capstan
 version=$(scripts/version)
 
+OLDIFS=$IFS
+IFS=' '; set -- $(go version)
+IFS='.'; set -- $3
+IFS=$OLDIFS
+if [ $2 -gt 4 ]; then
+    link_operator="="
+else
+    link_operator=" "
+fi
+
 go get $package
-go build -ldflags "-X main.VERSION '$version'" $package
+go build -a -ldflags "-X main.VERSION$link_operator'$version' -w -s" -tags netgo $package
 go install $package
