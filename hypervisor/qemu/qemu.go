@@ -294,7 +294,13 @@ func (c *VMConfig) vmNetworking() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		args = append(args, "-netdev", fmt.Sprintf("bridge,id=hn0,br=%s,helper=/usr/libexec/qemu-bridge-helper", c.Bridge), "-device", fmt.Sprintf("virtio-net-pci,netdev=hn0,id=nic1,mac=%s", mac.String()))
+
+		bridgeHelper, err := qemuBridgeHelper()
+		if err != nil {
+			return nil, err
+		}
+
+		args = append(args, "-netdev", fmt.Sprintf("bridge,id=hn0,br=%s,helper=%s", c.Bridge, bridgeHelper), "-device", fmt.Sprintf("virtio-net-pci,netdev=hn0,id=nic1,mac=%s", mac.String()))
 		return args, nil
 	case "nat":
 		args = append(args, "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0")
@@ -330,4 +336,31 @@ func qemuExecutable() (string, error) {
 		}
 	}
 	return "", fmt.Errorf("No QEMU installation found. Use the CAPSTAN_QEMU_PATH environment variable to specify its path.")
+}
+
+func qemuBridgeHelper() (string, error) {
+	paths := []string{
+		"/usr/libexec",
+		"/usr/lib/qemu",
+		"/usr/lib",
+	}
+
+	// Use ENV variable if it exists. This allows users to set the location if not avaliable
+	// in standard directories.
+	bridgeHelper := os.Getenv("CAPSTAN_QEMU_BRIDGE_HELPER")
+	if bridgeHelper != "" {
+		if _, err := os.Stat(bridgeHelper); err == nil {
+			return bridgeHelper, nil
+		}
+	}
+
+	// If the ENV setting was not available or the file does not exist, try standard locations
+	for _, path := range paths {
+		bridgeHelper := filepath.Join(path, "qemu-bridge-helper")
+		if _, err := os.Stat(bridgeHelper); err == nil {
+			return bridgeHelper, nil
+		}
+	}
+
+	return "", fmt.Errorf("No QEMU bridge helper (qemu-bridge-helper) found. Use CAPSTAN_QEMU_BRIDGE_HELPER to set the path to qemu-bridge-helper.")
 }
