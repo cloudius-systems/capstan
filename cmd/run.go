@@ -144,27 +144,49 @@ func RunInstance(repo *util.Repo, config *RunConfig) error {
 		}
 		deleteInstance(config.InstanceName)
 	} else if config.ImageName == "" && config.InstanceName == "" {
-		// Valid only when Capstanfile is present
-		config.ImageName = repo.DefaultImage()
-		config.InstanceName = config.ImageName
-		if config.ImageName == "" {
-			return fmt.Errorf("No Capstanfile found, unable to run.")
-		}
-		if !repo.ImageExists(config.Hypervisor, config.ImageName) {
-			if !core.IsTemplateFile("Capstanfile") {
-				return fmt.Errorf("%s: no such image", config.ImageName)
+		if core.IsTemplateFile("Capstanfile") {
+			// Valid only when Capstanfile is present
+			config.ImageName = repo.DefaultImage()
+			config.InstanceName = config.ImageName
+			if config.ImageName == "" {
+				return fmt.Errorf("No Capstanfile found, unable to run.")
 			}
-			image := &core.Image{
-				Name:       config.ImageName,
-				Hypervisor: config.Hypervisor,
+			if !repo.ImageExists(config.Hypervisor, config.ImageName) {
+				//if !core.IsTemplateFile("Capstanfile") {
+				//return fmt.Errorf("%s: no such image", config.ImageName)
+				//}
+				image := &core.Image{
+					Name:       config.ImageName,
+					Hypervisor: config.Hypervisor,
+				}
+				template, err := core.ReadTemplateFile("Capstanfile")
+				if err != nil {
+					return err
+				}
+				if err := Build(repo, image, template, config.Verbose, config.Memory); err != nil {
+					return err
+				}
 			}
-			template, err := core.ReadTemplateFile("Capstanfile")
+		} else if pkg, err := core.ParsePackageManifest("meta/package.yaml"); err == nil {
+			// If the current directory represents an MPM package, try to compose and then
+			// run the VM.
+
+			// Set image and package name based on the package name.
+			config.ImageName = pkg.Name
+			config.InstanceName = pkg.Name
+
+			// Try to compose the package.
+			sz, _ := util.ParseMemSize("10G")
+			wd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
-			if err := Build(repo, image, template, config.Verbose, config.Memory); err != nil {
+			err = ComposePackage(repo, sz, true, false, wd, pkg.Name)
+			if err != nil {
 				return err
 			}
+		} else {
+			return fmt.Errorf("Missing Capstanfile or package metadata")
 		}
 		path = repo.ImagePath(config.Hypervisor, config.ImageName)
 		deleteInstance(config.InstanceName)
