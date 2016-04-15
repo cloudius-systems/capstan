@@ -1,8 +1,7 @@
-package cmd_test
+package cmd
 
 import (
 	"bytes"
-	"github.com/cloudius-systems/capstan/cmd"
 	"github.com/cloudius-systems/capstan/core"
 	"github.com/cloudius-systems/capstan/util"
 	. "gopkg.in/check.v1"
@@ -28,7 +27,7 @@ func (s *suite) SetUpSuite(c *C) {
 var _ = Suite(&suite{})
 
 func (*suite) TestPackageUnmarshaller(c *C) {
-	packageYaml := "name: Capstan tester\nauthor: MIKE\nversion: 0.23-24-gc60331d\n" +
+	packageYaml := "name: Capstan tester\ntitle: MPM Test package\nauthor: MIKE\nversion: 0.23-24-gc60331d\n" +
 		"require:\n - httpserver\n - openmpi\n" +
 		"binary:\n app: /usr/bin/app.so\n /usr/bin/app: /usr/local/bin/app.so"
 
@@ -37,6 +36,7 @@ func (*suite) TestPackageUnmarshaller(c *C) {
 
 	c.Assert(err, IsNil)
 	c.Assert(simplePackage.Name, Equals, "Capstan tester")
+	c.Assert(simplePackage.Title, Equals, "MPM Test package")
 	c.Assert(simplePackage.Author, Equals, "MIKE")
 	c.Assert(simplePackage.Version, Equals, "0.23-24-gc60331d")
 	c.Assert(simplePackage.Require, HasLen, 2)
@@ -68,7 +68,7 @@ func (*suite) TestIncomplete(c *C) {
 }
 
 func (*suite) TestMinimalPackageYaml(c *C) {
-	minimalYaml := "name: MIKE test\nauthor: MIKE"
+	minimalYaml := "name: MIKE test\ntitle: MIKELANGELO test package\nauthor: MIKE"
 	var nameAuthorPackage core.Package
 	err := nameAuthorPackage.Parse([]byte(minimalYaml))
 	c.Assert(err, IsNil)
@@ -95,7 +95,7 @@ func (*suite) TestComposeNonPackageFails(c *C) {
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-app"
 
-	err := cmd.ComposePackage(repo, imageSize, tmp, appName)
+	err := ComposePackage(repo, imageSize, false, false, tmp, appName)
 
 	c.Assert(err, NotNil)
 }
@@ -116,45 +116,56 @@ func (*suite) TestComposeCorruptPackageFails(c *C) {
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-app"
 
-	err = cmd.ComposePackage(repo, imageSize, tmp, appName)
+	err = ComposePackage(repo, imageSize, false, false, tmp, appName)
 	c.Assert(err, NotNil)
 }
 
 func (*suite) TestCollectDirectoryContents(c *C) {
-	// We are going to create an empty temp directory.
-	tmp, _ := ioutil.TempDir("", "pkg")
-	defer os.RemoveAll(tmp)
-
-	// Create package metadata
-	metaPath := filepath.Join(tmp, "meta")
-	os.MkdirAll(metaPath, 0755)
-
-	simplePacakge := "name: simple\nauthor: mike\nversion: 0.1"
-
-	err := ioutil.WriteFile(filepath.Join(metaPath, "package.yaml"), []byte(simplePacakge), 0644)
+	paths, err := collectDirectoryContents("testdata/hashing")
 	c.Assert(err, IsNil)
 
-	// Also add few files.
-	os.MkdirAll(filepath.Join(tmp, "usr", "bin"), 0755)
-	os.MkdirAll(filepath.Join(tmp, "usr", "lib"), 0755)
-	ioutil.WriteFile(filepath.Join(tmp, "file1"), []byte("file1"), 0644)
-	ioutil.WriteFile(filepath.Join(tmp, "usr", "bin", "file2"), []byte("file2"), 0644)
-	ioutil.WriteFile(filepath.Join(tmp, "usr", "bin", "file3"), []byte("file3"), 0644)
-	ioutil.WriteFile(filepath.Join(tmp, "usr", "lib", "file4"), []byte("file4"), 0644)
-	ioutil.WriteFile(filepath.Join(tmp, "usr", "lib", "file5"), []byte("file5"), 0644)
+	expectedPaths := []string{"file1", "symlink-to-file1", "dir2", "dir2/file-in-dir2", "dir1",
+		"dir1/file2", "dir1/dir3", "dir1/dir3/another-file", "dir1/dir3/file3", "file4"}
 
-	repo := util.NewRepo(util.DefaultRepositoryUrl)
-	//imageSize, _ := util.ParseMemSize("64M")
-	//appName := "test-app"
+	c.Assert(paths, HasLen, len(expectedPaths))
 
-	m := make(map[string]string)
-	err = cmd.CollectDirectoryContents(m, tmp, repo)
-	c.Assert(err, IsNil)
+	wd, err := os.Getwd()
+	if err != nil {
+		c.Fail()
+	}
 
-	c.Assert(len(m), Equals, 8)
-	c.Assert(m[filepath.Join(tmp, "file1")], Equals, "/file1")
-	c.Assert(m[filepath.Join(tmp, "usr", "bin", "file2")], Equals, "/usr/bin/file2")
+	for _, path := range expectedPaths {
+		hostPath := filepath.Join(wd, "testdata", "hashing", path)
+		guestPath := filepath.Join("/", path)
 
-	//err = cmd.ComposePackage(repo, imageSize, tmp, appName)
-	//c.Assert(err, IsNil)
+		c.Assert(paths[hostPath], Equals, guestPath)
+	}
+}
+
+func (*suite) TestFileHashing(c *C) {
+	expectedHashes := map[string]string{
+		"/file1":                  "5235be9b9e4ae0c8f4a7037b122cdec4",
+		"/symlink-to-file1":       "5235be9b9e4ae0c8f4a7037b122cdec4",
+		"/file4":                  "d41d8cd98f00b204e9800998ecf8427e",
+		"/dir2/file-in-dir2":      "bab32b2dd8c64c63af1214a1bebd59d8",
+		"/dir1/file2":             "cabe46f8749fde430f75df84c82a433a",
+		"/dir1/dir3/another-file": "b2a63c3b7990c175a2bd03bc6f35397e",
+		"/dir1/dir3/file3":        "65b17cb1d1308e8bead96db0f31125b5",
+		"/dir1":                   "fd4470862b13f32bfcc3659aa8dc4082",
+		"/dir1/dir3":              "fa983bf68e65476b95e362f3d1ff3cf2",
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		c.Fail()
+	}
+
+	for path, hash := range expectedHashes {
+		hostPath := filepath.Join(wd, "testdata", "hashing", path)
+
+		hostHash, err := hashPath(hostPath, path)
+		c.Assert(err, IsNil)
+
+		c.Assert(hostHash, Equals, hash)
+	}
 }

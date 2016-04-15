@@ -132,7 +132,16 @@ func BuildPackage(packageDir string) (string, error) {
 	return target, nil
 }
 
-func ComposePackage(repo *util.Repo, imageSize int64, packageDir string, appName string) error {
+// ComposePackage uses the contents of the specified package directory and
+// create a (QEMU) virtual machine image. The image consists of all of the
+// required packages.
+// If updatePackage is set, ComposePackage tries to update an existing image
+// by comparing previous MD5 hashes to the ones in the current package
+// directory. Only modified files are uploaded and no file deletions are
+// possible at this time.
+func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbose bool, packageDir string, appName string) error {
+
+	// Package content should be collected in a subdirectory called mpm-pkg.
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
 	// Remove collected directory afterwards.
 	defer os.RemoveAll(targetPath)
@@ -147,6 +156,8 @@ func ComposePackage(repo *util.Repo, imageSize int64, packageDir string, appName
 			return err
 		}
 
+		// Set to the Java command line. This is a wrapper for Java application
+		// and should handle starting of different java threads.
 		commandLine = fmt.Sprintf("java.so %s io.osv.MultiJarLoader -mains /etc/javamains", java.GetVmArgs())
 	}
 
@@ -162,19 +173,40 @@ func ComposePackage(repo *util.Repo, imageSize int64, packageDir string, appName
 		return err
 	}
 
-	// Initialize an empty image based on the provided loader image. imageSize is used to
-	// determine the size of the user partition. Use default loader image.
-	if err := repo.InitializeImage("", appName, imageSize); err != nil {
-		return fmt.Errorf("Failed to initialize empty image named %s", appName)
-	}
-
 	// Get the path of imported image.
 	imagePath := repo.ImagePath("qemu", appName)
+	// Check whether the image already exists.
+	imageExists := false
+	if _, err = os.Stat(imagePath); !os.IsNotExist(err) {
+		imageExists = true
+	}
+
+	imageCachePath := repo.ImageCachePath("qemu", appName)
+	var imageCache core.HashCache
+
+	// If the user requested new image or requested to update a non-existent image,
+	// initialize it first.
+	if !updatePackage || !imageExists {
+		// Initialize an empty image based on the provided loader image. imageSize is used to
+		// determine the size of the user partition. Use default loader image.
+		if err := repo.InitializeImage("", appName, imageSize); err != nil {
+			return fmt.Errorf("Failed to initialize empty image named %s", appName)
+		}
+	} else {
+		// We are updating an existing image so try to parse the cache
+		// config file. Note that we are not interested in any errors as
+		// no-cache or invalid cache means that all files will be uploaded.
+		imageCache, _ = core.ParseHashCache(imageCachePath)
+	}
 
 	// Upload the specified path onto virtual image.
-	if err := UploadPackageContents(imagePath, paths); err != nil {
+	imageCache, err = UploadPackageContents(imagePath, paths, imageCache, verbose)
+	if err != nil {
 		return err
 	}
+
+	// Save the new image cache
+	imageCache.WriteToFile(imageCachePath)
 
 	if commandLine != "" {
 		if err = util.SetCmdLine(imagePath, commandLine); err != nil {

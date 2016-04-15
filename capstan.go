@@ -146,7 +146,7 @@ func main() {
 					return
 				}
 				repo := util.NewRepo(c.GlobalString("u"))
-				err := cmd.Run(repo, config)
+				err := cmd.RunInstance(repo, config)
 				if err != nil {
 					fmt.Println(err.Error())
 				}
@@ -357,6 +357,8 @@ func main() {
 					ArgsUsage: "image-name",
 					Flags: []cli.Flag{
 						cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
+						cli.BoolFlag{Name: "update", Usage: "updates the existing target VM by uploading only modified files"},
+						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 					},
 					Action: func(c *cli.Context) {
 						if len(c.Args()) != 1 {
@@ -377,10 +379,13 @@ func main() {
 							return
 						}
 
+						updatePackage := c.Bool("update")
+						verbose := c.Bool("verbose")
+
 						// Always use the current directory for the package to compose.
 						packageDir, _ := os.Getwd()
 
-						if err := cmd.ComposePackage(repo, imageSize, packageDir, appName); err != nil {
+						if err := cmd.ComposePackage(repo, imageSize, updatePackage, verbose, packageDir, appName); err != nil {
 							fmt.Println(err)
 							os.Exit(1)
 						}

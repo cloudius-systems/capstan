@@ -40,7 +40,7 @@ type RunConfig struct {
 	Cmd          string
 }
 
-func Run(repo *util.Repo, config *RunConfig) error {
+func RunInstance(repo *util.Repo, config *RunConfig) error {
 	var path string
 	var cmd *exec.Cmd
 
@@ -100,7 +100,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			// so, cmd like "capstan run cloudius/osv" will work
 			config.ImageName = config.InstanceName
 			config.InstanceName = strings.Replace(config.InstanceName, "/", "-", -1)
-			return Run(repo, config)
+			return RunInstance(repo, config)
 		}
 	} else if config.ImageName != "" && config.InstanceName != "" {
 		// Both ImageName and InstanceName are specified

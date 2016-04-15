@@ -133,6 +133,10 @@ func (r *Repo) ImagePath(hypervisor string, image string) string {
 	return filepath.Join(r.RepoPath(), image, fmt.Sprintf("%s.%s", filepath.Base(image), hypervisor))
 }
 
+func (r *Repo) ImageCachePath(hypervisor string, image string) string {
+	return filepath.Join(r.RepoPath(), image, fmt.Sprintf("%s.%s.cache", filepath.Base(image), hypervisor))
+}
+
 func (r *Repo) PackagePath(packageName string) string {
 	return filepath.Join(r.Path, "packages", fmt.Sprintf("%s.mpm", packageName))
 }
