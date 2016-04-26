@@ -100,10 +100,10 @@ func UploadPackageContents(appImage string, uploadPaths map[string]string, image
 	}
 
 	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
-	defer conn.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer conn.Close()
 
 	// Initialise a progress bar for uploading files. Only start it in case
 	// silent mode is activated.

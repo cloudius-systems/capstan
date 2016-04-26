@@ -165,6 +165,7 @@ func VMCommand(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	}
 
 	if c.Cmd != "" {
+		fmt.Printf("Setting cmdline: %s\n", c.Cmd)
 		util.SetCmdLine(c.Image, c.Cmd)
 	}
 
@@ -183,6 +184,7 @@ func VMCommand(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("%s %v\n", path, args)
 	cmd := exec.Command(path, args...)
 	return cmd, nil
 }
@@ -273,7 +275,7 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	args = append(args, net...)
 	monitor := fmt.Sprintf("socket,id=charmonitor,path=%s,server,nowait", c.Monitor)
 	args = append(args, "-chardev", monitor, "-mon", "chardev=charmonitor,id=monitor,mode=control")
-	if runtime.GOOS == "linux" {
+	if runtime.GOOS == "linux" && checkKVM() {
 		args = append(args, "-enable-kvm", "-cpu", "host,+x2apic")
 	}
 	return args, nil
@@ -363,4 +365,17 @@ func qemuBridgeHelper() (string, error) {
 	}
 
 	return "", fmt.Errorf("No QEMU bridge helper (qemu-bridge-helper) found. Use CAPSTAN_QEMU_BRIDGE_HELPER to set the path to qemu-bridge-helper.")
+}
+
+func checkKVM() bool {
+	cmd := exec.Command("kvm-ok")
+	if err := cmd.Start(); err != nil {
+		return false
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return false
+	}
+
+	return true
 }
