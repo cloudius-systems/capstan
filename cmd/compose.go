@@ -109,7 +109,7 @@ func UploadPackageContents(appImage string, uploadPaths map[string]string, image
 	// silent mode is activated.
 	var bar *pb.ProgressBar
 	if !verbose {
-		bar = pb.StartNew(len(uploadPaths))
+		bar = pb.StartNew(len(uploadPaths)).Prefix("Uploading files ")
 	}
 
 	// Initialise a dictionary for the up-to-date file hashes.
@@ -149,6 +149,10 @@ func UploadPackageContents(appImage string, uploadPaths map[string]string, image
 
 		// Store the new hash whenever a file is successfully uploaded to the VM.
 		newHashes[dest] = hash
+	}
+
+	if !verbose {
+		bar.FinishPrint("All files uploaded")
 	}
 
 	// Finalise the transfer.

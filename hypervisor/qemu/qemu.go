@@ -184,7 +184,6 @@ func VMCommand(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%s %v\n", path, args)
 	cmd := exec.Command(path, args...)
 	return cmd, nil
 }
