@@ -377,9 +377,9 @@ func extractPackageContent(pkgreader io.Reader, target string) error {
 
 		switch {
 		case info.Mode()&os.ModeSymlink == os.ModeSymlink:
-			if err = os.Symlink(header.Linkname, path); err != nil {
-				return err
-			}
+			// Create symbolic link. Ignore any error that might occur locally as
+			// links can be created dynamically on the VM itself.
+			os.Symlink(header.Linkname, path)
 
 		case info.IsDir():
 			if err = os.MkdirAll(path, info.Mode()); err != nil {
