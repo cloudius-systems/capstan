@@ -14,7 +14,7 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/util"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	"os"
 )
 
