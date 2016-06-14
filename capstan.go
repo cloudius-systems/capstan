@@ -13,6 +13,7 @@ import (
 	"github.com/cloudius-systems/capstan/core"
 	"github.com/cloudius-systems/capstan/hypervisor"
 	"github.com/cloudius-systems/capstan/nat"
+	"github.com/cloudius-systems/capstan/provider/openstack"
 	"github.com/cloudius-systems/capstan/util"
 	"github.com/urfave/cli"
 	"os"
@@ -429,6 +430,59 @@ func main() {
 						}
 
 						if err = cmd.ImportPackage(repo, packageDir); err != nil {
+							fmt.Println(err)
+							os.Exit(1)
+						}
+					},
+				},
+			},
+		},
+		{
+			Name:    "stack",
+			Aliases: []string{"openstack"},
+			Usage:   "OpenStack manipulation tools",
+			Subcommands: []cli.Command{
+				{
+					Name:  "push",
+					Usage: "composes OSv image and pushes it to OpenStack",
+					Flags: append(
+						[]cli.Flag{
+							cli.StringFlag{Name: "size, s", Value: "10G", Usage: "minimal size of the target user partition (use M or G suffix).\n" +
+								"\tNOTE: will be enlarged to match flavor size."},
+							cli.StringFlag{Name: "flavor, f", Usage: "OpenStack flavor name that created OSv image should fit to"},
+							cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
+							cli.BoolFlag{Name: "keep-image", Usage: "don't delete local composed image in .capstan/repository/stack"},
+							cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
+					ArgsUsage:   "image-name",
+					Description: "Compose package, build .qcow2 image and upload it to OpenStack under nickname <image-name>.",
+					Action: func(c *cli.Context) {
+						err := cmd.OpenStackPush(c)
+						if err != nil {
+							fmt.Println(err)
+							os.Exit(1)
+						}
+					},
+				},
+				{
+					Name:  "run",
+					Usage: "runs image that was previously pushed to OpenStack",
+					Flags: append(
+						[]cli.Flag{
+							cli.StringFlag{Name: "flavor, f", Usage: "OpenStack flavor to be run with"},
+							cli.StringFlag{Name: "mem, m", Usage: "MB of memory (RAM) to be run with"},
+							cli.StringFlag{Name: "name, n", Usage: "instance name"},
+							cli.IntFlag{Name: "count, c", Value: 1, Usage: "number of instances to run"},
+							cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
+					ArgsUsage: "image-name",
+					Description: "Run image that you've previously uploaded with 'capstan stack push'.\n   " +
+						"Please note that image size CANNOT be changed at this point (wont' boot on\n   " +
+						"too small flavor, wont use extra space on too big flavor), but feel free\n   " +
+						"to adjust amount of memory (RAM).",
+					Action: func(c *cli.Context) {
+						err := cmd.OpenStackRun(c)
+						if err != nil {
 							fmt.Println(err)
 							os.Exit(1)
 						}

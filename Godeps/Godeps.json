@@ -14,6 +14,10 @@
 			"Rev": "ecf753e7c962639ab5a1fb46f7da627d4c0a04b8"
 		},
 		{
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "d2dd0262208475919e1a362f675cfc0e7c10e905"
+		},
+		{
 			"ImportPath": "github.com/urfave/cli",
 			"Comment": "v1.17.0-67-ge5bef42",
 			"Rev": "e5bef42c62aa7d25aba4880dc02b7624f01e9e19"

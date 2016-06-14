@@ -1,7 +1,5 @@
 # Capstan
 
-[![Build Status](https://secure.travis-ci.org/cloudius-systems/capstan.png?branch=master)](http://travis-ci.org/cloudius-systems/capstan)
-
 Capstan is a tool for rapidly building and running your application on OSv.
 Capstan is as simple and fast as using Docker for creating containers, but the
 result is a complete virtual machine image that will run on any hypervisor with
@@ -53,29 +51,52 @@ environment variable and then download the  ``capstan`` executable and place it
 in ``$HOME/bin``.
 
 ```
-$ curl https://raw.githubusercontent.com/cloudius-systems/capstan/master/scripts/download | bash
+$ curl https://raw.githubusercontent.com/cloudius-systems/capstan/master/scripts/download | bash
 ```
 
 ### Installing from Sources
 
 You need a working Go environment installed. See [Go install
 instructions](http://golang.org/doc/install.html) for how to do that. Go
-version 1.1 or later is required.
+version 1.6 or later is required.
 
 Make sure you have the ``GOPATH`` environment variable set to point to a
 writable Go workspace such as ``$HOME/go``.
 
-To install Capstan, type:
+First install godep dependency manager:
 
 ```
-$ go get github.com/cloudius-systems/capstan
+$ go get github.com/tools/godep
+$ go install
 ```
 
-This installs a ``capstan`` executable to your Go workspace so make sure your
+This installs a ``godep`` executable to your Go workspace so make sure your
 ``PATH`` environment variable includes ``$GOPATH/bin``.
 
-For more detailed information, check out [installation instructions](https://github.com/cloudius-systems/capstan/wiki/Capstan-Installation)
-on the wiki.
+Then clone code from the gitlab - NOTE: you must put it in correct folder:
+
+```
+mkdir -p $GOPATH/src/github.com/cloudius-systems
+cd $GOPATH/src/github.com/cloudius-systems
+git clone ssh://git@gitlab.xlab.si:13022/mikelangelo/capstan.git
+```
+
+To install all dependencies, type:
+
+```
+cd $GOPATH/src/github.com/cloudius-systems/capstan
+godep restore
+```
+
+Your environment is now set. To finally install Capstan, type:
+
+```
+cd $GOPATH/src/github.com/cloudius-systems/capstan
+go install
+```
+
+Capstan binary now appears in $GOPATH/bin folder, so make sure to add this to your PATH.
+
 
 ### Updating from Sources
 
@@ -83,7 +104,7 @@ To update capstan to the latest version execute the following commands:
 ```sh
 $ cd $GOPATH/src/github.com/cloudius-systems/capstan
 $ git pull
-$ ./install
+$ go install
 ```
 
 ## Usage
