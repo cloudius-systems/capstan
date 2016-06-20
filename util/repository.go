@@ -218,6 +218,19 @@ func (r *Repo) InitializeImage(loaderImage string, imageName string, imageSize i
 		return err
 	}
 
+	// Get the size of the loader image, then round that to the closest 2MB to start the user
+	// ZFS partition.
+	zfsStart := (loaderInfo.Size() + 2097151) & ^2097151
+	// Make filesystem size in bytes
+	zfsSize := int64(imageSize * 1024 * 1024)
+	// Adjust user partition size so that total image size will be as defined by user.
+	zfsSize -= zfsStart
+
+	if zfsSize <= 0 {
+		return fmt.Errorf("Image size (%d B) not sufficient for loader image content (%d B)",
+			int64(imageSize*1024*1024), zfsStart)
+	}
+
 	// Create temporary folder in which the image will be composed.
 	tmp, _ := ioutil.TempDir("", "capstan")
 	// Once this function is finished, remove temporary file.
@@ -228,12 +241,6 @@ func (r *Repo) InitializeImage(loaderImage string, imageName string, imageSize i
 	if err := CopyLocalFile(imagePath, loaderImagePath); err != nil {
 		return err
 	}
-
-	// Get the size of the loader image, then round that to the closest 2MB to start the user
-	// ZFS partition.
-	zfsStart := (loaderInfo.Size() + 2097151) & ^2097151
-	// Make filesystem size in bytes
-	zfsSize := int64(imageSize * 1024 * 1024)
 
 	// Make sure the image is in QCOW2 format. This is to make sure that the
 	// image in the next step does not grow in size in case the input image is

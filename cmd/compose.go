@@ -20,6 +20,9 @@ func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath strin
 	// Initialize an empty image based on the provided loader image. imageSize is used to
 	// determine the size of the user partition.
 	err := r.InitializeImage(loaderImage, appName, imageSize)
+	if err != nil {
+		return err
+	}
 
 	// Get the path of imported image.
 	imagePath := r.ImagePath("qemu", appName)

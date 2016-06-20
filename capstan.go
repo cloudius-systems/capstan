@@ -356,7 +356,7 @@ func main() {
 					Usage:     "composes the package and all its dependencies into OSv image",
 					ArgsUsage: "image-name",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
+						cli.StringFlag{Name: "size, s", Value: "10G", Usage: "total size of the target image (use M or G suffix)"},
 						cli.BoolFlag{Name: "update", Usage: "updates the existing target VM by uploading only modified files"},
 						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 						cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},

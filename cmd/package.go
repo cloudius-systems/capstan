@@ -192,7 +192,7 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbos
 		// Initialize an empty image based on the provided loader image. imageSize is used to
 		// determine the size of the user partition. Use default loader image.
 		if err := repo.InitializeImage("", appName, imageSize); err != nil {
-			return fmt.Errorf("Failed to initialize empty image named %s", appName)
+			return fmt.Errorf("Failed to initialize empty image named %s.\nError was: %s", appName, err)
 		}
 	} else {
 		// We are updating an existing image so try to parse the cache
