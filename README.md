@@ -2,8 +2,8 @@
 
 Capstan is a tool for rapidly building and running your application on OSv.
 Capstan is as simple and fast as using Docker for creating containers, but the
-result is a complete virtual machine image that will run on any hypervisor with
-OSv support.
+result is a complete lightweight virtual machine image that will run on any
+hypervisor with OSv support.
 
 ## Features
 
@@ -15,6 +15,7 @@ OSv support.
     * VMware Workstation and Fusion
 * Cloud providers:
     * Google Compute Engine
+* Application package management and modular composition of VMs
 
 ## Installation
 
@@ -32,6 +33,12 @@ On Fedora:
 
 ```
 $ sudo yum install qemu-system-x86 qemu-img
+```
+
+On Ubuntu
+
+```
+$ sudo apt-get install qemu-system-x86 qemu-utils
 ```
 
 On OS X:
@@ -67,21 +74,34 @@ First install godep dependency manager:
 
 ```
 $ go get github.com/tools/godep
-$ go install
 ```
 
 This installs a ``godep`` executable to your Go workspace so make sure your
 ``PATH`` environment variable includes ``$GOPATH/bin``.
 
-Then clone code from the gitlab - NOTE: you must put it in correct folder:
+This version of Capstan is a form from [original
+repository](https://github.com/cloudius-systems/capstan). Because it uses the
+same package structure, the easiest way to use the source is to first get the
+original version:
 
 ```
-mkdir -p $GOPATH/src/github.com/cloudius-systems
-cd $GOPATH/src/github.com/cloudius-systems
-git clone ssh://git@gitlab.xlab.si:13022/mikelangelo/capstan.git
+$ go get github.com/cloudius-systems/capstan
 ```
 
-To install all dependencies, type:
+Now you can navigate to ``$GOPATH/src/github.com/cloudius-systems/capstan``
+and pull from MIKELANGELO repository:
+
+```
+$ cd $GOPATH/src/github.com/cloudius-systems/capstan
+
+# Change the URL of the origin.
+$ git remote set-url origin https://github.com/mikelangelo-project/capstan.git
+
+# Get the latest release from the new repository.
+$ git pull
+```
+
+In order to install all dependencies, type:
 
 ```
 cd $GOPATH/src/github.com/cloudius-systems/capstan
@@ -92,11 +112,11 @@ Your environment is now set. To finally install Capstan, type:
 
 ```
 cd $GOPATH/src/github.com/cloudius-systems/capstan
-go install
+go build
 ```
 
-Capstan binary now appears in $GOPATH/bin folder, so make sure to add this to your PATH.
-
+To install it into your ``GOPATH/bin`` folder, use either ``go install`` or
+attached ``./install`` script.
 
 ### Updating from Sources
 
@@ -107,60 +127,11 @@ $ git pull
 $ go install
 ```
 
-## Usage
-
-To run OSv on default hypervisor which is QEMU/KVM, type:
-
-```
-$ capstan run cloudius/osv
-```
-
-To run OSv on VirtualBox, type:
-
-```
-$ capstan run -p vbox cloudius/osv
-```
-
-To port-forwarding OSv port 22 to Host port 10022, type:
-
-```
-$ capstan run -f "10022:22" cloudius/osv
-```
-
-To bridging OSv vNIC to Host bridge interface, type:
-
-```
-On Linux:
-$ capstan run -n bridge cloudius/osv
-
-On OS X with VirtualBox:
-$ capstan run -n bridge -b <physical NIC name> cloudius/osv
-```
-
-To show a list of available remote images, type:
-
-```
-$ capstan search
-```
-
-To show a list of locally installed images, type:
-
-```
-$ capstan images
-```
-
-## Examples
-
-Check out the following example projects to get you going:
-
-* [Node.js](https://github.com/cloudius-systems/capstan-example-nodejs)
-* [Java](https://github.com/cloudius-systems/capstan-example-java)
-* [Clojure](https://github.com/cloudius-systems/capstan-example-clojure)
-* [Linux binaries](https://github.com/cloudius-systems/capstan-example)
-
 ## Documentation
 
+* [Basic usage](Documentation/Usage.md)
 * [Capstanfile](Documentation/Capstanfile.md)
+* [Application management](Documentation/ApplicationManagement.md)
 
 ## License
 
