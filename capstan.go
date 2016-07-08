@@ -435,6 +435,42 @@ func main() {
 						}
 					},
 				},
+				{
+					Name:      "search",
+					Usage:     "searches for packages in the remote repository (partial name matches are also supported)",
+					ArgsUsage: "[package-name]",
+					Action: func(c *cli.Context) error {
+						packageName := c.Args().First()
+						err := util.ListPackagesRemote(c.GlobalString("u"), packageName)
+
+						if err != nil {
+							return cli.NewExitError(err.Error(), 1)
+						}
+
+						return nil
+					},
+				},
+				{
+					Name:      "pull",
+					Usage:     "pulls the package from remote repository and imports it into local package storage",
+					ArgsUsage: "[package-name]",
+					Action: func(c *cli.Context) error {
+						// Name of the package is required argument.
+						if len(c.Args()) != 1 {
+							// fmt.Println("usage: capstan package pull [package-name]")
+							// return nil
+							return cli.NewExitError("usage: capstan package pull [package-name]", 1)
+						}
+
+						// Initialise the repository
+						repo := util.NewRepo(c.GlobalString("u"))
+						if err := cmd.PullPackage(repo, c.Args().First()); err != nil {
+							return cli.NewExitError(err.Error(), 1)
+						}
+
+						return nil
+					},
+				},
 			},
 		},
 		{

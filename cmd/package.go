@@ -405,3 +405,20 @@ func extractPackageContent(pkgreader io.Reader, target string) error {
 
 	return nil
 }
+
+// PullPackage looks for the package in remote repository and tries to import
+// it into local repository.
+func PullPackage(r *util.Repo, packageName string) error {
+	remote, err := util.IsRemotePackage(r.URL, packageName)
+	if err != nil {
+		return err
+	}
+
+	// If this is a remote package, try to download and import it.
+	if remote {
+		return r.DownloadPackage(r.URL, packageName)
+	}
+
+	// Otherwise, report an error.
+	return fmt.Errorf("Pacakge %s not found in the given repository", packageName)
+}

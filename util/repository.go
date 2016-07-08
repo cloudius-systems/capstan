@@ -179,11 +179,15 @@ func (r *Repo) ListPackages() {
 		if filepath.Ext(p.Name()) == ".yaml" {
 			pkg, err := core.ParsePackageManifest(filepath.Join(r.PackagesPath(), p.Name()))
 
+			// Skip the package if the manifest cannot be parsed.
 			if err != nil {
 				continue
 			}
 
-			fmt.Printf("%-50s %-50s %-25s %-15s\n", pkg.Name, pkg.Title, pkg.Version, p.ModTime().Format(time.RFC3339))
+			// Set the modification time to the one of the package manifest file.
+			pkg.ModTime = p.ModTime()
+
+			fmt.Println(pkg.String())
 		}
 	}
 }
