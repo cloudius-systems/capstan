@@ -1,0 +1,22 @@
+#!/bin/sh
+
+package=github.com/cloudius-systems/capstan
+version=$(scripts/version)
+
+OLDIFS=$IFS
+IFS=' '; set -- $(go version)
+IFS='.'; set -- $3
+IFS=$OLDIFS
+if [ $2 -gt 4 ]; then
+    link_operator="="
+else
+    link_operator=" "
+fi
+
+echo "Building Linux amd64"
+env GOOS=linux GOARCH=amd64 go build -a -ldflags "-X main.VERSION$link_operator'$version' -w -s" -tags netgo -v -o dist/linux_amd64/capstan $package
+s3cmd put --acl-public --guess-mime-type ./dist/linux_amd64/capstan s3://mikelangelo-capstan/capstan/v0.1.8/linux_amd64/capstan
+
+echo "Building Darwin amd64"
+env GOOS=darwin GOARCH=amd64 go build -a -ldflags "-X main.VERSION$link_operator'$version' -w -s" -tags netgo -v -o dist/darwin_amd64/capstan $package
+s3cmd put --acl-public --guess-mime-type ./dist/darwin_amd64/capstan s3://mikelangelo-capstan/capstan/v0.1.8/darwin_amd64/capstan
