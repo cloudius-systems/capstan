@@ -214,7 +214,7 @@ func (r *Repo) InitializeImage(loaderImage string, imageName string, imageSize i
 	}
 
 	// Get the actual path of the loader image.
-	loaderImagePath := r.ImagePath("raw", loaderImage)
+	loaderImagePath := r.ImagePath("qemu", loaderImage)
 	// Check whether the base loader image exists
 	loaderInfo, err := os.Stat(loaderImagePath)
 	if os.IsNotExist(err) {
