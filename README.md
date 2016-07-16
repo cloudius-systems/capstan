@@ -127,6 +127,27 @@ $ git pull
 $ go install
 ```
 
+## Configuration
+There are three ways to configure Capstan, but currently only *remote repository
+URL* is configurable. First non-empty value is taken:
+
+1. command-line arguments (e.g. `capstan -u <repo-URL>`)
+2. configuration file `.capstan/config.yaml` e.g.
+
+    ```
+    # config.yaml
+
+    repo_url: <repo-URL>
+
+    ```
+
+3. environment variables (e.g. `export CAPSTAN_REPO_URL=<repo-URL>`)
+
+To determine which configuration value is eventually taken use:
+```
+capstan config print
+```
+
 ## Documentation
 
 * [Basic usage](Documentation/Usage.md)

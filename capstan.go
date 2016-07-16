@@ -23,19 +23,32 @@ var (
 	VERSION string
 )
 
-const (
-	DEFAULT_REPO_URL = "https://s3.amazonaws.com/osv.capstan/"
-)
-
 func main() {
 	app := cli.NewApp()
 	app.Name = "capstan"
 	app.Version = VERSION
 	app.Usage = "pack, ship, and run applications in light-weight VMs"
 	app.Flags = []cli.Flag{
-		cli.StringFlag{Name: "u", Value: DEFAULT_REPO_URL, Usage: "remote repository URL"},
+		cli.StringFlag{Name: "u", Usage: fmt.Sprintf("remote repository URL (default: \"%s\")", util.DefaultRepositoryUrl)},
 	}
 	app.Commands = []cli.Command{
+		{
+			Name:  "config",
+			Usage: "Capstan configuration",
+			Subcommands: []cli.Command{
+				{
+					Name:  "print",
+					Usage: "print current capstan configuration",
+					Action: func(c *cli.Context) {
+						err := cmd.ConfigPrint(c)
+						if err != nil {
+							fmt.Println(err)
+							os.Exit(1)
+						}
+					},
+				},
+			},
+		},
 		{
 			Name:  "info",
 			Usage: "show disk image information",
@@ -242,7 +255,8 @@ func main() {
 				if len(c.Args()) > 0 {
 					image = c.Args()[0]
 				}
-				err := util.ListImagesRemote(c.GlobalString("u"), image)
+				repo := util.NewRepo(c.GlobalString("u"))
+				err := util.ListImagesRemote(repo.URL, image)
 				if err != nil {
 					fmt.Println(err.Error())
 				}
@@ -441,7 +455,8 @@ func main() {
 					ArgsUsage: "[package-name]",
 					Action: func(c *cli.Context) error {
 						packageName := c.Args().First()
-						err := util.ListPackagesRemote(c.GlobalString("u"), packageName)
+						repo := util.NewRepo(c.GlobalString("u"))
+						err := util.ListPackagesRemote(repo.URL, packageName)
 
 						if err != nil {
 							return cli.NewExitError(err.Error(), 1)

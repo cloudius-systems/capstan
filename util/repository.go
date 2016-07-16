@@ -31,11 +31,44 @@ type Repo struct {
 	Path string
 }
 
+type CapstanSettings struct {
+	RepoUrl string `yaml:"repo_url"`
+}
+
 func NewRepo(url string) *Repo {
 	root := os.Getenv("CAPSTAN_ROOT")
 	if root == "" {
 		root = filepath.Join(HomePath(), "/.capstan/")
 	}
+
+	// Read configuration file
+	config := CapstanSettings{
+		RepoUrl: "",
+	}
+	data, err := ioutil.ReadFile(filepath.Join(root, "config.yaml"))
+	if err == nil {
+		err = yaml.Unmarshal(data, &config)
+	}
+
+	// Decide which repo URL to choose. Take first non-empty value of:
+	// 1. -u
+	// 2. Capstan.yaml, if contains CAPSTAN_REPO_URL
+	// 3. Env variable CAPSTAN_REPO_URL
+	// 4. Default
+	// Config file preceeds Env variable to enable per-capstan-root config.
+	url = func(flagUrl string) string {
+		if flagUrl != "" {
+			return flagUrl
+		}
+		if config.RepoUrl != "" {
+			return config.RepoUrl
+		}
+		if envUrl := os.Getenv("CAPSTAN_REPO_URL"); envUrl != "" {
+			return envUrl
+		}
+		return DefaultRepositoryUrl
+	}(url)
+
 	return &Repo{
 		URL:  url,
 		Path: root,
@@ -48,6 +81,12 @@ type ImageInfo struct {
 	Created       string
 	Description   string
 	Build         string
+}
+
+func (r *Repo) PrintRepo() error {
+	fmt.Printf("CAPSTAN_ROOT: %s\n", r.Path)
+	fmt.Printf("CAPSTAN_REPO_URL: %s\n", r.URL)
+	return nil
 }
 
 func (r *Repo) ImportImage(imageName string, file string, version string, created string, description string, build string) error {
