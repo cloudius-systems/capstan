@@ -387,16 +387,18 @@ func extractPackageContent(pkgreader io.Reader, target string) error {
 			}
 
 		case info.Mode().IsRegular():
-			file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, info.Mode())
+			writer, err := os.Create(path)
 			if err != nil {
 				return err
 			}
 
-			defer file.Close()
-			_, err = io.Copy(file, tarReader)
+			_, err = io.Copy(writer, tarReader)
+			err = os.Chmod(path, os.FileMode(header.Mode))
 			if err != nil {
 				return err
 			}
+
+			writer.Close()
 
 		default:
 			return fmt.Errorf("File %s has unsupported mode %v", path, info.Mode())
