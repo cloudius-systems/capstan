@@ -228,11 +228,20 @@ func IsRemoteImage(repo_url, name string) (bool, error) {
 
 // DownloadPackage downloads a package from the S3 repository into local.
 func (r *Repo) DownloadPackage(repo_url, packageName string) error {
+	remote, err := IsRemotePackage(r.URL, packageName)
+	if err != nil {
+		return err
+	}
+	// If the package is not found on a remote repository, inform the user.
+	if !remote {
+		return fmt.Errorf("package %s is not available in the given repository (%s)", packageName, repo_url)
+	}
+
 	// Get the root of the packages dir.
 	packagesRoot := r.PackagesPath()
 
 	// Make sure the path exists by creating the entire directory structure.
-	err := os.MkdirAll(packagesRoot, 0775)
+	err = os.MkdirAll(packagesRoot, 0775)
 	if err != nil {
 		return fmt.Errorf("%s: mkdir failed", packagesRoot)
 	}

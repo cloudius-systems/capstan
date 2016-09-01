@@ -375,6 +375,7 @@ func main() {
 						cli.BoolFlag{Name: "update", Usage: "updates the existing target VM by uploading only modified files"},
 						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 						cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
+						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
 					},
 					Action: func(c *cli.Context) {
 						if len(c.Args()) != 1 {
@@ -398,11 +399,13 @@ func main() {
 						updatePackage := c.Bool("update")
 						verbose := c.Bool("verbose")
 						runCmd := c.String("run")
+						pullMissing := c.Bool("pull-missing")
 
 						// Always use the current directory for the package to compose.
 						packageDir, _ := os.Getwd()
 
-						if err := cmd.ComposePackage(repo, imageSize, updatePackage, verbose, runCmd, packageDir, appName); err != nil {
+						if err := cmd.ComposePackage(repo, imageSize, updatePackage, verbose, pullMissing,
+							runCmd, packageDir, appName); err != nil {
 							fmt.Println(err)
 							os.Exit(1)
 						}
@@ -411,11 +414,16 @@ func main() {
 				{
 					Name:  "collect",
 					Usage: "collects contents of this package and all required packages",
+					Flags: []cli.Flag{
+						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+					},
 					Action: func(c *cli.Context) {
 						repo := util.NewRepo(c.GlobalString("u"))
 						packageDir, _ := os.Getwd()
 
-						if err := cmd.CollectPackage(repo, packageDir); err != nil {
+						pullMissing := c.Bool("pull-missing")
+
+						if err := cmd.CollectPackage(repo, packageDir, pullMissing); err != nil {
 							fmt.Println(err)
 							os.Exit(1)
 						}
@@ -504,6 +512,7 @@ func main() {
 							cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
 							cli.BoolFlag{Name: "keep-image", Usage: "don't delete local composed image in .capstan/repository/stack"},
 							cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+							cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
 						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
 					ArgsUsage:   "image-name",
 					Description: "Compose package, build .qcow2 image and upload it to OpenStack under nickname <image-name>.",

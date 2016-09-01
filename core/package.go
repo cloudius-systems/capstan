@@ -45,7 +45,7 @@ func ParsePackageManifest(manifestFile string) (Package, error) {
 
 	// Make sure the metadata file exists.
 	if _, err := os.Stat(manifestFile); os.IsNotExist(err) {
-		return pkg, err
+		return pkg, fmt.Errorf("Manifest file %s does not exist", manifestFile)
 	}
 
 	// Read the package descriptor.

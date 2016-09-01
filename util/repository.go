@@ -150,6 +150,20 @@ func (r *Repo) ImageExists(hypervisor, image string) bool {
 	return true
 }
 
+// PackageExists will check that both package manifest and package file are
+// present in the local package repository.
+func (r *Repo) PackageExists(packageName string) bool {
+	if _, err := os.Stat(r.PackageManifest(packageName)); os.IsNotExist(err) {
+		return false
+	}
+
+	if _, err := os.Stat(r.PackagePath(packageName)); os.IsNotExist(err) {
+		return false
+	}
+
+	return true
+}
+
 func (r *Repo) RemoveImage(image string) error {
 	path := filepath.Join(r.RepoPath(), image)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -366,22 +380,33 @@ func (r *Repo) GetPackage(pkgname string) (io.Reader, error) {
 	return os.Open(pkgpath)
 }
 
-func (r *Repo) GetPackageDependencies(pkg core.Package) ([]core.Package, error) {
-	// Bootstrap is a required package for every other package.
-	bootstrap, err := core.ParsePackageManifest(r.PackageManifest("eu.mikelangelo-project.osv.bootstrap"))
-	if err != nil {
-		return nil, err
-	}
-
-	dependencies := []core.Package{bootstrap}
+func (r *Repo) GetPackageDependencies(pkg core.Package, downloadMissing bool) ([]core.Package, error) {
+	var dependencies []core.Package
 
 	for _, requiredPackage := range pkg.Require {
+		// If the package does not exist in the local repository and the request
+		// was made to download missing packages we should try to download them
+		// from the remote repository.
+		if !r.PackageExists(requiredPackage) {
+			if downloadMissing {
+				if err := r.DownloadPackage(r.URL, requiredPackage); err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, fmt.Errorf("Package %s does not exist in your local repository. Pull it manually using "+
+					"'capstan package pull %s' or enable automatic pulling of missing "+
+					"packages by adding --pull-missing flag", requiredPackage, requiredPackage)
+			}
+		}
+
+		// Proceed with the evaluation of the package content.
 		rpkg, err := core.ParsePackageManifest(r.PackageManifest(requiredPackage))
 		if err != nil {
 			return nil, err
 		}
 
-		rdeps, err := r.GetPackageDependencies(rpkg)
+		// Process all additional required packages.
+		rdeps, err := r.GetPackageDependencies(rpkg, downloadMissing)
 		if err != nil {
 			return nil, err
 		}

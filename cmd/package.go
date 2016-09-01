@@ -139,7 +139,8 @@ func BuildPackage(packageDir string) (string, error) {
 // by comparing previous MD5 hashes to the ones in the current package
 // directory. Only modified files are uploaded and no file deletions are
 // possible at this time.
-func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbose bool, runCmd string, packageDir string, appName string) error {
+func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbose bool,
+	pullMissing bool, runCmd string, packageDir string, appName string) error {
 
 	// Package content should be collected in a subdirectory called mpm-pkg.
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
@@ -164,7 +165,7 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbos
 	}
 
 	// First, collect the contents of the package.
-	err := CollectPackage(repo, packageDir)
+	err := CollectPackage(repo, packageDir, pullMissing)
 	if err != nil {
 		return err
 	}
@@ -221,15 +222,22 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbos
 	return nil
 }
 
-func CollectPackage(repo *util.Repo, packageDir string) error {
+// CollectPackage will try to resolve all of the dependencies of the given package
+// and collect the content in the $CWD/mpm-pkg directory.
+func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool) error {
 	// Get the manifest file of the given package.
 	pkg, err := core.ParsePackageManifest(filepath.Join(packageDir, "meta", "package.yaml"))
 	if err != nil {
 		return err
 	}
 
+	// The bootstrap package is implicitly required by every application package,
+	// so we add it to the list of required packages. Even if user has added
+	// the bootstrap manually, this will not result in overhead.
+	pkg.Require = append(pkg.Require, "eu.mikelangelo-project.osv.bootstrap")
+
 	// Look for all dependencies and make sure they are all available in the repository.
-	requiredPackages, err := repo.GetPackageDependencies(pkg)
+	requiredPackages, err := repo.GetPackageDependencies(pkg, pullMissing)
 	if err != nil {
 		return err
 	}
@@ -411,16 +419,6 @@ func extractPackageContent(pkgreader io.Reader, target string) error {
 // PullPackage looks for the package in remote repository and tries to import
 // it into local repository.
 func PullPackage(r *util.Repo, packageName string) error {
-	remote, err := util.IsRemotePackage(r.URL, packageName)
-	if err != nil {
-		return err
-	}
-
-	// If this is a remote package, try to download and import it.
-	if remote {
-		return r.DownloadPackage(r.URL, packageName)
-	}
-
-	// Otherwise, report an error.
-	return fmt.Errorf("Pacakge %s not found in the given repository", packageName)
+	// Try to download the package from the remote repository.
+	return r.DownloadPackage(r.URL, packageName)
 }

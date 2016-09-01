@@ -13,6 +13,7 @@ func OpenStackPush(c *cli.Context) error {
 	verbose := c.Bool("verbose")
 	runCmd := c.String("run")
 	imageName := c.Args().First()
+	pullMissing := c.Bool("pull-missing")
 
 	if imageName == "" {
 		return fmt.Errorf("USAGE: capstan stack push [command options] image-name")
@@ -56,7 +57,7 @@ func OpenStackPush(c *cli.Context) error {
 
 	// Compose image locally.
 	fmt.Printf("Creating image of user-usable size %d MB.\n", sizeMB)
-	err = ComposePackage(repo, sizeMB, false, verbose, runCmd, packageDir, appName)
+	err = ComposePackage(repo, sizeMB, false, verbose, pullMissing, runCmd, packageDir, appName)
 	if err != nil {
 		return err
 	}
