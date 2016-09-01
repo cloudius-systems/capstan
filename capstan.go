@@ -23,6 +23,18 @@ var (
 	VERSION string
 )
 
+const (
+	// These exit codes were taken from BSD:
+	// https://www.freebsd.org/cgi/man.cgi?query=sysexits&apropos=0&sektion=0&manpath=FreeBSD+4.3-RELEASE&format=html
+
+	// The command was used incorrectly, e.g., with the wrong number of arguments,
+	// a bad flag, a bad syntax in a parameter, or whatever.
+	EX_USAGE = 64
+	// The input data was incorrect in some way. This should only be used for
+	// user's data & not system files.
+	EX_DATAERR = 65
+)
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "capstan"
@@ -39,12 +51,11 @@ func main() {
 				{
 					Name:  "print",
 					Usage: "print current capstan configuration",
-					Action: func(c *cli.Context) {
-						err := cmd.ConfigPrint(c)
-						if err != nil {
-							fmt.Println(err)
-							os.Exit(1)
+					Action: func(c *cli.Context) error {
+						if err := cmd.ConfigPrint(c); err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
+						return nil
 					},
 				},
 			},
@@ -52,16 +63,15 @@ func main() {
 		{
 			Name:  "info",
 			Usage: "show disk image information",
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				if len(c.Args()) != 1 {
-					fmt.Println("usage: capstan info [image-file]")
-					return
+					return cli.NewExitError("usage: capstan info [image-file]", EX_USAGE)
 				}
 				image := c.Args()[0]
-				err := cmd.Info(image)
-				if err != nil {
-					fmt.Println(err.Error())
+				if err := cmd.Info(image); err != nil {
+					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
+				return nil
 			},
 		},
 		{
@@ -73,16 +83,16 @@ func main() {
 				cli.StringFlag{Name: "d", Value: "", Usage: "image description"},
 				cli.StringFlag{Name: "b", Value: "", Usage: "image build command"},
 			},
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				if len(c.Args()) != 2 {
-					fmt.Println("usage: capstan import [image-name] [image-file]")
-					return
+					return cli.NewExitError("usage: capstan import [image-name] [image-file]", EX_USAGE)
 				}
 				repo := util.NewRepo(c.GlobalString("u"))
 				err := repo.ImportImage(c.Args()[0], c.Args()[1], c.String("v"), c.String("c"), c.String("d"), c.String("b"))
 				if err != nil {
-					fmt.Println(err.Error())
+					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
+				return nil
 			},
 		},
 		{
@@ -91,36 +101,35 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
 			},
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				if len(c.Args()) != 1 {
-					fmt.Println("usage: capstan pull [image-name]")
-					return
+					return cli.NewExitError("usage: capstan pull [image-name]", EX_USAGE)
 				}
 				hypervisor := c.String("p")
 				if !isValidHypervisor(hypervisor) {
-					fmt.Printf("error: '%s' is not a supported hypervisor\n", c.String("p"))
-					return
+					return cli.NewExitError(fmt.Sprintf("error: '%s' is not a supported hypervisor\n", c.String("p")), EX_DATAERR)
 				}
 				repo := util.NewRepo(c.GlobalString("u"))
 				err := cmd.Pull(repo, hypervisor, c.Args().First())
 				if err != nil {
-					fmt.Println(err.Error())
+					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
+				return nil
 			},
 		},
 		{
 			Name:  "rmi",
 			Usage: "delete an image from a repository",
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				if len(c.Args()) != 1 {
-					fmt.Println("usage: capstan rmi [image-name]")
-					return
+					return cli.NewExitError("usage: capstan rmi [image-name]", EX_USAGE)
 				}
 				repo := util.NewRepo(c.GlobalString("u"))
 				err := repo.RemoveImage(c.Args().First())
 				if err != nil {
-					fmt.Println(err.Error())
+					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
+				return nil
 			},
 		},
 		{
@@ -140,7 +149,7 @@ func main() {
 				cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
 				cli.StringFlag{Name: "execute,e", Usage: "set the command line to execute"},
 			},
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				config := &cmd.RunConfig{
 					InstanceName: c.Args().First(),
 					ImageName:    c.String("i"),
@@ -156,14 +165,14 @@ func main() {
 					Cmd:          c.String("execute"),
 				}
 				if !isValidHypervisor(config.Hypervisor) {
-					fmt.Printf("error: '%s' is not a supported hypervisor\n", config.Hypervisor)
-					return
+					return cli.NewExitError(fmt.Sprintf("error: '%s' is not a supported hypervisor\n", config.Hypervisor), EX_DATAERR)
 				}
 				repo := util.NewRepo(c.GlobalString("u"))
 				err := cmd.RunInstance(repo, config)
 				if err != nil {
-					fmt.Println(err.Error())
+					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
+				return nil
 			},
 		},
 		{
@@ -174,20 +183,18 @@ func main() {
 				cli.StringFlag{Name: "m", Value: "512M", Usage: "memory size"},
 				cli.BoolFlag{Name: "v", Usage: "verbose mode"},
 			},
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				imageName := c.Args().First()
 				repo := util.NewRepo(c.GlobalString("u"))
 				if len(c.Args()) != 1 {
 					imageName = repo.DefaultImage()
 				}
 				if imageName == "" {
-					fmt.Println("usage: capstan build [image-name]")
-					return
+					return cli.NewExitError("usage: capstan build [image-name]", EX_USAGE)
 				}
 				hypervisor := c.String("p")
 				if !isValidHypervisor(hypervisor) {
-					fmt.Printf("error: '%s' is not a supported hypervisor\n", c.String("p"))
-					return
+					return cli.NewExitError(fmt.Sprintf("error: '%s' is not a supported hypervisor\n", c.String("p")), EX_DATAERR)
 				}
 				image := &core.Image{
 					Name:       imageName,
@@ -195,13 +202,12 @@ func main() {
 				}
 				template, err := core.ReadTemplateFile("Capstanfile")
 				if err != nil {
-					fmt.Println(err.Error())
-					return
+					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
 				if err := cmd.Build(repo, image, template, c.Bool("v"), c.String("m")); err != nil {
-					fmt.Println(err.Error())
-					return
+					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
+				return nil
 			},
 		},
 		{
@@ -211,10 +217,9 @@ func main() {
 				cli.StringFlag{Name: "loader_image, l", Value: "mike/osv-loader", Usage: "the base loader image"},
 				cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
 			},
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				if len(c.Args()) != 2 {
-					fmt.Println("Usage: capstan compose [image-name] [path-to-upload]")
-					return
+					return cli.NewExitError("Usage: capstan compose [image-name] [path-to-upload]", EX_USAGE)
 				}
 
 				// Name of the application (or image) that will be used in the internal repository.
@@ -228,29 +233,30 @@ func main() {
 
 				imageSize, err := util.ParseMemSize(c.String("size"))
 				if err != nil {
-					fmt.Printf("Incorrect image size format: %s\n", err)
-					return
+					return cli.NewExitError(fmt.Sprintf("Incorrect image size format: %s\n", err), EX_DATAERR)
 				}
 
 				if err := cmd.Compose(repo, loaderImage, imageSize, uploadPath, appName); err != nil {
-					fmt.Println(err.Error())
-					return
+					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
+				return nil
 			},
 		},
 		{
 			Name:      "images",
 			ShortName: "i",
 			Usage:     "list images",
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				repo := util.NewRepo(c.GlobalString("u"))
 				repo.ListImages()
+
+				return nil
 			},
 		},
 		{
 			Name:  "search",
 			Usage: "search a remote images",
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				image := ""
 				if len(c.Args()) > 0 {
 					image = c.Args()[0]
@@ -258,40 +264,47 @@ func main() {
 				repo := util.NewRepo(c.GlobalString("u"))
 				err := util.ListImagesRemote(repo.URL, image)
 				if err != nil {
-					fmt.Println(err.Error())
+					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
+				return nil
 			},
 		},
 		{
 			Name:      "instances",
 			ShortName: "I",
 			Usage:     "list instances",
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				cmd.Instances()
+
+				return nil
 			},
 		},
 		{
 			Name:  "stop",
 			Usage: "stop an instance",
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				if len(c.Args()) != 1 {
-					fmt.Println("usage: capstan stop [instance_name]")
-					return
+					return cli.NewExitError("usage: capstan stop [instance_name]", EX_USAGE)
 				}
 				instance := c.Args()[0]
-				cmd.Stop(instance)
+				if err := cmd.Stop(instance); err != nil {
+					return cli.NewExitError(err.Error(), EX_DATAERR)
+				}
+				return nil
 			},
 		},
 		{
 			Name:  "delete",
 			Usage: "delete an instance",
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				if len(c.Args()) != 1 {
-					fmt.Println("usage: capstan delete [instance_name]")
-					return
+					return cli.NewExitError("usage: capstan delete [instance_name]", EX_USAGE)
 				}
 				instance := c.Args()[0]
-				cmd.Delete(instance)
+				if err := cmd.Delete(instance); err != nil {
+					return cli.NewExitError(err.Error(), EX_DATAERR)
+				}
+				return nil
 			},
 		},
 		{
@@ -309,10 +322,9 @@ func main() {
 						cli.StringFlag{Name: "version,v", Usage: "package version"},
 						cli.StringSliceFlag{Name: "require", Usage: "specify package dependency"},
 					},
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						if len(c.Args()) > 1 {
-							fmt.Println("usage: capstan package init [path]")
-							return
+							return cli.NewExitError("usage: capstan package init [path]", EX_USAGE)
 						}
 
 						// The package path is the current working dir...
@@ -324,20 +336,17 @@ func main() {
 
 						// Author is a mandatory field.
 						if c.String("name") == "" {
-							fmt.Println("You must provide the name of the package (--name or -n)")
-							return
+							return cli.NewExitError("You must provide the name of the package (--name or -n)", EX_USAGE)
 						}
 
 						// Author is a mandatory field.
 						if c.String("title") == "" {
-							fmt.Println("You must provide the title of the package (--title or -t)")
-							return
+							return cli.NewExitError("You must provide the title of the package (--title or -t)", EX_USAGE)
 						}
 
 						// Author is a mandatory field.
 						if c.String("author") == "" {
-							fmt.Println("You must provide the author of the package (--author or -a)")
-							return
+							return cli.NewExitError("You must provide the author of the package (--author or -a)", EX_USAGE)
 						}
 
 						// Initialise the package structure. The version may be empty as it is not
@@ -350,20 +359,24 @@ func main() {
 							Require: c.StringSlice("require"),
 						}
 
-						cmd.InitPackage(packagePath, p)
+						if err := cmd.InitPackage(packagePath, p); err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
+						}
+
+						return nil
 					},
 				},
 				{
 					Name:  "build",
 					Usage: "builds the package into a compressed file",
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						packageDir, _ := os.Getwd()
 
 						_, err := cmd.BuildPackage(packageDir)
 						if err != nil {
-							fmt.Println(err)
-							os.Exit(1)
+							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
+						return nil
 					},
 				},
 				{
@@ -377,10 +390,9 @@ func main() {
 						cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
 					},
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
-							fmt.Println("Usage: capstan package compose [image-name]")
-							return
+							return cli.NewExitError("Usage: capstan package compose [image-name]", EX_USAGE)
 						}
 
 						// Use the provided repository.
@@ -392,8 +404,7 @@ func main() {
 						// Parse image size descriptor.
 						imageSize, err := util.ParseMemSize(c.String("size"))
 						if err != nil {
-							fmt.Printf("Incorrect image size format: %s\n", err)
-							return
+							return cli.NewExitError(fmt.Sprintf("Incorrect image size format: %s\n", err), EX_USAGE)
 						}
 
 						updatePackage := c.Bool("update")
@@ -406,9 +417,10 @@ func main() {
 
 						if err := cmd.ComposePackage(repo, imageSize, updatePackage, verbose, pullMissing,
 							runCmd, packageDir, appName); err != nil {
-							fmt.Println(err)
-							os.Exit(1)
+							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
+
+						return nil
 					},
 				},
 				{
@@ -417,44 +429,47 @@ func main() {
 					Flags: []cli.Flag{
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
 					},
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						repo := util.NewRepo(c.GlobalString("u"))
 						packageDir, _ := os.Getwd()
 
 						pullMissing := c.Bool("pull-missing")
 
 						if err := cmd.CollectPackage(repo, packageDir, pullMissing); err != nil {
-							fmt.Println(err)
-							os.Exit(1)
+							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
+
+						return nil
 					},
 				},
 				{
 					Name:  "list",
 					Usage: "lists the available packages",
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						repo := util.NewRepo(c.GlobalString("u"))
 
 						repo.ListPackages()
+
+						return nil
 					},
 				},
 				{
 					Name:  "import",
 					Usage: "builds the package at the given path and imports it into a chosen repository",
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						// Use the provided repository.
 						repo := util.NewRepo(c.GlobalString("u"))
 
 						packageDir, err := os.Getwd()
 						if err != nil {
-							fmt.Println(err)
-							os.Exit(1)
+							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
 						if err = cmd.ImportPackage(repo, packageDir); err != nil {
-							fmt.Println(err)
-							os.Exit(1)
+							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
+
+						return nil
 					},
 				},
 				{
@@ -464,10 +479,8 @@ func main() {
 					Action: func(c *cli.Context) error {
 						packageName := c.Args().First()
 						repo := util.NewRepo(c.GlobalString("u"))
-						err := util.ListPackagesRemote(repo.URL, packageName)
-
-						if err != nil {
-							return cli.NewExitError(err.Error(), 1)
+						if err := util.ListPackagesRemote(repo.URL, packageName); err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
 						return nil
@@ -480,15 +493,13 @@ func main() {
 					Action: func(c *cli.Context) error {
 						// Name of the package is required argument.
 						if len(c.Args()) != 1 {
-							// fmt.Println("usage: capstan package pull [package-name]")
-							// return nil
-							return cli.NewExitError("usage: capstan package pull [package-name]", 1)
+							return cli.NewExitError("usage: capstan package pull [package-name]", EX_USAGE)
 						}
 
 						// Initialise the repository
 						repo := util.NewRepo(c.GlobalString("u"))
 						if err := cmd.PullPackage(repo, c.Args().First()); err != nil {
-							return cli.NewExitError(err.Error(), 1)
+							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
 						return nil
@@ -516,12 +527,13 @@ func main() {
 						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
 					ArgsUsage:   "image-name",
 					Description: "Compose package, build .qcow2 image and upload it to OpenStack under nickname <image-name>.",
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						err := cmd.OpenStackPush(c)
 						if err != nil {
-							fmt.Println(err)
-							os.Exit(1)
+							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
+
+						return nil
 					},
 				},
 				{
@@ -540,12 +552,13 @@ func main() {
 						"Please note that image size CANNOT be changed at this point (wont' boot on\n   " +
 						"too small flavor, wont use extra space on too big flavor), but feel free\n   " +
 						"to adjust amount of memory (RAM).",
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						err := cmd.OpenStackRun(c)
 						if err != nil {
-							fmt.Println(err)
-							os.Exit(1)
+							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
+
+						return nil
 					},
 				},
 			},
