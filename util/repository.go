@@ -18,6 +18,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -27,12 +28,14 @@ const (
 )
 
 type Repo struct {
-	URL  string
-	Path string
+	URL        string
+	Path       string
+	DisableKvm bool
 }
 
 type CapstanSettings struct {
-	RepoUrl string `yaml:"repo_url"`
+	RepoUrl    string `yaml:"repo_url"`
+	DisableKvm bool   `yaml:"disable_kvm"`
 }
 
 func NewRepo(url string) *Repo {
@@ -43,7 +46,8 @@ func NewRepo(url string) *Repo {
 
 	// Read configuration file
 	config := CapstanSettings{
-		RepoUrl: "",
+		RepoUrl:    "",
+		DisableKvm: false,
 	}
 	data, err := ioutil.ReadFile(filepath.Join(root, "config.yaml"))
 	if err == nil {
@@ -69,9 +73,15 @@ func NewRepo(url string) *Repo {
 		return DefaultRepositoryUrl
 	}(url)
 
+	// Attempt to load DisableKvm flag from environment.
+	if envDisableKvm, err := strconv.ParseBool(os.Getenv("CAPSTAN_DISABLE_KVM")); err == nil {
+		config.DisableKvm = envDisableKvm
+	}
+
 	return &Repo{
-		URL:  url,
-		Path: root,
+		URL:        url,
+		Path:       root,
+		DisableKvm: config.DisableKvm,
 	}
 }
 
@@ -86,6 +96,7 @@ type ImageInfo struct {
 func (r *Repo) PrintRepo() error {
 	fmt.Printf("CAPSTAN_ROOT: %s\n", r.Path)
 	fmt.Printf("CAPSTAN_REPO_URL: %s\n", r.URL)
+	fmt.Printf("CAPSTAN_DISABLE_KVM: %v\n", r.DisableKvm)
 	return nil
 }
 

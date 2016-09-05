@@ -128,8 +128,7 @@ $ go install
 ```
 
 ## Configuration
-There are three ways to configure Capstan, but currently only *remote repository
-URL* is configurable. First non-empty value is taken:
+There are three ways to configure Capstan (first non-empty value is taken):
 
 1. command-line arguments (e.g. `capstan -u <repo-URL>`)
 2. configuration file `.capstan/config.yaml` e.g.
@@ -138,12 +137,14 @@ URL* is configurable. First non-empty value is taken:
     # config.yaml
 
     repo_url: <repo-URL>
+    disable_kvm: true
 
     ```
 
 3. environment variables (e.g. `export CAPSTAN_REPO_URL=<repo-URL>`)
 
-To determine which configuration value is eventually taken use:
+
+To double-check which configuration value is eventually taken use:
 ```
 capstan config print
 ```

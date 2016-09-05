@@ -239,6 +239,7 @@ func RunInstance(repo *util.Repo, config *RunConfig) error {
 			ConfigFile:  filepath.Join(dir, "osv.config"),
 			MAC:         config.MAC,
 			Cmd:         config.Cmd,
+			DisableKvm:  repo.DisableKvm,
 		}
 
 		cmd, err = qemu.LaunchVM(config)
@@ -311,7 +312,12 @@ func RunInstance(repo *util.Repo, config *RunConfig) error {
 		return err
 	}
 	if cmd != nil {
-		return cmd.Wait()
+		err = cmd.Wait()
+		if err != nil && strings.Contains(err.Error(), "failed to initialize KVM: Device or resource busy") {
+			// Probably KVM is already in use e.g. by VirtualBox. Suggest user to turn it off.
+			fmt.Println("Could not run QEMU VM. Try to set 'disable_kvm:true' in ~/.capstan/config.yaml")
+		}
+		return err
 	} else {
 		return nil
 	}

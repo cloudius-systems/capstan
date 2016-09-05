@@ -38,6 +38,7 @@ type VMConfig struct {
 	ConfigFile  string
 	MAC         string
 	Cmd         string
+	DisableKvm  bool
 }
 
 type Version struct {
@@ -274,7 +275,7 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	args = append(args, net...)
 	monitor := fmt.Sprintf("socket,id=charmonitor,path=%s,server,nowait", c.Monitor)
 	args = append(args, "-chardev", monitor, "-mon", "chardev=charmonitor,id=monitor,mode=control")
-	if runtime.GOOS == "linux" && checkKVM() {
+	if !c.DisableKvm && runtime.GOOS == "linux" && checkKVM() {
 		args = append(args, "-enable-kvm", "-cpu", "host,+x2apic")
 	}
 	return args, nil

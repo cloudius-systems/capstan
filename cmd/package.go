@@ -203,7 +203,7 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbos
 	}
 
 	// Upload the specified path onto virtual image.
-	imageCache, err = UploadPackageContents(imagePath, paths, imageCache, verbose)
+	imageCache, err = UploadPackageContents(repo, imagePath, paths, imageCache, verbose)
 	if err != nil {
 		return err
 	}

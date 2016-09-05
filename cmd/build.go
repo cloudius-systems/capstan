@@ -197,6 +197,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 		Networking:  "nat",
 		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
+		DisableKvm:  r.DisableKvm,
 	}
 	cmd, err := qemu.VMCommand(vmconfig)
 	if err != nil {

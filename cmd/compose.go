@@ -33,14 +33,14 @@ func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath strin
 	}
 
 	// Upload the specified path onto virtual image.
-	if _, err = UploadPackageContents(imagePath, paths, nil, false); err != nil {
+	if _, err = UploadPackageContents(r, imagePath, paths, nil, false); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func UploadPackageContents(appImage string, uploadPaths map[string]string, imageCache core.HashCache, verbose bool) (core.HashCache, error) {
+func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string]string, imageCache core.HashCache, verbose bool) (core.HashCache, error) {
 
 	var osvCmdline string
 
@@ -67,6 +67,7 @@ func UploadPackageContents(appImage string, uploadPaths map[string]string, image
 		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
 		Cmd:         osvCmdline,
+		DisableKvm:  r.DisableKvm,
 	}
 
 	// TODO Have to come up with a better error handling if necessary. Be more verbose on errors.
@@ -104,6 +105,10 @@ func UploadPackageContents(appImage string, uploadPaths map[string]string, image
 
 	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
 	if err != nil {
+		if !r.DisableKvm && strings.Contains(err.Error(), "getsockopt: connection refused") {
+			// Probably KVM is already in use e.g. by VirtualBox. Suggest user to turn it off for qemu.
+			fmt.Println("Could not run QEMU VM. Try to set 'disable_kvm:true' in ~/.capstan/config.yaml")
+		}
 		return nil, err
 	}
 	defer conn.Close()
