@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/cloudius-systems/capstan/core"
 	"github.com/cloudius-systems/capstan/provider/openstack"
+	"github.com/cloudius-systems/capstan/runtime"
 	"github.com/cloudius-systems/capstan/util"
 	"github.com/urfave/cli"
 	"os"
@@ -11,7 +13,6 @@ import (
 // OpenStackPush picks best flavor, composes package, builds .qcow2 image and uploads it to OpenStack.
 func OpenStackPush(c *cli.Context) error {
 	verbose := c.Bool("verbose")
-	runCmd := c.String("run")
 	imageName := c.Args().First()
 	pullMissing := c.Bool("pull-missing")
 
@@ -55,9 +56,21 @@ func OpenStackPush(c *cli.Context) error {
 	// flavor.Disk is in GB, we need MB
 	sizeMB := 1024 * int64(flavor.Disk)
 
+	// Initialize RunConfig by reading meta/run.yaml
+	runConf, err := core.ParsePackageRunManifest(".", c.String("r"))
+	if err != nil {
+		return err
+	} else if runConf == nil { // No run.yaml detected.
+		runConf = &runtime.RunConfig{}
+	}
+	// Override RunConfig with command-line arguments
+	if v := c.String("run"); v != "" {
+		runConf.Cmd = v
+	}
+
 	// Compose image locally.
 	fmt.Printf("Creating image of user-usable size %d MB.\n", sizeMB)
-	err = ComposePackage(repo, sizeMB, false, verbose, pullMissing, runCmd, packageDir, appName)
+	err = ComposePackage(repo, sizeMB, false, verbose, pullMissing, runConf, packageDir, appName)
 	if err != nil {
 		return err
 	}

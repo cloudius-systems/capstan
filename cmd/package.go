@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"fmt"
 	"github.com/cloudius-systems/capstan/core"
+	"github.com/cloudius-systems/capstan/runtime"
 	"github.com/cloudius-systems/capstan/util"
 	"gopkg.in/yaml.v2"
 	"io"
@@ -140,7 +141,7 @@ func BuildPackage(packageDir string) (string, error) {
 // directory. Only modified files are uploaded and no file deletions are
 // possible at this time.
 func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbose bool,
-	pullMissing bool, runCmd string, packageDir string, appName string) error {
+	pullMissing bool, runConf *runtime.RunConfig, packageDir string, appName string) error {
 
 	// Package content should be collected in a subdirectory called mpm-pkg.
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
@@ -148,24 +149,10 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbos
 	defer os.RemoveAll(targetPath)
 
 	// Default command line is the one passed by the user.
-	commandLine := runCmd
-
-	// If it is a Java application, we have to set the VMs command line.
-	if core.IsJavaPackage(packageDir) {
-		java, err := core.ParseJavaConfig(packageDir)
-		// If it is a Java application, failure to parse the config should be
-		// treated as an error and should fail package composition process.
-		if err != nil {
-			return err
-		}
-
-		// Set to the Java command line. This is a wrapper for Java application
-		// and should handle starting of different java threads.
-		commandLine = fmt.Sprintf("java.so %s io.osv.MultiJarLoader -mains /etc/javamains", java.GetVmArgs())
-	}
+	commandLine := runConf.Cmd
 
 	// First, collect the contents of the package.
-	err := CollectPackage(repo, packageDir, pullMissing)
+	err := CollectPackage(repo, packageDir, pullMissing, runConf)
 	if err != nil {
 		return err
 	}
@@ -224,11 +211,18 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbos
 
 // CollectPackage will try to resolve all of the dependencies of the given package
 // and collect the content in the $CWD/mpm-pkg directory.
-func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool) error {
+func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, runConf *runtime.RunConfig) error {
 	// Get the manifest file of the given package.
 	pkg, err := core.ParsePackageManifest(filepath.Join(packageDir, "meta", "package.yaml"))
 	if err != nil {
 		return err
+	}
+
+	// If runtime is known, then we add runtime dependencies to the list.
+	if runConf != nil {
+		fmt.Printf("Prepending '%s' runtime dependencies to dep list: %s\n",
+			runConf.Runtime.GetRuntimeName(), runConf.Runtime.GetDependencies())
+		pkg.Require = append(runConf.Runtime.GetDependencies(), pkg.Require...)
 	}
 
 	// The bootstrap package is implicitly required by every application package,
@@ -303,21 +297,8 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool) error 
 		return err
 	}
 
-	if core.IsJavaPackage(packageDir) {
-		// Check if /etc folder is already available. This is where we are going to store
-		// Java launch definition.
-		etcDir := filepath.Join(targetPath, "etc")
-		if _, err := os.Stat(etcDir); os.IsNotExist(err) {
-			os.MkdirAll(etcDir, 0777)
-		}
-
-		java, err := core.ParseJavaConfig(packageDir)
-		if err != nil {
-			return err
-		}
-
-		err = ioutil.WriteFile(filepath.Join(etcDir, "javamains"), []byte(java.GetCommandLine()), 0644)
-		if err != nil {
+	if runConf != nil {
+		if err := runConf.Runtime.OnCollect(targetPath); err != nil {
 			return err
 		}
 	}

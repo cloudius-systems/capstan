@@ -108,6 +108,137 @@ COMMANDS:
 
 The following subsections explain these commands in detail.
 
+### Package structure
+Capstan package has the following file structure:
+```
+project
+└─── meta
+    | package.yaml
+    | run.yaml
+| ... (application files and directories)
+```
+`meta` directory is where capstan metadata information is stored.
+The following subsections provide more information about each of these files.
+
+#### package.yaml (required)
+TODO
+
+#### run.yaml (optional)
+This file specifies run options. Actual set of options depends on runtime that this package is about to use, but file structure should be as shown here:
+```yaml
+# meta/run.yaml
+
+# required run attributes
+runtime: node
+
+# runtime-specific run attributes
+...
+```
+`runtime` key is always required - it defines what runtime the package will be using.
+A list of all runtimes can be obtained by executing:
+```
+$ capstan runtime list
+
+RUNTIME             DESCRIPTION                                       DEPENDENCIES
+native              Run arbitrary command inside OSv                  []
+node                Run JavaScript NodeJS 4.4.5 application           [eu.mikelangelo-project.app.node-4.4.5]
+java                Run Java 1.7.0 application                        [eu.mikelangelo-project.osv.java]
+```
+
+To generate template for `meta/run.yaml` go to your package root directory and execute command:
+```
+$ capstan runtime init -r <runtime-name>
+
+// meta/run.yaml stub successfully added to your package. Please customize it in editor.
+```
+To preview what content will be written to `meta/run.yaml` without changing any files, execute commmand:
+```
+$ capstan runtime preview -r <runtime-name>
+
+--------- meta/run.yaml ---------
+runtime: node
+
+# REQUIRED
+# Filepath of the NodeJS entrypoint (where server is defined).
+# Note that package root will correspond to filesystem root (/) in OSv image.
+# Example value: /server.js
+main: <filepath>
+---------------------------------
+```
+
+
+#### Named Configurations
+If your package can be run in more than one way (e.g. HDFS package can be run either as datanode either as namenode), you can store multiple configurations inside `meta/run.yaml` file and then easily switch between them.
+To enable this feature, use following format of the configuration file:
+```yaml
+# meta/run.yaml
+
+# required run attributes
+runtime: {runtime}
+
+# required when you opt-in for named configurations
+config_set:
+   myconfig1: # <--- this is configuration name (pick whatever you like)
+      # runtime-specific run attributes
+      ...
+   myconfig2:
+      ...
+
+# optional
+config_set_default: myconfig1
+```
+`config_set_default` field defines which of the named configurations is used if no other is specified on the command line. You can override this value with command-line argument `--runconfig {name}` which is supported by these commands:
+```bash
+capstan package compose
+capstan run
+capstan package collect
+```
+
+To generate template for `meta/run.yaml` in named configurations format, add `--named` flag to `runtime init` command:
+```
+$ capstan runtime init -r <runtime-name> --named
+
+// meta/run.yaml stub successfully added to your package. Please customize it in editor.
+```
+To preview what content will be written to `meta/run.yaml` without changing any files, execute commmand:
+```
+$ capstan runtime preview -r <runtime-name> --named
+
+--------- meta/run.yaml ---------
+
+runtime: node
+
+config_set:
+
+################################################################
+### This is first named configuration (feel free to rename). ###
+################################################################
+myconfig1:
+   # REQUIRED
+   # Filepath of the NodeJS entrypoint (where server is defined).
+   # Note that package root will correspond to filesystem root (/) in OSv image.
+   # Example value: /server.js
+   main: <filepath>
+
+################################################################
+### This is second named configuration #########################
+################################################################
+myconfig2:
+   # REQUIRED
+   # Filepath of the NodeJS entrypoint (where server is defined).
+   # Note that package root will correspond to filesystem root (/) in OSv image.
+   # Example value: /server.js
+   main: <filepath>
+
+# Add as many named configurations as you need
+
+# OPTIONAL
+# What config_set should be used as default.
+# This value can be overwritten with --runconfig argument.
+config_set_default: myconfig1
+---------------------------------
+```
+
 ### Package initialisation
 
 A package is any directory in your file system that contains a special package
@@ -198,7 +329,7 @@ refer to required packages.
 ```
 $ capstan package list
 
-Name                                               Description                                        Version                   Created        
+Name                                               Description                                        Version                   Created
 eu.mikelangelo-project.app.hadoop-hdfs             Hadoop HDFS                                        2.7.2                     2016-03-30T10:23:03+02:00
 eu.mikelangelo-project.openfoam.core               OpenFOAM Core                                      2.4.0                     2016-02-23T19:24:36+01:00
 eu.mikelangelo-project.openfoam.simplefoam         OpenFOAM simpleFoam                                2.4.0                     2016-01-19T09:39:12+01:00
@@ -235,7 +366,7 @@ By importing a package into your local package repository, you will be able to
 use it when composing other packages. Simply execute:
 
 ```
-$ capstan package import 
+$ capstan package import
 ```
 
 Use ``capstan package list`` to verify the package has been properly imported
@@ -367,23 +498,23 @@ application; note that classpath is trimmed).
 
 ```
 main: org.apache.hadoop.hdfs.server.datanode.DataNode
-classpath: 
+classpath:
     - /hdfs/etc/hadoop
     - /hdfs/share/hadoop/common/lib/commons-logging-1.1.3.jar
     - /hdfs/share/hadoop/common/lib/jersey-json-1.9.jar
     - ...
-vmargs: 
-    - Dproc_datanode 
-    - Xmx1000m 
-    - Djava.net.preferIPv4Stack=true 
-    - Dhadoop.log.dir=/hdfs/logs 
-    - Dhadoop.log.file=hadoop.log 
-    - Dhadoop.home.dir=/hdfs 
-    - Dhadoop.id.str=xlab 
-    - Dhadoop.root.logger=INFO,console 
-    - Djava.library.path=/hdfs/lib/native 
-    - Dhadoop.policy.file=hadoop-policy.xml 
-    - Djava.net.preferIPv4Stack=true 
-    - Dhadoop.security.logger=ERROR,RFAS 
-    - Dhadoop.security.logger=INFO,NullAppender 
+vmargs:
+    - Dproc_datanode
+    - Xmx1000m
+    - Djava.net.preferIPv4Stack=true
+    - Dhadoop.log.dir=/hdfs/logs
+    - Dhadoop.log.file=hadoop.log
+    - Dhadoop.home.dir=/hdfs
+    - Dhadoop.id.str=xlab
+    - Dhadoop.root.logger=INFO,console
+    - Djava.library.path=/hdfs/lib/native
+    - Dhadoop.policy.file=hadoop-policy.xml
+    - Djava.net.preferIPv4Stack=true
+    - Dhadoop.security.logger=ERROR,RFAS
+    - Dhadoop.security.logger=INFO,NullAppender
 ```

@@ -14,6 +14,7 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/provider/openstack"
+	"github.com/cloudius-systems/capstan/runtime"
 	"github.com/cloudius-systems/capstan/util"
 	"github.com/urfave/cli"
 	"os"
@@ -148,27 +149,58 @@ func main() {
 				cli.StringFlag{Name: "gce-upload-dir", Value: "", Usage: "Directory to upload local image to: e.g., gs://osvimg"},
 				cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
 				cli.StringFlag{Name: "execute,e", Usage: "set the command line to execute"},
+				cli.StringFlag{Name: "runconfig,r", Usage: "specify config_set name (specified in meta/run.yaml)"},
 			},
 			Action: func(c *cli.Context) error {
-				config := &cmd.RunConfig{
-					InstanceName: c.Args().First(),
-					ImageName:    c.String("i"),
-					Hypervisor:   c.String("p"),
-					Verbose:      c.Bool("v"),
-					Memory:       c.String("m"),
-					Cpus:         c.Int("c"),
-					Networking:   c.String("n"),
-					Bridge:       c.String("b"),
-					NatRules:     nat.Parse(c.StringSlice("f")),
-					GCEUploadDir: c.String("gce-upload-dir"),
-					MAC:          c.String("mac"),
-					Cmd:          c.String("execute"),
+				// Initialize RunConfig by reading meta/run.yaml
+				config, err := core.ParsePackageRunManifest(".", c.String("runconfig"))
+				if err != nil {
+					return cli.NewExitError(err.Error(), EX_DATAERR)
+				} else if config == nil { // No run.yaml detected.
+					config = &runtime.RunConfig{}
 				}
+
+				// Override RunConfig with command-line arguments
+				if v := c.Args().First(); v != "" {
+					config.InstanceName = v
+				}
+				if v := c.String("i"); v != "" {
+					config.ImageName = v
+				}
+				if v := c.String("p"); v != "" {
+					config.Hypervisor = v
+				}
+				if v := c.String("m"); v != "" {
+					config.Memory = v
+				}
+				if v := c.String("n"); v != "" {
+					config.Networking = v
+				}
+				if v := c.String("b"); v != "" {
+					config.Bridge = v
+				}
+				if v := c.String("gce-upload-dir"); v != "" {
+					config.GCEUploadDir = v
+				}
+				if v := c.String("mac"); v != "" {
+					config.MAC = v
+				}
+				if v := c.String("execute"); v != "" {
+					config.Cmd = v
+				}
+				if v := c.Bool("v"); v {
+					config.Verbose = v
+				}
+				if v := c.StringSlice("f"); len(v) > 0 {
+					config.NatRules = nat.Parse(v)
+				}
+				config.Cpus = c.Int("c") // TODO: only override if value was passed by user (not default)
+
 				if !isValidHypervisor(config.Hypervisor) {
 					return cli.NewExitError(fmt.Sprintf("error: '%s' is not a supported hypervisor\n", config.Hypervisor), EX_DATAERR)
 				}
 				repo := util.NewRepo(c.GlobalString("u"))
-				err := cmd.RunInstance(repo, config)
+				err = cmd.RunInstance(repo, config)
 				if err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
@@ -321,6 +353,7 @@ func main() {
 						cli.StringFlag{Name: "author,a", Usage: "package author"},
 						cli.StringFlag{Name: "version,v", Usage: "package version"},
 						cli.StringSliceFlag{Name: "require", Usage: "specify package dependency"},
+						cli.StringFlag{Name: "runtime", Usage: "runtime to stub package for. Use 'capstan runtime list' to list all"},
 					},
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) > 1 {
@@ -359,8 +392,16 @@ func main() {
 							Require: c.StringSlice("require"),
 						}
 
+						// Init package
 						if err := cmd.InitPackage(packagePath, p); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
+						}
+
+						// Scaffold runtime if runtime name is provided
+						if c.String("runtime") != "" {
+							if err := cmd.RuntimeInit(c.String("runtime"), false, false, true); err != nil {
+								return cli.NewExitError(err.Error(), EX_DATAERR)
+							}
 						}
 
 						return nil
@@ -389,6 +430,7 @@ func main() {
 						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 						cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+						cli.StringFlag{Name: "runconfig,r", Usage: "specify config_set name (specified in meta/run.yaml)"},
 					},
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
@@ -409,14 +451,25 @@ func main() {
 
 						updatePackage := c.Bool("update")
 						verbose := c.Bool("verbose")
-						runCmd := c.String("run")
 						pullMissing := c.Bool("pull-missing")
 
 						// Always use the current directory for the package to compose.
 						packageDir, _ := os.Getwd()
 
+						// Initialize RunConfig by reading meta/run.yaml
+						runConf, err := core.ParsePackageRunManifest(".", c.String("r"))
+						if err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
+						} else if runConf == nil { // No run.yaml detected.
+							runConf = &runtime.RunConfig{}
+						}
+						// Override RunConfig with command-line arguments
+						if v := c.String("run"); v != "" {
+							runConf.Cmd = v
+						}
+
 						if err := cmd.ComposePackage(repo, imageSize, updatePackage, verbose, pullMissing,
-							runCmd, packageDir, appName); err != nil {
+							runConf, packageDir, appName); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
@@ -428,6 +481,7 @@ func main() {
 					Usage: "collects contents of this package and all required packages",
 					Flags: []cli.Flag{
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+						cli.StringFlag{Name: "runconfig,r", Usage: "specify config_set name (specified in meta/run.yaml)"},
 					},
 					Action: func(c *cli.Context) error {
 						repo := util.NewRepo(c.GlobalString("u"))
@@ -435,7 +489,13 @@ func main() {
 
 						pullMissing := c.Bool("pull-missing")
 
-						if err := cmd.CollectPackage(repo, packageDir, pullMissing); err != nil {
+						// Initialize RunConfig by reading meta/run.yaml
+						runConf, err := core.ParsePackageRunManifest(".", c.String("r"))
+						if err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
+						}
+
+						if err := cmd.CollectPackage(repo, packageDir, pullMissing, runConf); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
@@ -524,6 +584,7 @@ func main() {
 							cli.BoolFlag{Name: "keep-image", Usage: "don't delete local composed image in .capstan/repository/stack"},
 							cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 							cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+							cli.StringFlag{Name: "runconfig,r", Usage: "specify config_set name (specified in meta/run.yaml)"},
 						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
 					ArgsUsage:   "image-name",
 					Description: "Compose package, build .qcow2 image and upload it to OpenStack under nickname <image-name>.",
@@ -557,6 +618,63 @@ func main() {
 						if err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
+
+						return nil
+					},
+				},
+			},
+		},
+		{
+			Name:  "runtime",
+			Usage: "package runtime manipulation tools (meta/run.yaml)",
+			Subcommands: []cli.Command{
+				{
+					Name:  "preview",
+					Usage: "prints runtime yaml template to the console",
+					Flags: []cli.Flag{
+						cli.StringFlag{Name: "runtime, r", Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
+						cli.BoolFlag{Name: "named", Usage: "Use named configurations format"},
+						cli.BoolFlag{Name: "plain", Usage: "Remove comments"},
+					},
+					Action: func(c *cli.Context) error {
+						if c.String("runtime") == "" {
+							return cli.NewExitError("usage: capstan runtime preview -r [runtime-name]", EX_USAGE)
+						}
+
+						if err := cmd.RuntimePreview(c.String("runtime"), c.Bool("named"), c.Bool("plain")); err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
+						}
+
+						return nil
+					},
+				},
+				{
+					Name:  "init",
+					Usage: "prepares meta/run.yaml stub for selected runtime",
+					Flags: []cli.Flag{
+						cli.StringFlag{Name: "runtime, r", Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
+						cli.BoolFlag{Name: "named", Usage: "Use named configurations format"},
+						cli.BoolFlag{Name: "plain", Usage: "Remove comments"},
+						cli.BoolFlag{Name: "force, f", Usage: "Override existing meta/run.yaml"},
+					},
+					Action: func(c *cli.Context) error {
+						if c.String("runtime") == "" {
+							return cli.NewExitError("usage: capstan runtime preview -r [runtime-name]", EX_USAGE)
+						}
+
+						if err := cmd.RuntimeInit(c.String("runtime"), c.Bool("named"), c.Bool("plain"), c.Bool("force")); err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
+						}
+
+						return nil
+					},
+				},
+				{
+					Name:  "list",
+					Usage: "list available runtimes",
+					Flags: []cli.Flag{},
+					Action: func(c *cli.Context) error {
+						cmd.RuntimeList()
 
 						return nil
 					},

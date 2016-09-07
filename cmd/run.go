@@ -15,7 +15,7 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
 	"github.com/cloudius-systems/capstan/hypervisor/vmw"
 	"github.com/cloudius-systems/capstan/image"
-	"github.com/cloudius-systems/capstan/nat"
+	"github.com/cloudius-systems/capstan/runtime"
 	"github.com/cloudius-systems/capstan/util"
 	"io/ioutil"
 	"os"
@@ -25,22 +25,7 @@ import (
 	"strings"
 )
 
-type RunConfig struct {
-	InstanceName string
-	ImageName    string
-	Hypervisor   string
-	Verbose      bool
-	Memory       string
-	Cpus         int
-	Networking   string
-	Bridge       string
-	NatRules     []nat.Rule
-	GCEUploadDir string
-	MAC          string
-	Cmd          string
-}
-
-func RunInstance(repo *util.Repo, config *RunConfig) error {
+func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 	var path string
 	var cmd *exec.Cmd
 
@@ -181,7 +166,7 @@ func RunInstance(repo *util.Repo, config *RunConfig) error {
 			if err != nil {
 				return err
 			}
-			err = ComposePackage(repo, sz, true, false, true, "", wd, pkg.Name)
+			err = ComposePackage(repo, sz, true, false, true, config, wd, pkg.Name)
 			if err != nil {
 				return err
 			}
@@ -323,7 +308,7 @@ func RunInstance(repo *util.Repo, config *RunConfig) error {
 	}
 }
 
-func buildJarImage(repo *util.Repo, config *RunConfig) (*RunConfig, error) {
+func buildJarImage(repo *util.Repo, config *runtime.RunConfig) (*runtime.RunConfig, error) {
 	jarPath := config.ImageName
 	imageName, jarName := parseJarNames(jarPath)
 	image := &core.Image{
