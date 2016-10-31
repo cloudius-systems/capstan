@@ -237,6 +237,14 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, runCon
 	}
 
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
+
+	// Delete old 'mpm-package' folder if exists
+	if _, err := os.Stat(targetPath); err == nil {
+		if err = os.RemoveAll(targetPath); err != nil {
+			fmt.Printf("failed to remove 'mpm-pkg' folder: %s\n", err)
+		}
+	}
+
 	if err = os.MkdirAll(targetPath, 0775); err != nil {
 		return err
 	}
