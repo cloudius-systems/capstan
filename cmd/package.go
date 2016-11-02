@@ -219,7 +219,7 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, runCon
 	}
 
 	// If runtime is known, then we add runtime dependencies to the list.
-	if runConf != nil {
+	if runtime.IsRuntimeKnown(runConf) {
 		fmt.Printf("Prepending '%s' runtime dependencies to dep list: %s\n",
 			runConf.Runtime.GetRuntimeName(), runConf.Runtime.GetDependencies())
 		pkg.Require = append(runConf.Runtime.GetDependencies(), pkg.Require...)
@@ -305,7 +305,7 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, runCon
 		return err
 	}
 
-	if runConf != nil {
+	if runtime.IsRuntimeKnown(runConf) {
 		if err := runConf.Runtime.OnCollect(targetPath); err != nil {
 			return err
 		}

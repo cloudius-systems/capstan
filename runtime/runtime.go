@@ -79,3 +79,16 @@ func PickRuntime(runtimeName string) (Runtime, error) {
 
 	return nil, fmt.Errorf("Unknown runtime: '%s'\n", runtimeName)
 }
+
+// IsRuntimeKnown checks whether meta/run.yaml was used or not.
+// When meta/run.yaml is used, runConf.Runtime object is set.
+// There are three possibilities:
+// -------------------------
+// runConf | runConf.Runtime
+// -------------------------
+// nil     | nil             => runConf not not specified
+// <obj>   | nil             => runConf generated based on command-line arguments (e.g. --exec, --mem)
+// <obj>   | <obj>           => runConf parsed from meta/run.yaml (runtime mechanism was employed)
+func IsRuntimeKnown(runConf *RunConfig) bool {
+	return runConf != nil && runConf.Runtime != nil
+}
