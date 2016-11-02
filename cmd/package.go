@@ -366,6 +366,10 @@ func extractPackageContent(pkgreader io.Reader, target string) error {
 
 		switch {
 		case info.Mode()&os.ModeSymlink == os.ModeSymlink:
+			if err := ensureDirectoryStructureForFile(path); err != nil {
+				return fmt.Errorf("Could not prepare directory structure for %s: %s", path, err)
+			}
+
 			// Create symbolic link. Ignore any error that might occur locally as
 			// links can be created dynamically on the VM itself.
 			os.Symlink(header.Linkname, path)
@@ -376,6 +380,10 @@ func extractPackageContent(pkgreader io.Reader, target string) error {
 			}
 
 		case info.Mode().IsRegular():
+			if err := ensureDirectoryStructureForFile(path); err != nil {
+				return fmt.Errorf("Could not prepare directory structure for %s: %s", path, err)
+			}
+
 			writer, err := os.Create(path)
 			if err != nil {
 				return err
@@ -402,4 +410,17 @@ func extractPackageContent(pkgreader io.Reader, target string) error {
 func PullPackage(r *util.Repo, packageName string) error {
 	// Try to download the package from the remote repository.
 	return r.DownloadPackage(r.URL, packageName)
+}
+
+// ensureDirectoryStructureForFile creates directory path for given filepath.
+func ensureDirectoryStructureForFile(currfilepath string) error {
+	dirpath := filepath.Dir(currfilepath)
+
+	if _, err := os.Stat(dirpath); err != nil {
+		if err = os.MkdirAll(dirpath, 0775); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
