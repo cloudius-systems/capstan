@@ -10,6 +10,7 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/nat"
 	"github.com/cloudius-systems/capstan/util"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -102,6 +103,10 @@ func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string
 			break
 		}
 	}
+
+	// Consuming stdout is mandatory once it is redirected to linux socket.
+	// If not, buffer will fill up and capstan will hang.
+	go io.Copy(ioutil.Discard, stdout)
 
 	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
 	if err != nil {

@@ -225,6 +225,9 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 			break
 		}
 	}
+
+	// Consuming stdout/stderr is mandatory once they are redirected to linux socket.
+	// If not, buffer will fill up and capstan will hang.
 	if verbose {
 		go io.Copy(os.Stdout, stdout)
 		go io.Copy(os.Stderr, stderr)
@@ -232,6 +235,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 		go io.Copy(ioutil.Discard, stdout)
 		go io.Copy(ioutil.Discard, stderr)
 	}
+
 	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
 	if err != nil {
 		return err
