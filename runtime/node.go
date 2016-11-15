@@ -14,7 +14,7 @@ type nodeJsRuntime struct {
 //
 
 func (conf nodeJsRuntime) GetRuntimeName() string {
-	return NodeJS
+	return string(NodeJS)
 }
 func (conf nodeJsRuntime) GetRuntimeDescription() string {
 	return "Run JavaScript NodeJS 4.4.5 application"

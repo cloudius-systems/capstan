@@ -14,7 +14,7 @@ type nativeRuntime struct {
 //
 
 func (conf nativeRuntime) GetRuntimeName() string {
-	return Native
+	return string(Native)
 }
 func (conf nativeRuntime) GetRuntimeDescription() string {
 	return "Run arbitrary command inside OSv"

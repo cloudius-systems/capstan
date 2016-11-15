@@ -21,7 +21,7 @@ type javaRuntime struct {
 //
 
 func (conf javaRuntime) GetRuntimeName() string {
-	return Java
+	return string(Java)
 }
 func (conf javaRuntime) GetRuntimeDescription() string {
 	return "Run Java 1.7.0 application"

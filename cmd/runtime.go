@@ -11,7 +11,7 @@ import (
 
 func RuntimePreview(runtimeName string, named bool, plain bool) error {
 	// Resolve runtime
-	rt, err := runtime.PickRuntime(runtimeName)
+	rt, err := runtime.PickRuntime(runtime.RuntimeType(runtimeName))
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func RuntimePreview(runtimeName string, named bool, plain bool) error {
 
 func RuntimeInit(runtimeName string, named bool, plain bool, force bool) error {
 	// Resolve runtime
-	rt, err := runtime.PickRuntime(runtimeName)
+	rt, err := runtime.PickRuntime(runtime.RuntimeType(runtimeName))
 	if err != nil {
 		return err
 	}
@@ -77,9 +77,9 @@ func RuntimeInit(runtimeName string, named bool, plain bool, force bool) error {
 
 func RuntimeList() error {
 	fmt.Printf("%-20s%-50s%-20s\n", "RUNTIME", "DESCRIPTION", "DEPENDENCIES")
-	for _, runtimeName := range runtime.SupportedRuntimes {
-		rt, _ := runtime.PickRuntime(runtimeName)
-		fmt.Printf("%-20s%-50s%-20s\n", runtimeName, rt.GetRuntimeDescription(), rt.GetDependencies())
+	for _, runtimeType := range runtime.SupportedRuntimes {
+		rt, _ := runtime.PickRuntime(runtimeType)
+		fmt.Printf("%-20s%-50s%-20s\n", string(runtimeType), rt.GetRuntimeDescription(), rt.GetDependencies())
 	}
 	return nil
 }

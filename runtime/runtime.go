@@ -6,13 +6,15 @@ import (
 	"strings"
 )
 
+type RuntimeType string
+
 const (
-	Native string = "native"
-	NodeJS string = "node"
-	Java   string = "java"
+	Native RuntimeType = "native"
+	NodeJS RuntimeType = "node"
+	Java   RuntimeType = "java"
 )
 
-var SupportedRuntimes []string = []string{
+var SupportedRuntimes []RuntimeType = []RuntimeType{
 	Native,
 	NodeJS,
 	Java,
@@ -103,7 +105,7 @@ func (r CommonRuntime) Validate() error {
 }
 
 // PickRuntime maps runtime name into runtime struct.
-func PickRuntime(runtimeName string) (Runtime, error) {
+func PickRuntime(runtimeName RuntimeType) (Runtime, error) {
 	switch runtimeName {
 	case Native:
 		return &nativeRuntime{}, nil
