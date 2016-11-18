@@ -14,5 +14,5 @@ else
 fi
 
 go get $package
-go build -ldflags "-X main.VERSION$link_operator'$version'" $package
+go build -a -ldflags "-X main.VERSION$link_operator'$version' -w -s" -tags netgo $package
 go install $package

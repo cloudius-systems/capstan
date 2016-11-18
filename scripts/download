@@ -16,7 +16,7 @@ case "$HOSTTYPE" in
   *)        echo "OSv only supports 64-bit x86. Exiting." && exit 1 ;;
 esac
 
-URL="http://osv.capstan.s3.amazonaws.com/capstan/${VERSION}/${OS}_${ARCH}/capstan"
+URL="http://mikelangelo-capstan.s3.amazonaws.com/capstan/${VERSION}/${OS}_${ARCH}/capstan"
 DIR="$HOME/bin"
 
 mkdir -p $DIR

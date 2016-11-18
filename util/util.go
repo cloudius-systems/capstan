@@ -9,6 +9,7 @@ package util
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -42,6 +43,32 @@ func CopyFile(src, dst string) *exec.Cmd {
 		cmd = exec.Command("cp", src, dst)
 	}
 	return cmd
+}
+
+func CopyLocalFile(dst, src string) error {
+	fi, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	s, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	// no need to check errors on read only file, we already got everything
+	// we need from the filesystem, so nothing can go wrong now.
+	defer s.Close()
+	d, err := os.Create(dst)
+	// Ensure the target file has the same mode as source
+	d.Chmod(fi.Mode())
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(d, s); err != nil {
+		d.Close()
+		return err
+	}
+	return d.Close()
 }
 
 func SearchInstance(name string) (instanceName, instancePlatform string) {
