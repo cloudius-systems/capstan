@@ -9,10 +9,11 @@ import (
 )
 
 type javaRuntimeSettings struct {
-	Main      string   `yaml:"main"`
-	Args      []string `yaml:"args"`
-	Classpath []string `yaml:"classpath"`
-	JvmArgs   []string `yaml:"jvmargs"`
+	CommonRuntime `yaml:"-,inline"`
+	Main          string   `yaml:"main"`
+	Args          []string `yaml:"args"`
+	Classpath     []string `yaml:"classpath"`
+	JvmArgs       []string `yaml:"jvmargs"`
 }
 
 //
@@ -37,7 +38,7 @@ func (conf javaRuntimeSettings) Validate() error {
 		return fmt.Errorf("'classpath' must be provided")
 	}
 
-	return nil
+	return conf.CommonRuntime.Validate()
 }
 func (conf javaRuntimeSettings) GetRunConfig() (*RunConfig, error) {
 	return &RunConfig{
@@ -90,7 +91,7 @@ args:
 #                   - Dhadoop.log.dir=/hdfs/logs
 jvmargs:
    <list>
-`
+` + conf.CommonRuntime.GetYamlTemplate()
 }
 
 //

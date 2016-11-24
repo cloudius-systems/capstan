@@ -5,7 +5,8 @@ import (
 )
 
 type nativeRuntimeSettings struct {
-	BootCmd string `yaml:"bootcmd"`
+	CommonRuntime `yaml:"-,inline"`
+	BootCmd       string `yaml:"bootcmd"`
 }
 
 //
@@ -20,9 +21,6 @@ func (conf nativeRuntimeSettings) GetRuntimeDescription() string {
 }
 func (conf nativeRuntimeSettings) GetDependencies() []string {
 	return []string{}
-}
-func (conf nativeRuntimeSettings) Validate() error {
-	return nil
 }
 func (conf nativeRuntimeSettings) GetRunConfig() (*RunConfig, error) {
 	return &RunConfig{

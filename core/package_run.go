@@ -95,6 +95,11 @@ func ParsePackageRunManifest(runManifestFile string, selectedConfig string) (*ru
 		return nil, err
 	}
 
+	// Prepend environment variables
+	if conf.Cmd, err = runtime.PrependEnvsPrefix(conf.Cmd, theRuntime.GetEnv()); err != nil {
+		return nil, err
+	}
+
 	// Remember original config as well.
 	conf.Runtime = theRuntime
 

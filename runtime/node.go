@@ -5,7 +5,8 @@ import (
 )
 
 type nodeJsRuntimeSettings struct {
-	Main string `yaml:"main"`
+	CommonRuntime `yaml:"-,inline"`
+	Main          string `yaml:"main"`
 }
 
 //
@@ -20,9 +21,6 @@ func (conf nodeJsRuntimeSettings) GetRuntimeDescription() string {
 }
 func (conf nodeJsRuntimeSettings) GetDependencies() []string {
 	return []string{"eu.mikelangelo-project.app.node-4.4.5"}
-}
-func (conf nodeJsRuntimeSettings) Validate() error {
-	return nil
 }
 func (conf nodeJsRuntimeSettings) GetRunConfig() (*RunConfig, error) {
 	return &RunConfig{
@@ -39,5 +37,5 @@ func (conf nodeJsRuntimeSettings) GetYamlTemplate() string {
 # Note that package root will correspond to filesystem root (/) in OSv image.
 # Example value: /server.js
 main: <filepath>
-`
+` + conf.CommonRuntime.GetYamlTemplate()
 }

@@ -3,6 +3,7 @@ package runtime
 import (
 	"fmt"
 	"github.com/cloudius-systems/capstan/nat"
+	"strings"
 )
 
 const (
@@ -30,8 +31,7 @@ type RunConfig struct {
 	GCEUploadDir string
 	MAC          string
 	Cmd          string
-
-	Runtime Runtime
+	Runtime      Runtime
 }
 
 // Runtime interface must be extended for every new runtime.
@@ -64,6 +64,42 @@ type Runtime interface {
 
 	// GetDependencies returns a list of dependent package names.
 	GetDependencies() []string
+
+	// GetEnv returns map of environment variables read from run.yaml.
+	GetEnv() map[string]string
+}
+
+// CommonRuntime fields are those common to all runtimes.
+// This fields are set for each named-configuration separately, nothing
+// is shared.
+type CommonRuntime struct {
+	Env map[string]string `yaml:"env"`
+}
+
+func (r CommonRuntime) GetEnv() map[string]string {
+	return r.Env
+}
+
+func (r CommonRuntime) GetYamlTemplate() string {
+	return `
+# OPTIONAL
+# Environment variables.
+# A map of environment variables to be set when unikernel is run.
+# Example value:  env:
+#                    PORT: 8000
+#                    HOSTNAME: www.myserver.org
+env:
+   <key>: <value>
+`
+}
+
+func (r CommonRuntime) Validate() error {
+	for k, v := range r.Env {
+		if strings.Contains(k, " ") || strings.Contains(v, " ") {
+			return fmt.Errorf("spaces not allowed in env key/value: '%s':'%s'", k, v)
+		}
+	}
+	return nil
 }
 
 // PickRuntime maps runtime name into runtime struct.
@@ -91,4 +127,15 @@ func PickRuntime(runtimeName string) (Runtime, error) {
 // <obj>   | <obj>           => runConf parsed from meta/run.yaml (runtime mechanism was employed)
 func IsRuntimeKnown(runConf *RunConfig) bool {
 	return runConf != nil && runConf.Runtime != nil
+}
+
+// PrependEnvsPrefix prepends all key-values of env map to the boot cmd give.
+// It prepends each pair in a form of "--env={KEY}={VALUE}".
+// Also performs check that neither key nor value contains space.
+func PrependEnvsPrefix(cmd string, env map[string]string) (string, error) {
+	s := ""
+	for k, v := range env {
+		s += fmt.Sprintf("--env=%s=%s ", k, v)
+	}
+	return fmt.Sprintf("%s%s", s, cmd), nil
 }
