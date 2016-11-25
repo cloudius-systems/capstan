@@ -2,4 +2,4 @@
 host=review.mikelangelo-project.eu
 port=29418
 project=mikelangelo/capstan
-defaultbranch=develop
+defaultbranch=master

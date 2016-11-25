@@ -12,7 +12,7 @@ type javaRuntimeSettings struct {
 	Main      string   `yaml:"main"`
 	Args      []string `yaml:"args"`
 	Classpath []string `yaml:"classpath"`
-	VmArgs    []string `yaml:"vmargs"`
+	JvmArgs   []string `yaml:"jvmargs"`
 }
 
 //
@@ -41,7 +41,7 @@ func (conf javaRuntimeSettings) Validate() error {
 }
 func (conf javaRuntimeSettings) GetRunConfig() (*RunConfig, error) {
 	return &RunConfig{
-		Cmd: fmt.Sprintf("java.so %s io.osv.MultiJarLoader -mains /etc/javamains", conf.GetVmArgs()),
+		Cmd: fmt.Sprintf("java.so %s io.osv.MultiJarLoader -mains /etc/javamains", conf.GetJvmArgs()),
 	}, nil
 }
 func (conf javaRuntimeSettings) OnCollect(targetPath string) error {
@@ -67,7 +67,7 @@ func (conf javaRuntimeSettings) GetYamlTemplate() string {
 main: <name>
 
 # REQUIRED
-# A list of paths where classes and other resources should be found.
+# A list of paths where classes and other resources can be found.
 # Example value: classpath: 
 #                   - /
 #                   - /package1
@@ -84,11 +84,11 @@ args:
 
 # OPTIONAL
 # A list of JVM args (e.g. Xmx, Xms)
-# Example value: vmargs:
+# Example value: jvmargs:
 #                   - Xmx1000m 
 #                   - Djava.net.preferIPv4Stack=true 
 #                   - Dhadoop.log.dir=/hdfs/logs
-vmargs:
+jvmargs:
    <list>
 `
 }
@@ -110,10 +110,10 @@ func (conf javaRuntimeSettings) GetCommandLine() string {
 
 	return strings.TrimSpace(fmt.Sprintf("%s %s %s", cp, conf.Main, args))
 }
-func (conf javaRuntimeSettings) GetVmArgs() string {
+func (conf javaRuntimeSettings) GetJvmArgs() string {
 	vmargs := ""
 
-	for _, arg := range conf.VmArgs {
+	for _, arg := range conf.JvmArgs {
 		vmargs += fmt.Sprintf("-%s ", arg)
 	}
 
