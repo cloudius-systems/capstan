@@ -5,7 +5,7 @@ import (
 )
 
 type nativeRuntimeSettings struct {
-	Main string `yaml:"main"`
+	BootCmd string `yaml:"bootcmd"`
 }
 
 //
@@ -26,7 +26,7 @@ func (conf nativeRuntimeSettings) Validate() error {
 }
 func (conf nativeRuntimeSettings) GetRunConfig() (*RunConfig, error) {
 	return &RunConfig{
-		Cmd: fmt.Sprintf("%s", conf.Main),
+		Cmd: fmt.Sprintf("%s", conf.BootCmd),
 	}, nil
 }
 func (conf nativeRuntimeSettings) OnCollect(targetPath string) error {
@@ -38,6 +38,6 @@ func (conf nativeRuntimeSettings) GetYamlTemplate() string {
 # Command to be executed in OSv.
 # Note that package root will correspond to filesystem root (/) in OSv image.
 # Example value: --env=WM_PROJECT_DIR=/openfoam /usr/bin/simpleFoam.so -help
-main: <command>
+bootcmd: <command>
 `
 }
