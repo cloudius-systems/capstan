@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type javaRuntimeSettings struct {
+type javaRuntime struct {
 	CommonRuntime `yaml:"-,inline"`
 	Main          string   `yaml:"main"`
 	Args          []string `yaml:"args"`
@@ -20,16 +20,16 @@ type javaRuntimeSettings struct {
 // Interface implementation
 //
 
-func (conf javaRuntimeSettings) GetRuntimeName() string {
+func (conf javaRuntime) GetRuntimeName() string {
 	return Java
 }
-func (conf javaRuntimeSettings) GetRuntimeDescription() string {
+func (conf javaRuntime) GetRuntimeDescription() string {
 	return "Run Java 1.7.0 application"
 }
-func (conf javaRuntimeSettings) GetDependencies() []string {
+func (conf javaRuntime) GetDependencies() []string {
 	return []string{"eu.mikelangelo-project.osv.java"}
 }
-func (conf javaRuntimeSettings) Validate() error {
+func (conf javaRuntime) Validate() error {
 	if conf.Main == "" {
 		return fmt.Errorf("'main' must be provided")
 	}
@@ -40,12 +40,12 @@ func (conf javaRuntimeSettings) Validate() error {
 
 	return conf.CommonRuntime.Validate()
 }
-func (conf javaRuntimeSettings) GetRunConfig() (*RunConfig, error) {
+func (conf javaRuntime) GetRunConfig() (*RunConfig, error) {
 	return &RunConfig{
 		Cmd: fmt.Sprintf("java.so %s io.osv.MultiJarLoader -mains /etc/javamains", conf.GetJvmArgs()),
 	}, nil
 }
-func (conf javaRuntimeSettings) OnCollect(targetPath string) error {
+func (conf javaRuntime) OnCollect(targetPath string) error {
 	// Check if /etc folder is already available. This is where we are going to store
 	// Java launch definition.
 	etcDir := filepath.Join(targetPath, "etc")
@@ -60,7 +60,7 @@ func (conf javaRuntimeSettings) OnCollect(targetPath string) error {
 
 	return nil
 }
-func (conf javaRuntimeSettings) GetYamlTemplate() string {
+func (conf javaRuntime) GetYamlTemplate() string {
 	return `
 # REQUIRED
 # Fully classified name of the main class.
@@ -98,7 +98,7 @@ jvmargs:
 // Utility
 //
 
-func (conf javaRuntimeSettings) GetCommandLine() string {
+func (conf javaRuntime) GetCommandLine() string {
 	var cp, args string
 
 	if len(conf.Classpath) > 0 {
@@ -111,7 +111,7 @@ func (conf javaRuntimeSettings) GetCommandLine() string {
 
 	return strings.TrimSpace(fmt.Sprintf("%s %s %s", cp, conf.Main, args))
 }
-func (conf javaRuntimeSettings) GetJvmArgs() string {
+func (conf javaRuntime) GetJvmArgs() string {
 	vmargs := ""
 
 	for _, arg := range conf.JvmArgs {

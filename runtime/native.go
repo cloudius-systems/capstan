@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type nativeRuntimeSettings struct {
+type nativeRuntime struct {
 	CommonRuntime `yaml:"-,inline"`
 	BootCmd       string `yaml:"bootcmd"`
 }
@@ -13,24 +13,24 @@ type nativeRuntimeSettings struct {
 // Interface implementation
 //
 
-func (conf nativeRuntimeSettings) GetRuntimeName() string {
+func (conf nativeRuntime) GetRuntimeName() string {
 	return Native
 }
-func (conf nativeRuntimeSettings) GetRuntimeDescription() string {
+func (conf nativeRuntime) GetRuntimeDescription() string {
 	return "Run arbitrary command inside OSv"
 }
-func (conf nativeRuntimeSettings) GetDependencies() []string {
+func (conf nativeRuntime) GetDependencies() []string {
 	return []string{}
 }
-func (conf nativeRuntimeSettings) GetRunConfig() (*RunConfig, error) {
+func (conf nativeRuntime) GetRunConfig() (*RunConfig, error) {
 	return &RunConfig{
 		Cmd: fmt.Sprintf("%s", conf.BootCmd),
 	}, nil
 }
-func (conf nativeRuntimeSettings) OnCollect(targetPath string) error {
+func (conf nativeRuntime) OnCollect(targetPath string) error {
 	return nil
 }
-func (conf nativeRuntimeSettings) GetYamlTemplate() string {
+func (conf nativeRuntime) GetYamlTemplate() string {
 	return `
 # REQUIRED
 # Command to be executed in OSv.

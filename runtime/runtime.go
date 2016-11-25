@@ -106,11 +106,11 @@ func (r CommonRuntime) Validate() error {
 func PickRuntime(runtimeName string) (Runtime, error) {
 	switch runtimeName {
 	case Native:
-		return &nativeRuntimeSettings{}, nil
+		return &nativeRuntime{}, nil
 	case NodeJS:
-		return &nodeJsRuntimeSettings{}, nil
+		return &nodeJsRuntime{}, nil
 	case Java:
-		return &javaRuntimeSettings{}, nil
+		return &javaRuntime{}, nil
 	}
 
 	return nil, fmt.Errorf("Unknown runtime: '%s'\n", runtimeName)
