@@ -310,17 +310,15 @@ func (r *Repo) InitializeImage(loaderImage string, imageName string, imageSize i
 		return err
 	}
 
-	// Make sure the image is in QCOW2 format. This is to make sure that the
-	// image in the next step does not grow in size in case the input image is
-	// in RAW format.
-	if err := SetPartition(imagePath, 2, uint64(zfsStart), uint64(zfsSize)); err != nil {
-		fmt.Printf("Setting the ZFS partition failed for %s\n", imagePath)
-		return err
-	}
-
 	// Convert the image to QCOW2 format. This will prevent the image file from
 	// becoming to large in the next step when we actually resize it.
 	if err := ConvertImageToQCOW2(imagePath); err != nil {
+		return err
+	}
+
+	// Store the information about the partition into the image.
+	if err := SetPartition(imagePath, 2, uint64(zfsStart), uint64(zfsSize)); err != nil {
+		fmt.Printf("Setting the ZFS partition failed for %s\n", imagePath)
 		return err
 	}
 
