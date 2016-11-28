@@ -22,6 +22,13 @@ func (conf nodeJsRuntime) GetRuntimeDescription() string {
 func (conf nodeJsRuntime) GetDependencies() []string {
 	return []string{"eu.mikelangelo-project.app.node-4.4.5"}
 }
+func (conf nodeJsRuntime) Validate() error {
+	if conf.Main == "" {
+		return fmt.Errorf("'main' must be provided")
+	}
+
+	return conf.CommonRuntime.Validate()
+}
 func (conf nodeJsRuntime) GetRunConfig() (*RunConfig, error) {
 	return &RunConfig{
 		Cmd: fmt.Sprintf("node %s", conf.Main),

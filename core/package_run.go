@@ -59,8 +59,7 @@ func ParsePackageRunManifest(runManifestFile string, selectedConfig string) (*ru
 	// Resolve named configuration.
 	if requiredConf.ConfigSet != nil {
 		if requiredConf.ConfigSetDefault == "" {
-			return nil, fmt.Errorf("Could not resolve named configuration - configuration name not provided",
-				requiredConf.ConfigSetDefault)
+			return nil, fmt.Errorf("Could not resolve named configuration - configuration name not provided")
 		}
 		if requiredConf.ConfigSet[requiredConf.ConfigSetDefault] == nil {
 			keys := ""

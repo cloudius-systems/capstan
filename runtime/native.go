@@ -22,6 +22,13 @@ func (conf nativeRuntime) GetRuntimeDescription() string {
 func (conf nativeRuntime) GetDependencies() []string {
 	return []string{}
 }
+func (conf nativeRuntime) Validate() error {
+	if conf.BootCmd == "" {
+		return fmt.Errorf("'bootcmd' must be provided")
+	}
+
+	return conf.CommonRuntime.Validate()
+}
 func (conf nativeRuntime) GetRunConfig() (*RunConfig, error) {
 	return &RunConfig{
 		Cmd: fmt.Sprintf("%s", conf.BootCmd),
@@ -35,7 +42,7 @@ func (conf nativeRuntime) GetYamlTemplate() string {
 # REQUIRED
 # Command to be executed in OSv.
 # Note that package root will correspond to filesystem root (/) in OSv image.
-# Example value: --env=WM_PROJECT_DIR=/openfoam /usr/bin/simpleFoam.so -help
+# Example value: /usr/bin/simpleFoam.so -help
 bootcmd: <command>
 `
 }
