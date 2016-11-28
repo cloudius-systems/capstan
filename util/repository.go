@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	DefaultRepositoryUrl = "https://s3.amazonaws.com/osv.capstan/"
+	DefaultRepositoryUrl = "https://mikelangelo-capstan.s3.amazonaws.com/"
 )
 
 type Repo struct {

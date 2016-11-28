@@ -62,9 +62,9 @@ COMMANDS:
    help, h      Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   -u "https://s3.amazonaws.com/osv.capstan/"   remote repository URL
-   --help, -h                                   show help
-   --version, -v                                print the version
+   -u "https://mikelangelo-capstan.s3.amazonaws.com/"   remote repository URL
+   --help, -h                                           show help
+   --version, -v                                        print the version
 ```
 
 Each of the available commands furthermore provides additional help, for example
