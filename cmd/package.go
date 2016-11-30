@@ -357,10 +357,11 @@ func extractPackageContent(pkgreader io.Reader, target string) error {
 
 	for {
 		header, err := tarReader.Next()
-		if err == io.EOF {
-			// Have we reached till the end of the tar?
-			break
-		} else if err != nil {
+		if err != nil {
+			if err == io.EOF {
+				// Have we reached till the end of the tar?
+				break
+			}
 			return err
 		}
 
@@ -428,6 +429,108 @@ func ensureDirectoryStructureForFile(currfilepath string) error {
 		if err = os.MkdirAll(dirpath, 0775); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// DescribePackage describes package with given name without extracting it.
+func DescribePackage(repo *util.Repo, packageName string) error {
+	if !repo.PackageExists(packageName) {
+		return fmt.Errorf("Package %s does not exist in your local repository. Pull it using "+
+			"'capstan package pull %s'", packageName, packageName)
+	}
+
+	pkgTar, err := repo.GetPackage(packageName)
+	if err != nil {
+		return err
+	}
+
+	var pkg *core.Package
+	var cmdConf *core.CmdConfig
+
+	tarReader := tar.NewReader(pkgTar)
+	for {
+		header, err := tarReader.Next()
+		if err != nil {
+			if err == io.EOF {
+				// Have we reached till the end of the tar?
+				break
+			}
+			return err
+		}
+
+		// Read meta/package.yaml
+		if strings.HasSuffix(header.Name, "meta/package.yaml") {
+			data, err := ioutil.ReadAll(tarReader)
+			if err != nil {
+				return err
+			}
+			pkg = &core.Package{}
+			if err := pkg.Parse(data); err != nil {
+				return err
+			}
+		}
+
+		// Read meta/run.yaml
+		if strings.HasSuffix(header.Name, "meta/run.yaml") {
+			data, err := ioutil.ReadAll(tarReader)
+			if err != nil {
+				return err
+			}
+			if cmdConf, err = core.ParsePackageRunManifestData(data); err != nil {
+				return err
+			}
+		}
+
+		// Stop reading if we have all the information
+		if pkg != nil && cmdConf != nil {
+			break
+		}
+	}
+
+	fmt.Println("PACKAGE METADATA")
+	if pkg != nil {
+		fmt.Println("name:", pkg.Name)
+		fmt.Println("title:", pkg.Title)
+		fmt.Println("author:", pkg.Author)
+
+		if len(pkg.Require) > 0 {
+			fmt.Println("required packages:")
+			for _, r := range pkg.Require {
+				fmt.Printf("   * %s\n", r)
+			}
+		}
+	} else {
+		return fmt.Errorf("package is not valid: missing meta/package.yaml")
+	}
+
+	fmt.Println("")
+
+	if cmdConf != nil {
+		fmt.Println("PACKAGE EXECUTION")
+		fmt.Println("runtime:", cmdConf.RuntimeType)
+		if cmdConf.ConfigSetDefault == "" && len(cmdConf.ConfigSets) == 1 {
+			for configName := range cmdConf.ConfigSets {
+				fmt.Println("default configuration:", configName)
+			}
+		} else {
+			fmt.Println("default configuration:", cmdConf.ConfigSetDefault)
+		}
+
+		fmt.Println("-----------------------------------------")
+		fmt.Printf("%-25s | %s\n", "CONFIGURATION NAME", "BOOT COMMAND")
+		fmt.Println("-----------------------------------------")
+		for configName := range cmdConf.ConfigSets {
+			runConf, err := cmdConf.ConfigSets[configName].GetRunConfig()
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%-25s | %s\n", configName, runConf.Cmd)
+		}
+		fmt.Println("-----------------------------------------")
+	} else {
+		fmt.Println("No package execution information was found.")
 	}
 
 	return nil

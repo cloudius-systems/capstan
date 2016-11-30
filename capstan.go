@@ -565,6 +565,29 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:      "describe",
+					Usage:     "describes the package from local repository",
+					ArgsUsage: "[package-name]",
+					Action: func(c *cli.Context) error {
+						// Name of the package is required argument.
+						if len(c.Args()) != 1 {
+							return cli.NewExitError("usage: capstan package describe [package-name]", EX_USAGE)
+						}
+
+						// Initialise the repository
+						repo := util.NewRepo(c.GlobalString("u"))
+
+						packageName := c.Args()[0]
+
+						// Describe the package
+						if err := cmd.DescribePackage(repo, packageName); err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
+						}
+
+						return nil
+					},
+				},
 			},
 		},
 		{

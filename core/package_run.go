@@ -17,8 +17,8 @@ type cmdConfigInternal struct {
 	ConfigSetDefault string                            `yaml:"config_set_default"`
 }
 
-// cmdConfig is a result that parsing meta/run.yaml yields.
-type cmdConfig struct {
+// CmdConfig is a result that parsing meta/run.yaml yields.
+type CmdConfig struct {
 	RuntimeType      runtime.RuntimeType
 	ConfigSetDefault string
 
@@ -94,8 +94,8 @@ func ParsePackageRunManifest(cmdConfigFile string, selectedConfig string) (*runt
 }
 
 // ParsePackageRunManifestData returns parsed manifest data.
-func ParsePackageRunManifestData(cmdConfigData []byte) (*cmdConfig, error) {
-	res := cmdConfig{}
+func ParsePackageRunManifestData(cmdConfigData []byte) (*CmdConfig, error) {
+	res := CmdConfig{}
 
 	// Parse basic fields.
 	internal := cmdConfigInternal{}
@@ -148,7 +148,7 @@ func ParsePackageRunManifestData(cmdConfigData []byte) (*cmdConfig, error) {
 }
 
 // selectConfigSetByName selects appropriate config set and returns it.
-func (r *cmdConfig) selectConfigSetByName(name string) (runtime.Runtime, error) {
+func (r *CmdConfig) selectConfigSetByName(name string) (runtime.Runtime, error) {
 	availableNames := fmt.Sprintf("['%s']", strings.Join(keysOfMap(r.ConfigSets), "', '"))
 
 	// Handle unspecified configuration name.
