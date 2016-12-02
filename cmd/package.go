@@ -141,19 +141,27 @@ func BuildPackage(packageDir string) (string, error) {
 // directory. Only modified files are uploaded and no file deletions are
 // possible at this time.
 func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbose bool,
-	pullMissing bool, runConf *runtime.RunConfig, packageDir string, appName string) error {
+	pullMissing bool, defaultBoot string, packageDir string, appName string, commandLine string) error {
 
 	// Package content should be collected in a subdirectory called mpm-pkg.
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
 	// Remove collected directory afterwards.
 	defer os.RemoveAll(targetPath)
 
-	// Default command line is the one passed by the user.
-	commandLine := runConf.Cmd
+	// Direct commandLine has greatest priority.
+	if commandLine == "" {
+		// If meta/run.yaml is provided, then we setup bootcmd to boot from script
+		if _, err := os.Stat(filepath.Join(packageDir, "meta", "run.yaml")); err == nil {
+			if defaultBoot != "" {
+				commandLine = runtime.BootCmdForScript(defaultBoot)
+			} else {
+				commandLine = runtime.BootCmdForScript("default")
+			}
+		}
+	}
 
 	// First, collect the contents of the package.
-	err := CollectPackage(repo, packageDir, pullMissing, runConf)
-	if err != nil {
+	if err := CollectPackage(repo, packageDir, pullMissing, defaultBoot); err != nil {
 		return err
 	}
 
@@ -198,31 +206,34 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbos
 	// Save the new image cache
 	imageCache.WriteToFile(imageCachePath)
 
-	if commandLine != "" {
-		if err = util.SetCmdLine(imagePath, commandLine); err != nil {
-			return err
-		}
-
-		fmt.Printf("Command line set to: %s\n", commandLine)
+	// Set the command line.
+	if err = util.SetCmdLine(imagePath, commandLine); err != nil {
+		return err
 	}
+	fmt.Printf("Command line set to: '%s'\n", commandLine)
 
 	return nil
 }
 
 // CollectPackage will try to resolve all of the dependencies of the given package
 // and collect the content in the $CWD/mpm-pkg directory.
-func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, runConf *runtime.RunConfig) error {
+func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, defaultBoot string) error {
 	// Get the manifest file of the given package.
 	pkg, err := core.ParsePackageManifest(filepath.Join(packageDir, "meta", "package.yaml"))
 	if err != nil {
 		return err
 	}
 
+	runtime, err := core.PackageRunManifestGeneral(filepath.Join(packageDir, "meta", "run.yaml"))
+	if err != nil {
+		return err
+	}
+
 	// If runtime is known, then we add runtime dependencies to the list.
-	if runtime.IsRuntimeKnown(runConf) {
+	if runtime != nil && len(runtime.GetDependencies()) > 0 {
 		fmt.Printf("Prepending '%s' runtime dependencies to dep list: %s\n",
-			runConf.Runtime.GetRuntimeName(), runConf.Runtime.GetDependencies())
-		pkg.Require = append(runConf.Runtime.GetDependencies(), pkg.Require...)
+			runtime.GetRuntimeName(), runtime.GetDependencies())
+		pkg.Require = append(runtime.GetDependencies(), pkg.Require...)
 	}
 
 	// The bootstrap package is implicitly required by every application package,
@@ -296,6 +307,11 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, runCon
 				return fmt.Errorf("File %s has unsupported mode %v", path, info.Mode())
 			}
 
+		} else if relPath == "/meta/run.yaml" {
+			// Prepare files with boot commands.
+			if err := persistBootCmdsIntoFiles(path, targetPath, defaultBoot); err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -305,8 +321,8 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, runCon
 		return err
 	}
 
-	if runtime.IsRuntimeKnown(runConf) {
-		if err := runConf.Runtime.OnCollect(targetPath); err != nil {
+	if runtime != nil {
+		if err := runtime.OnCollect(targetPath); err != nil {
 			return err
 		}
 	}
@@ -531,6 +547,67 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 		fmt.Println("-----------------------------------------")
 	} else {
 		fmt.Println("No package execution information was found.")
+	}
+
+	return nil
+}
+
+// persistBootCmdsIntoFiles iterates configuration sets and generates bootcmd file for each.
+// These files can then be used by OSv bootloader to run thread based on --boot parameter.
+// Argument mpmFolder should point to the root of the OSv i.e. mpm-pkg folder.
+func persistBootCmdsIntoFiles(runYamlFilepath, mpmFolder, defaultBoot string) error {
+	data, err := ioutil.ReadFile(runYamlFilepath)
+	if err != nil {
+		return err
+	}
+
+	cmdConf, err := core.ParsePackageRunManifestData(data)
+	if err != nil {
+		return err
+	}
+
+	// Prepare folder to store bootcmd files in.
+	targetFolder := filepath.Join(mpmFolder, "run")
+	if _, err := os.Stat(targetFolder); err != nil {
+		if err = os.MkdirAll(targetFolder, 0775); err != nil {
+			return err
+		}
+	}
+
+	// Calculate bootcmd for each config set and persist it to file.
+	for confName := range cmdConf.ConfigSets {
+		currConf := cmdConf.ConfigSets[confName]
+
+		// Validate.
+		if err := currConf.Validate(); err != nil {
+			return fmt.Errorf("Validation failed for configuration set '%s': %s", confName, err)
+		}
+
+		// Calculate boot command.
+		bootCmd, err := currConf.GetBootCmd()
+		if err != nil {
+			return err
+		}
+
+		// Persist to file.
+		cmdFile := filepath.Join(targetFolder, confName)
+		if err := ioutil.WriteFile(cmdFile, []byte(bootCmd), 0775); err != nil {
+			return err
+		}
+	}
+
+	// Argument --boot <name> has greater priority than config_set_default in meta/run.yaml
+	if defaultBoot != "" {
+		cmdConf.ConfigSetDefault = defaultBoot
+	}
+
+	// Link to default configuration.
+	if cmdConf.ConfigSetDefault != "" {
+		src := fmt.Sprintf("./%s", cmdConf.ConfigSetDefault)
+		dst := filepath.Join(targetFolder, "default")
+		os.Symlink(src, dst)
+
+		fmt.Printf("Default boot script is '%s'\n", cmdConf.ConfigSetDefault)
 	}
 
 	return nil

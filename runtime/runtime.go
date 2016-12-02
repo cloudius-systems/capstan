@@ -33,7 +33,6 @@ type RunConfig struct {
 	GCEUploadDir string
 	MAC          string
 	Cmd          string
-	Runtime      Runtime
 }
 
 // Runtime interface must be extended for every new runtime.
@@ -129,19 +128,6 @@ func PickRuntime(runtimeName RuntimeType) (Runtime, error) {
 	return nil, fmt.Errorf("Unknown runtime: '%s'\n", runtimeName)
 }
 
-// IsRuntimeKnown checks whether meta/run.yaml was used or not.
-// When meta/run.yaml is used, runConf.Runtime object is set.
-// There are three possibilities:
-// -------------------------
-// runConf | runConf.Runtime
-// -------------------------
-// nil     | nil             => runConf not not specified
-// <obj>   | nil             => runConf generated based on command-line arguments (e.g. --exec, --mem)
-// <obj>   | <obj>           => runConf parsed from meta/run.yaml (runtime mechanism was employed)
-func IsRuntimeKnown(runConf *RunConfig) bool {
-	return runConf != nil && runConf.Runtime != nil
-}
-
 // PrependEnvsPrefix prepends all key-values of env map to the boot cmd give.
 // It prepends each pair in a form of "--env={KEY}={VALUE}".
 // Also performs check that neither key nor value contains space.
@@ -151,4 +137,14 @@ func PrependEnvsPrefix(cmd string, env map[string]string) (string, error) {
 		s += fmt.Sprintf("--env=%s=%s ", k, v)
 	}
 	return fmt.Sprintf("%s%s", s, cmd), nil
+}
+
+// BootCmdForScript returns boot command that is to be used
+// to run config set with name bootName.
+func BootCmdForScript(bootName string) string {
+	if bootName == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("runscript /run/%s", bootName)
 }

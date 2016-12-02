@@ -27,8 +27,18 @@ type CmdConfig struct {
 	ConfigSets map[string]runtime.Runtime
 }
 
-// ParsePackageRunManifest parses meta/run.yaml file into RunConfig.
-func ParsePackageRunManifest(cmdConfigFile string, selectedConfig string) (*runtime.RunConfig, error) {
+// PackageRunManifestGeneral parses meta/run.yaml file into blank RunConfig.
+// By 'blank' we mean that the struct has no fields populated, but it is of
+// correct type i.e. appropriate implementation of Runtime interface.
+// NOTE: We must differentiate two things regarding Runtime interface implementation:
+//    a) what struct is it implemented with -> e.g. nodeJsRuntime
+//    b) what fields is struct populated with -> e.g. nodeJsRuntime.Main
+//
+//    For a given meta/run.yaml all config sets get the same (a), but are populated
+//    with different values for (b).
+// NOTE: when Capstan needs to know what packages to require, it needs (a), but
+//    not (b). And this function returns exactly this, (a) without (b).
+func PackageRunManifestGeneral(cmdConfigFile string) (runtime.Runtime, error) {
 
 	// Take meta/run.yaml from the current directory if not provided.
 	if cmdConfigFile == "." {
@@ -48,44 +58,17 @@ func ParsePackageRunManifest(cmdConfigFile string, selectedConfig string) (*runt
 		return nil, err
 	}
 
-	// Parse.
-	runManif, err := ParsePackageRunManifestData(data)
-	if err != nil {
-		return nil, err
+	// Parse basic fields only (to get runtime name).
+	internal := cmdConfigInternal{}
+	if err := yaml.Unmarshal(data, &internal); err != nil {
+		return nil, fmt.Errorf("failed to parse meta/run.yaml: %s", err)
 	}
 
-	// At this point we are certain that runtime name is valid, so we
-	// confirm this to user.
-	fmt.Printf("Resolved runtime into: %s\n", runManif.RuntimeType)
+	fmt.Printf("Resolved runtime into: %s\n", internal.Runtime)
 
-	// Override with command-line argument.
-	if selectedConfig != "" {
-		runManif.ConfigSetDefault = selectedConfig
-	}
-
-	// Select one.
-	theRuntime, err := runManif.selectConfigSetByName(runManif.ConfigSetDefault)
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Printf("Using named configuration: '%s'\n", runManif.ConfigSetDefault)
-
-	// Validate.
-	if err := theRuntime.Validate(); err != nil {
-		return nil, fmt.Errorf("Runtime validation failed: %s\n", err)
-	}
-
-	// Build bootcmd out of runtime
-	bootcmd, err := theRuntime.GetBootCmd()
-	if err != nil {
-		return nil, err
-	}
-
-	return &runtime.RunConfig{
-		Cmd:     bootcmd,
-		Runtime: theRuntime,
-	}, nil
+	// Return blank implementation of runtime interface.
+	blankRuntime, err := runtime.PickRuntime(internal.Runtime)
+	return blankRuntime, err
 }
 
 // ParsePackageRunManifestData returns parsed manifest data.

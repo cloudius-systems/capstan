@@ -149,59 +149,34 @@ func main() {
 				cli.StringFlag{Name: "gce-upload-dir", Value: "", Usage: "Directory to upload local image to: e.g., gs://osvimg"},
 				cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
 				cli.StringFlag{Name: "execute,e", Usage: "set the command line to execute"},
-				cli.StringFlag{Name: "runconfig,r", Usage: "specify config_set name (specified in meta/run.yaml)"},
+				cli.StringFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with"},
 			},
 			Action: func(c *cli.Context) error {
-				// Initialize RunConfig by reading meta/run.yaml
-				config, err := core.ParsePackageRunManifest(".", c.String("runconfig"))
-				if err != nil {
-					return cli.NewExitError(err.Error(), EX_DATAERR)
-				} else if config == nil { // No run.yaml detected.
-					config = &runtime.RunConfig{}
+				config := &runtime.RunConfig{
+					InstanceName: c.Args().First(),
+					ImageName:    c.String("i"),
+					Hypervisor:   c.String("p"),
+					Verbose:      c.Bool("v"),
+					Memory:       c.String("m"),
+					Cpus:         c.Int("c"),
+					Networking:   c.String("n"),
+					Bridge:       c.String("b"),
+					NatRules:     nat.Parse(c.StringSlice("f")),
+					GCEUploadDir: c.String("gce-upload-dir"),
+					MAC:          c.String("mac"),
+					Cmd:          c.String("execute"),
 				}
 
-				// Override RunConfig with command-line arguments
-				if v := c.Args().First(); v != "" {
-					config.InstanceName = v
+				// Boot from script unless bootcmd was manually provided.
+				if config.Cmd == "" {
+					config.Cmd = runtime.BootCmdForScript(c.String("boot"))
 				}
-				if v := c.String("i"); v != "" {
-					config.ImageName = v
-				}
-				if v := c.String("p"); v != "" {
-					config.Hypervisor = v
-				}
-				if v := c.String("m"); v != "" {
-					config.Memory = v
-				}
-				if v := c.String("n"); v != "" {
-					config.Networking = v
-				}
-				if v := c.String("b"); v != "" {
-					config.Bridge = v
-				}
-				if v := c.String("gce-upload-dir"); v != "" {
-					config.GCEUploadDir = v
-				}
-				if v := c.String("mac"); v != "" {
-					config.MAC = v
-				}
-				if v := c.String("execute"); v != "" {
-					config.Cmd = v
-				}
-				if v := c.Bool("v"); v {
-					config.Verbose = v
-				}
-				if v := c.StringSlice("f"); len(v) > 0 {
-					config.NatRules = nat.Parse(v)
-				}
-				config.Cpus = c.Int("c") // TODO: only override if value was passed by user (not default)
 
 				if !isValidHypervisor(config.Hypervisor) {
 					return cli.NewExitError(fmt.Sprintf("error: '%s' is not a supported hypervisor\n", config.Hypervisor), EX_DATAERR)
 				}
 				repo := util.NewRepo(c.GlobalString("u"))
-				err = cmd.RunInstance(repo, config)
-				if err != nil {
+				if err := cmd.RunInstance(repo, config); err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
 				return nil
@@ -430,7 +405,7 @@ func main() {
 						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 						cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
-						cli.StringFlag{Name: "runconfig,r", Usage: "specify config_set name (specified in meta/run.yaml)"},
+						cli.StringFlag{Name: "boot", Usage: "specify default config_set name to boot unikernel with"},
 					},
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
@@ -456,20 +431,8 @@ func main() {
 						// Always use the current directory for the package to compose.
 						packageDir, _ := os.Getwd()
 
-						// Initialize RunConfig by reading meta/run.yaml
-						runConf, err := core.ParsePackageRunManifest(".", c.String("r"))
-						if err != nil {
-							return cli.NewExitError(err.Error(), EX_DATAERR)
-						} else if runConf == nil { // No run.yaml detected.
-							runConf = &runtime.RunConfig{}
-						}
-						// Override RunConfig with command-line arguments
-						if v := c.String("run"); v != "" {
-							runConf.Cmd = v
-						}
-
 						if err := cmd.ComposePackage(repo, imageSize, updatePackage, verbose, pullMissing,
-							runConf, packageDir, appName); err != nil {
+							c.String("boot"), packageDir, appName, c.String("run")); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
@@ -481,7 +444,7 @@ func main() {
 					Usage: "collects contents of this package and all required packages",
 					Flags: []cli.Flag{
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
-						cli.StringFlag{Name: "runconfig,r", Usage: "specify config_set name (specified in meta/run.yaml)"},
+						cli.StringFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with"},
 					},
 					Action: func(c *cli.Context) error {
 						repo := util.NewRepo(c.GlobalString("u"))
@@ -489,13 +452,7 @@ func main() {
 
 						pullMissing := c.Bool("pull-missing")
 
-						// Initialize RunConfig by reading meta/run.yaml
-						runConf, err := core.ParsePackageRunManifest(".", c.String("r"))
-						if err != nil {
-							return cli.NewExitError(err.Error(), EX_DATAERR)
-						}
-
-						if err := cmd.CollectPackage(repo, packageDir, pullMissing, runConf); err != nil {
+						if err := cmd.CollectPackage(repo, packageDir, pullMissing, c.String("boot")); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
@@ -607,7 +564,7 @@ func main() {
 							cli.BoolFlag{Name: "keep-image", Usage: "don't delete local composed image in .capstan/repository/stack"},
 							cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 							cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
-							cli.StringFlag{Name: "runconfig,r", Usage: "specify config_set name (specified in meta/run.yaml)"},
+							cli.StringFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with"},
 						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
 					ArgsUsage:   "image-name",
 					Description: "Compose package, build .qcow2 image and upload it to OpenStack under nickname <image-name>.",

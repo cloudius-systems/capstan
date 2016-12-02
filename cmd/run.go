@@ -165,7 +165,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 			if err != nil {
 				return err
 			}
-			err = ComposePackage(repo, sz, true, false, true, config, wd, pkg.Name)
+			err = ComposePackage(repo, sz, true, false, true, "", wd, pkg.Name, config.Cmd)
 			if err != nil {
 				return err
 			}
