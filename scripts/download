@@ -13,6 +13,7 @@ esac
 
 case "$HOSTTYPE" in
   x86_64*)  ARCH="amd64" ;;
+  amd64*)   ARCH="amd64" ;;
   *)        echo "OSv only supports 64-bit x86. Exiting." && exit 1 ;;
 esac
 
