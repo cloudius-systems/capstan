@@ -43,8 +43,8 @@ type Runtime interface {
 	// Validate values that were read from yaml.
 	Validate() error
 
-	// GetRunConfig produces RunConfig from your yaml values.
-	GetRunConfig() (*RunConfig, error)
+	// GetBootCmd produces bootcmd based on meta/run.yaml.
+	GetBootCmd() (string, error)
 
 	// GetRuntimeName returns unique runtime name
 	// (use constant from the SupportedRuntimes list)
@@ -102,6 +102,17 @@ func (r CommonRuntime) Validate() error {
 		}
 	}
 	return nil
+}
+
+// BuildBootCmd equips runtime-specific bootcmd with common parts.
+func (r CommonRuntime) BuildBootCmd(bootCmd string) (string, error) {
+	// Prepend environment variables
+	newBootCmd, err := PrependEnvsPrefix(bootCmd, r.GetEnv())
+	if err != nil {
+		return "", err
+	}
+
+	return newBootCmd, nil
 }
 
 // PickRuntime maps runtime name into runtime struct.

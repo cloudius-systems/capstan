@@ -40,10 +40,9 @@ func (conf javaRuntime) Validate() error {
 
 	return conf.CommonRuntime.Validate()
 }
-func (conf javaRuntime) GetRunConfig() (*RunConfig, error) {
-	return &RunConfig{
-		Cmd: fmt.Sprintf("java.so %s io.osv.MultiJarLoader -mains /etc/javamains", conf.GetJvmArgs()),
-	}, nil
+func (conf javaRuntime) GetBootCmd() (string, error) {
+	cmd := fmt.Sprintf("java.so %s io.osv.MultiJarLoader -mains /etc/javamains", conf.GetJvmArgs())
+	return conf.CommonRuntime.BuildBootCmd(cmd)
 }
 func (conf javaRuntime) OnCollect(targetPath string) error {
 	// Check if /etc folder is already available. This is where we are going to store

@@ -522,11 +522,11 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 		fmt.Printf("%-25s | %s\n", "CONFIGURATION NAME", "BOOT COMMAND")
 		fmt.Println("-----------------------------------------")
 		for configName := range cmdConf.ConfigSets {
-			runConf, err := cmdConf.ConfigSets[configName].GetRunConfig()
+			bootCmd, err := cmdConf.ConfigSets[configName].GetBootCmd()
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%-25s | %s\n", configName, runConf.Cmd)
+			fmt.Printf("%-25s | %s\n", configName, bootCmd)
 		}
 		fmt.Println("-----------------------------------------")
 	} else {

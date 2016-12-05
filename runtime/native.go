@@ -29,10 +29,9 @@ func (conf nativeRuntime) Validate() error {
 
 	return conf.CommonRuntime.Validate()
 }
-func (conf nativeRuntime) GetRunConfig() (*RunConfig, error) {
-	return &RunConfig{
-		Cmd: fmt.Sprintf("%s", conf.BootCmd),
-	}, nil
+func (conf nativeRuntime) GetBootCmd() (string, error) {
+	cmd := conf.BootCmd
+	return conf.CommonRuntime.BuildBootCmd(cmd)
 }
 func (conf nativeRuntime) OnCollect(targetPath string) error {
 	return nil

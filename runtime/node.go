@@ -29,10 +29,9 @@ func (conf nodeJsRuntime) Validate() error {
 
 	return conf.CommonRuntime.Validate()
 }
-func (conf nodeJsRuntime) GetRunConfig() (*RunConfig, error) {
-	return &RunConfig{
-		Cmd: fmt.Sprintf("node %s", conf.Main),
-	}, nil
+func (conf nodeJsRuntime) GetBootCmd() (string, error) {
+	cmd := fmt.Sprintf("node %s", conf.Main)
+	return conf.CommonRuntime.BuildBootCmd(cmd)
 }
 func (conf nodeJsRuntime) OnCollect(targetPath string) error {
 	return nil

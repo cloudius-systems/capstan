@@ -76,21 +76,16 @@ func ParsePackageRunManifest(cmdConfigFile string, selectedConfig string) (*runt
 		return nil, fmt.Errorf("Runtime validation failed: %s\n", err)
 	}
 
-	// Convert runtime config to common run config.
-	conf, err := theRuntime.GetRunConfig()
+	// Build bootcmd out of runtime
+	bootcmd, err := theRuntime.GetBootCmd()
 	if err != nil {
 		return nil, err
 	}
 
-	// Prepend environment variables
-	if conf.Cmd, err = runtime.PrependEnvsPrefix(conf.Cmd, theRuntime.GetEnv()); err != nil {
-		return nil, err
-	}
-
-	// Remember original config as well.
-	conf.Runtime = theRuntime
-
-	return conf, nil
+	return &runtime.RunConfig{
+		Cmd:     bootcmd,
+		Runtime: theRuntime,
+	}, nil
 }
 
 // ParsePackageRunManifestData returns parsed manifest data.
