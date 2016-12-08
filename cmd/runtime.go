@@ -32,7 +32,7 @@ func RuntimePreview(runtimeName string, plain bool) error {
 	return nil
 }
 
-func RuntimeInit(runtimeName string, named bool, plain bool, force bool) error {
+func RuntimeInit(runtimeName string, plain bool, force bool) error {
 	// Resolve runtime
 	rt, err := runtime.PickRuntime(runtime.RuntimeType(runtimeName))
 	if err != nil {

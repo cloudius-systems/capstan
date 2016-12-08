@@ -399,7 +399,7 @@ func main() {
 
 						// Scaffold runtime if runtime name is provided
 						if c.String("runtime") != "" {
-							if err := cmd.RuntimeInit(c.String("runtime"), false, false, true); err != nil {
+							if err := cmd.RuntimeInit(c.String("runtime"), false, true); err != nil {
 								return cli.NewExitError(err.Error(), EX_DATAERR)
 							}
 						}
@@ -675,7 +675,6 @@ func main() {
 					Usage: "prepares meta/run.yaml stub for selected runtime",
 					Flags: []cli.Flag{
 						cli.StringFlag{Name: "runtime, r", Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
-						cli.BoolFlag{Name: "named", Usage: "Use named configurations format"},
 						cli.BoolFlag{Name: "plain", Usage: "Remove comments"},
 						cli.BoolFlag{Name: "force, f", Usage: "Override existing meta/run.yaml"},
 					},
@@ -684,7 +683,7 @@ func main() {
 							return cli.NewExitError("usage: capstan runtime preview -r [runtime-name]", EX_USAGE)
 						}
 
-						if err := cmd.RuntimeInit(c.String("runtime"), c.Bool("named"), c.Bool("plain"), c.Bool("force")); err != nil {
+						if err := cmd.RuntimeInit(c.String("runtime"), c.Bool("plain"), c.Bool("force")); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
