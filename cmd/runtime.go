@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func RuntimePreview(runtimeName string, named bool, plain bool) error {
+func RuntimePreview(runtimeName string, plain bool) error {
 	// Resolve runtime
 	rt, err := runtime.PickRuntime(runtime.RuntimeType(runtimeName))
 	if err != nil {
@@ -17,11 +17,7 @@ func RuntimePreview(runtimeName string, named bool, plain bool) error {
 	}
 
 	res := fmt.Sprintln("--------- meta/run.yaml ---------")
-	if named {
-		res += fmt.Sprint(composeNamedConf(rt))
-	} else {
-		res += fmt.Sprintln(composeSingleConf(rt))
-	}
+	res += fmt.Sprint(composeConf(rt))
 	res += fmt.Sprintln("---------------------------------")
 
 	if plain {
@@ -54,12 +50,7 @@ func RuntimeInit(runtimeName string, named bool, plain bool, force bool) error {
 	}
 
 	// Compose content
-	content := ""
-	if named {
-		content += fmt.Sprint(composeNamedConf(rt))
-	} else {
-		content += fmt.Sprint(composeSingleConf(rt))
-	}
+	content := fmt.Sprint(composeConf(rt))
 
 	if plain {
 		content = removeComments(content)
@@ -96,29 +87,17 @@ func removeComments(s string) string {
 	return s
 }
 
-func composeSingleConf(rt runtime.Runtime) string {
-	s := fmt.Sprintf("runtime: %s\n\n", rt.GetRuntimeName())
-	s += strings.TrimSpace(rt.GetYamlTemplate())
-	return s
-}
-
-func composeNamedConf(rt runtime.Runtime) string {
+func composeConf(rt runtime.Runtime) string {
 	res := `
 runtime: RUNTIME
 
 config_set: 
 
    ################################################################
-   ### This is first named configuration (feel free to rename). ###
+   ### This is one configuration set (feel free to rename it).  ###
    ################################################################
    myconfig1:
-      PLACEHOLDER
-
-   ################################################################
-   ### This is second named configuration #########################  
-   ################################################################   
-   myconfig2:
-      PLACEHOLDER
+      PLACEHOLDER   
 
    # Add as many named configurations as you need
 

@@ -656,7 +656,6 @@ func main() {
 					Usage: "prints runtime yaml template to the console",
 					Flags: []cli.Flag{
 						cli.StringFlag{Name: "runtime, r", Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
-						cli.BoolFlag{Name: "named", Usage: "Use named configurations format"},
 						cli.BoolFlag{Name: "plain", Usage: "Remove comments"},
 					},
 					Action: func(c *cli.Context) error {
@@ -664,7 +663,7 @@ func main() {
 							return cli.NewExitError("usage: capstan runtime preview -r [runtime-name]", EX_USAGE)
 						}
 
-						if err := cmd.RuntimePreview(c.String("runtime"), c.Bool("named"), c.Bool("plain")); err != nil {
+						if err := cmd.RuntimePreview(c.String("runtime"), c.Bool("plain")); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
