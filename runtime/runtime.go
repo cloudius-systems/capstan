@@ -2,7 +2,7 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan/nat"
+	"github.com/mikelangelo-project/capstan/nat"
 	"strings"
 )
 

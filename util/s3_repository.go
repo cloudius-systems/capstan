@@ -12,7 +12,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/cheggaaa/pb"
-	"github.com/cloudius-systems/capstan/core"
+	"github.com/mikelangelo-project/capstan/core"
 	"gopkg.in/yaml.v1"
 	"io"
 	"io/ioutil"

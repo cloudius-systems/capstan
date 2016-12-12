@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan/runtime"
+	"github.com/mikelangelo-project/capstan/runtime"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"

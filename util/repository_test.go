@@ -1,7 +1,7 @@
 package util_test
 
 import (
-	"github.com/cloudius-systems/capstan/util"
+	"github.com/mikelangelo-project/capstan/util"
 	. "gopkg.in/check.v1"
 	"path/filepath"
 )
