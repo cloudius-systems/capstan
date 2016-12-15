@@ -1,7 +1,7 @@
 package cmd_test
 
 import (
-	"github.com/cloudius-systems/capstan/cmd"
+	"github.com/mikelangelo-project/capstan/cmd"
 	. "gopkg.in/check.v1"
 	"io/ioutil"
 	"os"

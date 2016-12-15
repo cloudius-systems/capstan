@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/cloudius-systems/capstan/util"
+	"github.com/mikelangelo-project/capstan/util"
 	"github.com/urfave/cli"
 )
 

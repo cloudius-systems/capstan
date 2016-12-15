@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan/core"
-	"github.com/cloudius-systems/capstan/provider/openstack"
-	"github.com/cloudius-systems/capstan/runtime"
-	"github.com/cloudius-systems/capstan/util"
+	"github.com/mikelangelo-project/capstan/core"
+	"github.com/mikelangelo-project/capstan/provider/openstack"
+	"github.com/mikelangelo-project/capstan/runtime"
+	"github.com/mikelangelo-project/capstan/util"
 	"github.com/urfave/cli"
 	"os"
 )

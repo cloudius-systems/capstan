@@ -10,8 +10,8 @@ package util
 import (
 	"errors"
 	"fmt"
-	"github.com/cloudius-systems/capstan/core"
-	"github.com/cloudius-systems/capstan/image"
+	"github.com/mikelangelo-project/capstan/core"
+	"github.com/mikelangelo-project/capstan/image"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"

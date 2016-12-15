@@ -10,8 +10,8 @@ package qemu
 import (
 	"bufio"
 	"fmt"
-	"github.com/cloudius-systems/capstan/nat"
-	"github.com/cloudius-systems/capstan/util"
+	"github.com/mikelangelo-project/capstan/nat"
+	"github.com/mikelangelo-project/capstan/util"
 	"gopkg.in/yaml.v1"
 	"io/ioutil"
 	"net"

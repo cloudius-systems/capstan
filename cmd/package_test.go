@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"bytes"
-	"github.com/cloudius-systems/capstan/core"
-	"github.com/cloudius-systems/capstan/util"
+	"github.com/mikelangelo-project/capstan/core"
+	"github.com/mikelangelo-project/capstan/util"
 	. "gopkg.in/check.v1"
 	"io/ioutil"
 	"os"

@@ -9,7 +9,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan/image"
+	"github.com/mikelangelo-project/capstan/image"
 )
 
 func Info(path string) error {
