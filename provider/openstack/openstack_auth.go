@@ -2,8 +2,8 @@ package openstack
 
 import (
 	"fmt"
-	"github.com/rackspace/gophercloud"
-	"github.com/rackspace/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/urfave/cli"
 	"os"
 )

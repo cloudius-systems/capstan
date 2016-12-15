@@ -2,12 +2,13 @@ package openstack
 
 import (
 	"fmt"
-	"github.com/rackspace/gophercloud"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/flavors"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/images"
-	"github.com/rackspace/gophercloud/openstack/compute/v2/servers"
-	glanceImages "github.com/rackspace/gophercloud/openstack/imageservice/v2/images"
-	"github.com/rackspace/gophercloud/pagination"
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
+	"github.com/gophercloud/gophercloud/openstack/imageservice/v2/imagedata"
+	glanceImages "github.com/gophercloud/gophercloud/openstack/imageservice/v2/images"
+	"github.com/gophercloud/gophercloud/pagination"
 	"math"
 	"os"
 )
@@ -143,14 +144,15 @@ func listFlavors(clientNova *gophercloud.ServiceClient, minDiskGB int, minMemory
 // launchServer launches single server of given image.
 func launchServer(clientNova *gophercloud.ServiceClient, name string, flavorName string, imageName string, verbose bool) error {
 	resp := servers.Create(clientNova, servers.CreateOpts{
-		Name:       name,
-		FlavorName: flavorName,
-		ImageName:  imageName,
+		Name:          name,
+		FlavorName:    flavorName,
+		ImageName:     imageName,
+		ServiceClient: clientNova, // need to pass this to perform name-to-ID lookup
 	})
 	if verbose {
 		instance, err := resp.Extract()
 		if err != nil {
-			fmt.Println("Unable to create instance: %s", err)
+			fmt.Println("Unable to create instance:", err)
 		} else {
 			fmt.Printf("Instance ID: %s\n", instance.ID)
 		}
@@ -166,12 +168,11 @@ func launchServer(clientNova *gophercloud.ServiceClient, name string, flavorName
 // createImage creates image metadata on OpenStack.
 func createImage(clientGlance *gophercloud.ServiceClient, name string, flavor *flavors.Flavor, verbose bool) (string, error) {
 	createdImage, err := glanceImages.Create(clientGlance, glanceImages.CreateOpts{
-		Name:             name,
-		Tags:             []string{"tagOSv", "tagCapstan"},
-		DiskFormat:       "qcow2",
-		ContainerFormat:  "bare",
-		MinDiskGigabytes: flavor.Disk,
-		//MinRAMMegabytes: flavor.RAM  // TODO: Does it make sense to lock RAM during push??
+		Name:            name,
+		Tags:            []string{"tagOSv", "tagCapstan"},
+		DiskFormat:      "qcow2",
+		ContainerFormat: "bare",
+		MinDisk:         flavor.Disk,
 	}).Extract()
 
 	if err == nil && verbose {
@@ -192,7 +193,7 @@ func uploadImage(clientGlance *gophercloud.ServiceClient, imageId string, filepa
 	}
 	defer f.Close()
 
-	res := glanceImages.Upload(clientGlance, imageId, f)
+	res := imagedata.Upload(clientGlance, imageId, f)
 	return res.Err
 }
 
