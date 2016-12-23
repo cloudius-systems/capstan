@@ -41,7 +41,7 @@ func (conf javaRuntime) Validate() error {
 	return conf.CommonRuntime.Validate()
 }
 func (conf javaRuntime) GetBootCmd() (string, error) {
-	cmd := fmt.Sprintf("java.so %s io.osv.MultiJarLoader -mains /etc/javamains", conf.GetJvmArgs())
+	cmd := fmt.Sprintf("java.so %s io.osv.isolated.MultiJarLoader -mains /etc/javamains", conf.GetJvmArgs())
 	return conf.CommonRuntime.BuildBootCmd(cmd)
 }
 func (conf javaRuntime) OnCollect(targetPath string) error {
