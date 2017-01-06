@@ -7,7 +7,9 @@ application management using a tool developed in
 provided by ScyllaDB as part of their support for building lightweight
 OSv-based Virtual Machines.
 
-*Please note: this preliminary version of the documentation may omit/miss important information. If you have any comments or suggestions about the tool, the packages or this documentation, feel free to let us know.*
+*Please note: this preliminary version of the documentation may omit/miss important information.
+If you have any comments or suggestions about the tool, the packages or this documentation,
+feel free to let us know.*
 
 ## Installation
 
@@ -124,7 +126,8 @@ The following subsections provide more information about each of these files.
 TODO
 
 #### run.yaml (optional)
-This file specifies run options. Actual set of options depends on runtime that this package is about to use, but file structure should be as shown here:
+This file specifies run options. Actual set of options depends on runtime that this package is about
+to use, but file structure should be as shown here:
 ```yaml
 # meta/run.yaml
 
@@ -168,8 +171,9 @@ main: <filepath>
 
 
 #### Named Configurations
-If your package can be run in more than one way (e.g. HDFS package can be run either as datanode either as namenode), you can store multiple configurations inside `meta/run.yaml` file and then easily switch between them.
-To enable this feature, use following format of the configuration file:
+If your package can be run in more than one way (e.g. HDFS package can be run either as datanode
+or as namenode), you can store multiple configurations inside `meta/run.yaml` file and then easily
+switch between them. To enable this feature, use following format of the configuration file:
 ```yaml
 # meta/run.yaml
 
@@ -187,14 +191,17 @@ config_set:
 # optional
 config_set_default: myconfig1
 ```
-`config_set_default` field defines which of the named configurations is used if no other is specified on the command line. You can override this value with command-line argument `--runconfig {name}` which is supported by these commands:
+`config_set_default` field defines which of the named configurations is used if no other is specified
+on the command line. You can override this value with command-line argument `--runconfig {name}`
+which is supported by these commands:
 ```bash
 capstan package compose
 capstan run
 capstan package collect
 ```
 
-To generate template for `meta/run.yaml` in named configurations format, add `--named` flag to `runtime init` command:
+To generate template for `meta/run.yaml` in named configurations format, add `--named` flag to
+`runtime init` command:
 ```
 $ capstan runtime init -r <runtime-name> --named
 
@@ -329,14 +336,14 @@ refer to required packages.
 ```
 $ capstan package list
 
-Name                                               Description                                        Version                   Created
-eu.mikelangelo-project.app.hadoop-hdfs             Hadoop HDFS                                        2.7.2                     2016-03-30T10:23:03+02:00
-eu.mikelangelo-project.openfoam.core               OpenFOAM Core                                      2.4.0                     2016-02-23T19:24:36+01:00
-eu.mikelangelo-project.openfoam.simplefoam         OpenFOAM simpleFoam                                2.4.0                     2016-01-19T09:39:12+01:00
-eu.mikelangelo-project.osv.bootstrap               OSv Bootstrap                                      0.24-46-g464f4e0          2016-01-20T05:43:24+01:00
-eu.mikelangelo-project.osv.cli                     OSv Command Line Interface                         0.24-46-g464f4e0          2016-01-20T05:43:42+01:00
-eu.mikelangelo-project.osv.httpserver              OSv HTTP REST Server                               0.24-46-g464f4e0          2016-01-20T05:43:47+01:00
-eu.mikelangelo-project.osv.java                    Java JRE 1.7.0                                     1.7.0-openjdk-1.7.0.60-2.4.7.4.fc20.x86_64 2016-03-22T17:39:09+01:00
+Name                                               Description                    Version
+eu.mikelangelo-project.app.hadoop-hdfs             Hadoop HDFS                    2.7.2
+eu.mikelangelo-project.openfoam.core               OpenFOAM Core                  2.4.0
+eu.mikelangelo-project.openfoam.simplefoam         OpenFOAM simpleFoam            2.4.0
+eu.mikelangelo-project.osv.bootstrap               OSv Bootstrap                  0.24-46-g464f4e0
+eu.mikelangelo-project.osv.cli                     OSv Command Line Interface     0.24-46-g464f4e0
+eu.mikelangelo-project.osv.httpserver              OSv HTTP REST Server           0.24-46-g464f4e0
+eu.mikelangelo-project.osv.java                    Java JRE 1.7.0                 1.7.0-openjdk-1.7.0.60-2.4.7.4.fc20.x86_64
 ```
 
 ### Collecting package content
@@ -378,11 +385,13 @@ Package composition takes the content of the package and all of its required
 packages and creates a new QCOW2 virtual machine image. Current version of the
 command supports the following additional configuration options:
 
-* ``--size, -s``: specify the size of the target VM. Human readable representation can be used, for example 1G or 512M to request a 1 GB or 512 MB image.
+* ``--size, -s``: specify the size of the target VM. Human readable representation can be used, for
+example 1G or 512M to request a 1 GB or 512 MB image.
 
 * ``--update``: request an update of an existing VM. See below for more details
 
-* ``--run``: specify the default run command to be used when starting a VM. It will be read by the OSv loader and executed immediately after the kernel is booted
+* ``--run``: specify the default run command to be used when starting a VM. It will be read by the
+OSv loader and executed immediately after the kernel is booted
 
 * ``--verbose``: get detailed information about the files that are being uploaded onto the VM
 
