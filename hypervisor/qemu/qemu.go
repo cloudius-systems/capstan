@@ -39,6 +39,7 @@ type VMConfig struct {
 	MAC         string
 	Cmd         string
 	DisableKvm  bool
+	Persist     bool
 }
 
 type Version struct {
@@ -170,7 +171,9 @@ func VMCommand(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 		util.SetCmdLine(c.Image, c.Cmd)
 	}
 
-	StoreConfig(c)
+	if c.Persist {
+		StoreConfig(c)
+	}
 
 	version, err := ProbeVersion()
 	if err != nil {

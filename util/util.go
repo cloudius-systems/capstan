@@ -89,6 +89,13 @@ func SearchInstance(name string) (instanceName, instancePlatform string) {
 			if name != instance.Name() {
 				continue
 			}
+
+			// Instance only exists if osv.config is present.
+			if _, err := os.Stat(filepath.Join(platformDir, name, "osv.config")); os.IsNotExist(err) {
+				// Search no more.
+				return
+			}
+
 			instanceName = instance.Name()
 			instancePlatform = platform.Name()
 			return

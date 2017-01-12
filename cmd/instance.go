@@ -15,6 +15,7 @@ import (
 	"github.com/mikelangelo-project/capstan/hypervisor/vmw"
 	"github.com/mikelangelo-project/capstan/util"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -30,6 +31,12 @@ func Instances() error {
 			for _, instance := range instances {
 				if instance.IsDir() {
 					instanceDir := filepath.Join(platformDir, instance.Name())
+
+					// Instance only exists if osv.config is present.
+					if _, err := os.Stat(filepath.Join(instanceDir, "osv.config")); os.IsNotExist(err) {
+						continue
+					}
+
 					printInstance(instance.Name(), platform.Name(), instanceDir)
 				}
 			}

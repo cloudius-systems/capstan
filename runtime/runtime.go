@@ -33,6 +33,7 @@ type RunConfig struct {
 	GCEUploadDir string
 	MAC          string
 	Cmd          string
+	Persist      bool
 }
 
 // Runtime interface must be extended for every new runtime.

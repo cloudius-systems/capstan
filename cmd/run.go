@@ -34,7 +34,6 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 		if instanceName != "" {
 			defer fmt.Println("")
 
-			fmt.Printf("Created instance: %s\n", instanceName)
 			// Do not set RawTerm for gce
 			if instancePlatform != "gce" {
 				util.RawTerm()
@@ -76,6 +75,11 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 				return err
 			}
 			if cmd != nil {
+				fmt.Println()
+				fmt.Println("Running (already existing) instance:", instanceName)
+				fmt.Println("NOTE: instance parameters will NOT reflect arguments to 'capstan run' command!")
+				fmt.Printf("      (use 'capstan delete %s' to remove existing instance first)\n", instanceName)
+				fmt.Println()
 				return cmd.Wait()
 			}
 			return nil
@@ -224,6 +228,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 			MAC:         config.MAC,
 			Cmd:         config.Cmd,
 			DisableKvm:  repo.DisableKvm,
+			Persist:     config.Persist,
 		}
 
 		cmd, err = qemu.LaunchVM(config)

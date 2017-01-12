@@ -150,8 +150,12 @@ func main() {
 				cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
 				cli.StringFlag{Name: "execute,e", Usage: "set the command line to execute"},
 				cli.StringFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with"},
+				cli.BoolFlag{Name: "persist", Usage: "persist instance parameters (only relevant for qemu instances)"},
 			},
 			Action: func(c *cli.Context) error {
+				// TODO: check for orphaned instances (those with osv.monitor and disk.qcow2, but
+				// without osv.config) and remove them.
+
 				config := &runtime.RunConfig{
 					InstanceName: c.Args().First(),
 					ImageName:    c.String("i"),
@@ -165,6 +169,7 @@ func main() {
 					GCEUploadDir: c.String("gce-upload-dir"),
 					MAC:          c.String("mac"),
 					Cmd:          c.String("execute"),
+					Persist:      c.Bool("persist"),
 				}
 
 				// Boot from script unless bootcmd was manually provided.
