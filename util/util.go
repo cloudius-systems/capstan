@@ -116,3 +116,34 @@ func ConnectAndWait(network, path string) (net.Conn, error) {
 	}
 	return conn, err
 }
+
+// RemoveOrphanedInstances removes directories of instances that were not persisted with --persist.
+func RemoveOrphanedInstances(verbose bool) error {
+	// TODO: Implement function InstancesPath()
+	qemuDir := filepath.Join(ConfigDir(), "instances", "qemu")
+
+	// Do nothing when instances/qemu folder does not exist.
+	if _, err := os.Stat(qemuDir); os.IsNotExist(err) {
+		return nil
+	}
+
+	instanceDirs, _ := ioutil.ReadDir(qemuDir)
+	for _, instanceDir := range instanceDirs {
+		if instanceDir.IsDir() {
+			instanceDir := filepath.Join(qemuDir, instanceDir.Name())
+
+			// Remove orphaned instance
+			if _, err := os.Stat(filepath.Join(instanceDir, "osv.config")); os.IsNotExist(err) {
+				if verbose {
+					fmt.Println("Removing orphaned instance folder:", instanceDir)
+				}
+
+				if err = os.RemoveAll(instanceDir); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}

@@ -9,6 +9,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/mikelangelo-project/capstan/cmd"
 	"github.com/mikelangelo-project/capstan/core"
 	"github.com/mikelangelo-project/capstan/hypervisor"
@@ -17,7 +19,6 @@ import (
 	"github.com/mikelangelo-project/capstan/runtime"
 	"github.com/mikelangelo-project/capstan/util"
 	"github.com/urfave/cli"
-	"os"
 )
 
 var (
@@ -153,8 +154,11 @@ func main() {
 				cli.BoolFlag{Name: "persist", Usage: "persist instance parameters (only relevant for qemu instances)"},
 			},
 			Action: func(c *cli.Context) error {
-				// TODO: check for orphaned instances (those with osv.monitor and disk.qcow2, but
+				// Check for orphaned instances (those with osv.monitor and disk.qcow2, but
 				// without osv.config) and remove them.
+				if err := util.RemoveOrphanedInstances(c.Bool("v")); err != nil {
+					return cli.NewExitError(err, EX_DATAERR)
+				}
 
 				config := &runtime.RunConfig{
 					InstanceName: c.Args().First(),
