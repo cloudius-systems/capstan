@@ -3,15 +3,16 @@ package cmd
 import (
 	"archive/tar"
 	"fmt"
-	"github.com/mikelangelo-project/capstan/core"
-	"github.com/mikelangelo-project/capstan/runtime"
-	"github.com/mikelangelo-project/capstan/util"
-	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/mikelangelo-project/capstan/core"
+	"github.com/mikelangelo-project/capstan/runtime"
+	"github.com/mikelangelo-project/capstan/util"
+	"gopkg.in/yaml.v2"
 )
 
 func InitPackage(packagePath string, p *core.Package) error {
@@ -267,7 +268,7 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, defaul
 			return err
 		}
 
-		err = extractPackageContent(reqpkg, targetPath)
+		err = extractPackageContent(reqpkg, targetPath, req.Name)
 		if err != nil {
 			return err
 		}
@@ -309,7 +310,11 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, defaul
 
 		} else if relPath == "/meta/run.yaml" {
 			// Prepare files with boot commands.
-			if err := persistBootCmdsIntoFiles(path, targetPath, defaultBoot); err != nil {
+			data, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			if err := persistBootCmdsIntoFiles(data, targetPath, defaultBoot, ""); err != nil {
 				return err
 			}
 		}
@@ -368,7 +373,7 @@ func ImportPackage(repo *util.Repo, packageDir string) error {
 	return repo.ImportPackage(pkg, packagePath)
 }
 
-func extractPackageContent(pkgreader io.Reader, target string) error {
+func extractPackageContent(pkgreader io.Reader, target, pkgName string) error {
 	tarReader := tar.NewReader(pkgreader)
 
 	for {
@@ -381,8 +386,20 @@ func extractPackageContent(pkgreader io.Reader, target string) error {
 			return err
 		}
 
-		// Skip manifest data.
-		if strings.HasPrefix(header.Name, "/meta") {
+		if header.Name == "meta/run.yaml" {
+			// Prepare files with boot commands for this package.
+			data, err := ioutil.ReadAll(tarReader)
+			if err != nil {
+				return err
+			}
+			if err := persistBootCmdsIntoFiles(data, target, "", pkgName); err != nil {
+				return err
+			}
+			continue
+		} else if strings.HasPrefix(header.Name, "/meta/") || strings.HasPrefix(header.Name, "meta/") {
+			// Sometimes path starts with slash and sometimes not. Best to catch both here.
+
+			// Skip other manifest data
 			continue
 		}
 
@@ -554,14 +571,10 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 
 // persistBootCmdsIntoFiles iterates configuration sets and generates bootcmd file for each.
 // These files can then be used by OSv bootloader to run thread based on --boot parameter.
-// Argument mpmFolder should point to the root of the OSv i.e. mpm-pkg folder.
-func persistBootCmdsIntoFiles(runYamlFilepath, mpmFolder, defaultBoot string) error {
-	data, err := ioutil.ReadFile(runYamlFilepath)
-	if err != nil {
-		return err
-	}
-
-	cmdConf, err := core.ParsePackageRunManifestData(data)
+// Argument mpmFolder should point to the root of the OSv i.e. mpm-pkg folder. Prefix is used to
+// prefix 'default' configuration filename. E.g. prefix "abc" results in filename /run/abc-default.
+func persistBootCmdsIntoFiles(runYamlData []byte, mpmFolder, defaultBoot string, prefix string) error {
+	cmdConf, err := core.ParsePackageRunManifestData(runYamlData)
 	if err != nil {
 		return err
 	}
@@ -601,14 +614,7 @@ func persistBootCmdsIntoFiles(runYamlFilepath, mpmFolder, defaultBoot string) er
 		cmdConf.ConfigSetDefault = defaultBoot
 	}
 
-	// Link to default configuration.
-	if cmdConf.ConfigSetDefault != "" {
-		src := fmt.Sprintf("./%s", cmdConf.ConfigSetDefault)
-		dst := filepath.Join(targetFolder, "default")
-		os.Symlink(src, dst)
-
-		fmt.Printf("Default boot script is '%s'\n", cmdConf.ConfigSetDefault)
-	}
+	// TODO: Add symbolic links to point to default configset of each package.
 
 	return nil
 }
