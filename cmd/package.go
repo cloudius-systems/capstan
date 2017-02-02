@@ -142,27 +142,18 @@ func BuildPackage(packageDir string) (string, error) {
 // directory. Only modified files are uploaded and no file deletions are
 // possible at this time.
 func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbose bool,
-	pullMissing bool, defaultBoot string, packageDir string, appName string, commandLine string) error {
+	pullMissing bool, customBoot string, packageDir string, appName string, commandLine string) error {
 
 	// Package content should be collected in a subdirectory called mpm-pkg.
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
 	// Remove collected directory afterwards.
 	defer os.RemoveAll(targetPath)
 
-	// Direct commandLine has greatest priority.
-	if commandLine == "" {
-		// If meta/run.yaml is provided, then we setup bootcmd to boot from script
-		if _, err := os.Stat(filepath.Join(packageDir, "meta", "run.yaml")); err == nil {
-			if defaultBoot != "" {
-				commandLine = runtime.BootCmdForScript(defaultBoot)
-			} else {
-				commandLine = runtime.BootCmdForScript("default")
-			}
-		}
-	}
+	// Construct final bootcmd for the image.
+	commandLine = constructBootCmdFromArguments(commandLine, customBoot, packageDir)
 
 	// First, collect the contents of the package.
-	if err := CollectPackage(repo, packageDir, pullMissing, defaultBoot); err != nil {
+	if err := CollectPackage(repo, packageDir, pullMissing, customBoot); err != nil {
 		return err
 	}
 
@@ -218,7 +209,7 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbos
 
 // CollectPackage will try to resolve all of the dependencies of the given package
 // and collect the content in the $CWD/mpm-pkg directory.
-func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, defaultBoot string) error {
+func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, customBoot string) error {
 	// Get the manifest file of the given package.
 	pkg, err := core.ParsePackageManifest(filepath.Join(packageDir, "meta", "package.yaml"))
 	if err != nil {
@@ -314,7 +305,7 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, defaul
 			if err != nil {
 				return err
 			}
-			if err := persistBootCmdsIntoFiles(data, targetPath, defaultBoot, ""); err != nil {
+			if err := persistBootCmdsIntoFiles(data, targetPath, customBoot, ""); err != nil {
 				return err
 			}
 		}
@@ -573,7 +564,7 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 // These files can then be used by OSv bootloader to run thread based on --boot parameter.
 // Argument mpmFolder should point to the root of the OSv i.e. mpm-pkg folder. Prefix is used to
 // prefix 'default' configuration filename. E.g. prefix "abc" results in filename /run/abc-default.
-func persistBootCmdsIntoFiles(runYamlData []byte, mpmFolder, defaultBoot string, prefix string) error {
+func persistBootCmdsIntoFiles(runYamlData []byte, mpmFolder, customBoot string, prefix string) error {
 	cmdConf, err := core.ParsePackageRunManifestData(runYamlData)
 	if err != nil {
 		return err
@@ -610,11 +601,42 @@ func persistBootCmdsIntoFiles(runYamlData []byte, mpmFolder, defaultBoot string,
 	}
 
 	// Argument --boot <name> has greater priority than config_set_default in meta/run.yaml
-	if defaultBoot != "" {
-		cmdConf.ConfigSetDefault = defaultBoot
+	if customBoot != "" {
+		cmdConf.ConfigSetDefault = customBoot
 	}
 
 	// TODO: Add symbolic links to point to default configset of each package.
+	// Use name 'default' for this package's link and '{prefix}-default' for other.
 
 	return nil
+}
+
+// constructBootCmdFromArguments builds bootcmd based on three parameters (in this order):
+// * --run <commandLine>
+// * --boot <customBoot>
+// * config_set_default: <> (read from meta/run.yaml within packageDir)
+func constructBootCmdFromArguments(commandLine, customBoot, packageDir string) string {
+	// Direct commandLine has highest priority (--run <commandLine>).
+	if commandLine != "" {
+		fmt.Println("Command line will be set based on --run parameter")
+		return commandLine
+	}
+
+	// Configuration name has second-highest priority (--boot <customBoot>).
+	if customBoot != "" {
+		fmt.Println("Command line will be set based on --boot parameter")
+		return runtime.BootCmdForScript(customBoot)
+	}
+
+	// Default configuration in yaml has third-highest priority (config_set_default: <>).
+	if data, err := ioutil.ReadFile(filepath.Join(packageDir, "meta", "run.yaml")); err == nil {
+		if cmdConf, err := core.ParsePackageRunManifestData(data); err == nil && cmdConf.ConfigSetDefault != "" {
+			fmt.Println("Command line will be set based on config_set_default attribute of meta/run.yaml")
+			return runtime.BootCmdForScript(cmdConf.ConfigSetDefault)
+		}
+	}
+
+	// Fallback is empty bootcmd.
+	fmt.Println("Empty command line will be set for this image")
+	return ""
 }
