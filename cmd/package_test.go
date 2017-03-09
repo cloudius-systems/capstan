@@ -1,15 +1,12 @@
 package cmd
 
 import (
-	"bytes"
 	"github.com/mikelangelo-project/capstan/core"
 	"github.com/mikelangelo-project/capstan/util"
 	. "gopkg.in/check.v1"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -74,18 +71,6 @@ func (*suite) TestMinimalPackageYaml(c *C) {
 	c.Assert(err, IsNil)
 }
 
-func (s *suite) TestPackageCommandExists(c *C) {
-	cmd := exec.Command(s.capstanBinary, "package", "help", "compose")
-
-	var out bytes.Buffer
-	cmd.Stdout = &out
-
-	err := cmd.Run()
-	c.Assert(err, IsNil)
-
-	c.Assert(strings.Contains(out.String(), "No help topic"), Equals, false)
-}
-
 func (*suite) TestComposeNonPackageFails(c *C) {
 	// We are going to create an empty temp directory.
 	tmp, _ := ioutil.TempDir("", "pkg")
@@ -95,7 +80,7 @@ func (*suite) TestComposeNonPackageFails(c *C) {
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-app"
 
-	err := ComposePackage(repo, imageSize, false, false, tmp, appName)
+	err := ComposePackage(repo, imageSize, false, false, false, "", tmp, appName, "")
 
 	c.Assert(err, NotNil)
 }
@@ -116,7 +101,7 @@ func (*suite) TestComposeCorruptPackageFails(c *C) {
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-app"
 
-	err = ComposePackage(repo, imageSize, false, false, tmp, appName)
+	err = ComposePackage(repo, imageSize, false, false, false, "", tmp, appName, "")
 	c.Assert(err, NotNil)
 }
 

@@ -22,31 +22,38 @@ func runCapstan(command []string, root string) *exec.Cmd {
 	return c
 }
 
-func TestCommandErrors(t *testing.T) {
+func TestCommandErrorCodes(t *testing.T) {
 	root, err := ioutil.TempDir("", "capstan-root")
 	if err != nil {
 		t.Errorf("capstan: %v", err)
 	}
 	defer os.RemoveAll(root)
 
-	m := map[string]string{
-		"build foo":  "open Capstanfile: no such file or directory\n",
-		"build":      "usage: capstan build [image-name]\n",
-		"pull":       "usage: capstan pull [image-name]\n",
-		"import":     "usage: capstan import [image-name] [image-file]\n",
-		"import foo": "usage: capstan import [image-name] [image-file]\n",
-		"rmi":        "usage: capstan rmi [image-name]\n",
-		"run foo":    "foo: no such image\n",
-		"run":        "No Capstanfile found, unable to run.\n",
+	m := []struct {
+		cmd     string
+		errCode int
+		errMsg  string
+	}{
+		{"build foo", 65, "open Capstanfile: no such file or directory\n"},
+		{"build", 64, "usage: capstan build [image-name]\n"},
+		{"pull", 64, "usage: capstan pull [image-name]\n"},
+		{"import", 64, "usage: capstan import [image-name] [image-file]\n"},
+		{"import foo", 64, "usage: capstan import [image-name] [image-file]\n"},
+		{"rmi", 64, "usage: capstan rmi [image-name]\n"},
+		{"run foo", 65, "foo: no such image\n"},
+		{"run", 65, "Missing Capstanfile or package metadata\n"},
+		{"package help compose", 0, "capstan package compose - composes the package and all its dependencies into OSv imag"},
 	}
-	for key, value := range m {
-		cmd := runCapstan(strings.Fields(key), root)
-		out, err := cmd.Output()
-		if err != nil {
-			t.Errorf("capstan: %v", err)
+	for _, args := range m {
+		cmd := runCapstan(strings.Fields(args.cmd), root)
+		out, err := cmd.CombinedOutput()
+		if (args.errCode == 0) && (err != nil) ||
+			(args.errCode != 0) && (err == nil) ||
+			(err != nil) && !strings.Contains(err.Error(), fmt.Sprintf("%d", args.errCode)) {
+			t.Errorf("capstan %s: %v", args.cmd, err)
 		}
-		if g, e := string(out), value; g != e {
-			t.Errorf("capstan: want %q, got %q", e, g)
+		if g, e := string(out), args.errMsg; !strings.Contains(g, e) {
+			t.Errorf("capstan %s: want %q, got %q", args.cmd, e, g)
 		}
 	}
 }
@@ -70,8 +77,9 @@ func TestImportCommand(t *testing.T) {
 	if err != nil {
 		t.Errorf("capstan: %v", err)
 	}
-	if g, e := string(out), "Importing example...\n"; g != e {
-		t.Errorf("capstan: want %q, got %q", e, g)
+	expectedMessage := fmt.Sprintf("Importing example...\nImporting into %s/repository/example/example.qemu\n", root)
+	if g := string(out); g != expectedMessage {
+		t.Errorf("capstan: want %q, got %q", expectedMessage, g)
 	}
 
 	cmd = runCapstan([]string{"images"}, root)
@@ -105,7 +113,8 @@ func TestRmiCommand(t *testing.T) {
 	if err != nil {
 		t.Errorf("capstan: %v", err)
 	}
-	if g, e := string(out), "Importing example1...\n"; g != e {
+	e := fmt.Sprintf("Importing example1...\nImporting into %s/repository/example1/example1.qemu\n", root)
+	if g := string(out); g != e {
 		t.Errorf("capstan: want %q, got %q", e, g)
 	}
 
@@ -114,7 +123,8 @@ func TestRmiCommand(t *testing.T) {
 	if err != nil {
 		t.Errorf("capstan: %v", err)
 	}
-	if g, e := string(out), "Importing example2...\n"; g != e {
+	e = fmt.Sprintf("Importing example2...\nImporting into %s/repository/example2/example2.qemu\n", root)
+	if g := string(out); g != e {
 		t.Errorf("capstan: want %q, got %q", e, g)
 	}
 

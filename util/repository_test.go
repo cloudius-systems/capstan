@@ -23,5 +23,5 @@ func (s *suite) TestImagePath(c *C) {
 
 func (s *suite) TestPackagePath(c *C) {
 	path := s.repo.PackagePath("package")
-	c.Assert(path, Equals, filepath.Join(util.HomePath(), ".capstan", "packages", "package"))
+	c.Assert(path, Equals, filepath.Join(util.HomePath(), ".capstan", "packages", "package.mpm"))
 }
