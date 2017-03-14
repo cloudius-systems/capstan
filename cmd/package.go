@@ -283,8 +283,7 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 		}
 
 		relPath := strings.TrimPrefix(path, packageDir)
-		if relPath != "" && !strings.HasPrefix(relPath, "/meta") && !strings.HasPrefix(relPath, "/mpm-pkg") {
-
+		if !pathIgnored(relPath) {
 			switch {
 			case info.Mode()&os.ModeSymlink == os.ModeSymlink:
 				return os.Symlink(link, filepath.Join(targetPath, relPath))
@@ -345,6 +344,13 @@ func collectDirectoryContents(packageDir string) (map[string]string, error) {
 	})
 
 	return contents, err
+}
+
+func pathIgnored(path string) bool {
+	return path == "" ||
+		strings.HasPrefix(path, "/meta") ||
+		strings.HasPrefix(path, "/mpm-pkg") ||
+		strings.HasPrefix(path, "/.git")
 }
 
 func ImportPackage(repo *util.Repo, packageDir string) error {
