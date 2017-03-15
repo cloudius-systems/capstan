@@ -9,6 +9,9 @@ package openstack
 
 import (
 	"fmt"
+	"math"
+	"os"
+
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/images"
@@ -16,8 +19,6 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/imageservice/v2/imagedata"
 	glanceImages "github.com/gophercloud/gophercloud/openstack/imageservice/v2/images"
 	"github.com/gophercloud/gophercloud/pagination"
-	"math"
-	"os"
 )
 
 // GetOrPickFlavor returns flavors.Flavor struct that best matches arguments.
@@ -39,32 +40,7 @@ func PickFlavor(clientNova *gophercloud.ServiceClient, diskMB int64, memoryMB in
 	}
 
 	var flavs []flavors.Flavor = listFlavors(clientNova, int(math.Ceil(float64(diskMB)/1024)), int(memoryMB))
-
-	// Find smallest flavor for given conditions.
-	if verbose {
-		fmt.Printf("Find smallest flavor for conditions: diskMB >= %d AND memoryMB >= %d\n", diskMB, memoryMB)
-	}
-	var bestFlavor flavors.Flavor
-	var minDiffDisk int64 = -1
-	var minDiffMem int64 = -1
-	for _, f := range flavs {
-		diffDisk := int64(f.Disk)*1024 - diskMB
-		var diffMem int64 = 0 // 0 is best value
-		if memoryMB > 0 {
-			diffMem = int64(f.RAM) - memoryMB
-		}
-
-		if diffDisk >= 0 && // disk is big enough
-			(minDiffDisk == -1 || minDiffDisk > diffDisk) && // disk is smaller than current best, but still big enough
-			diffMem >= 0 && // memory is big enough
-			(minDiffMem == -1 || minDiffMem >= diffMem) { // memory is smaller than current best, but still big enough
-			bestFlavor, minDiffDisk, minDiffMem = f, diffDisk, diffMem
-		}
-	}
-	if minDiffDisk == -1 {
-		return nil, fmt.Errorf("No flavor fits required conditions: diskMB >= %d AND memoryMB >= %d\n", diskMB, memoryMB)
-	}
-	return &bestFlavor, nil
+	return selectBestFlavor(flavs, verbose)
 }
 
 // GetFlavor returns flavors.Flavor struct for given flavorName.
@@ -207,4 +183,24 @@ func uploadImage(clientGlance *gophercloud.ServiceClient, imageId string, filepa
 // deleteImage deletes image from OpenStack.
 func deleteImage(clientGlance *gophercloud.ServiceClient, imageId string) {
 	glanceImages.Delete(clientGlance, imageId)
+}
+
+// selectBestFlavor selects optimal flavor for given conditions.
+// Argument matchingFlavors should be a list of flavors that all satisfy disk&ram conditions.
+func selectBestFlavor(matchingFlavors []flavors.Flavor, verbose bool) (*flavors.Flavor, error) {
+	if len(matchingFlavors) == 0 {
+		return nil, fmt.Errorf("No matching flavors to pick from")
+	}
+
+	var bestFlavor *flavors.Flavor
+	for _, f := range matchingFlavors {
+		curr := f
+		// Prefer better fitting of HDD size rather than RAM size.
+		if bestFlavor == nil ||
+			f.Disk < bestFlavor.Disk ||
+			(f.Disk == bestFlavor.Disk && f.RAM < bestFlavor.RAM) {
+			bestFlavor = &curr
+		}
+	}
+	return bestFlavor, nil
 }
