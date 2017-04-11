@@ -1,7 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 package=github.com/mikelangelo-project/capstan
-version=$(scripts/version)
+git_version=$(scripts/version)
+
+IFS='-' read -ra version_parts <<< "$git_version"
+version="${version_parts[0]}"
 
 OLDIFS=$IFS
 IFS=' '; set -- $(go version)
@@ -15,8 +18,8 @@ fi
 
 echo "Building Linux amd64"
 env GOOS=linux GOARCH=amd64 go build -a -ldflags "-X main.VERSION$link_operator'$version' -w -s" -tags netgo -v -o dist/linux_amd64/capstan $package
-s3cmd put --acl-public --guess-mime-type ./dist/linux_amd64/capstan s3://mikelangelo-capstan/capstan/v0.1.8/linux_amd64/capstan
+s3cmd put --acl-public --guess-mime-type ./dist/linux_amd64/capstan s3://mikelangelo-capstan/capstan/$version/linux_amd64/capstan
 
 echo "Building Darwin amd64"
 env GOOS=darwin GOARCH=amd64 go build -a -ldflags "-X main.VERSION$link_operator'$version' -w -s" -tags netgo -v -o dist/darwin_amd64/capstan $package
-s3cmd put --acl-public --guess-mime-type ./dist/darwin_amd64/capstan s3://mikelangelo-capstan/capstan/v0.1.8/darwin_amd64/capstan
+s3cmd put --acl-public --guess-mime-type ./dist/darwin_amd64/capstan s3://mikelangelo-capstan/capstan/$version/darwin_amd64/capstan
