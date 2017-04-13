@@ -453,6 +453,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
 						cli.StringFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with"},
+						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 					},
 					Action: func(c *cli.Context) error {
 						repo := util.NewRepo(c.GlobalString("u"))
@@ -460,7 +461,7 @@ func main() {
 
 						pullMissing := c.Bool("pull-missing")
 
-						if err := cmd.CollectPackage(repo, packageDir, pullMissing, c.String("boot")); err != nil {
+						if err := cmd.CollectPackage(repo, packageDir, pullMissing, c.String("boot"), c.Bool("verbose")); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 

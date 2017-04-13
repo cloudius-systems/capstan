@@ -8,12 +8,24 @@
 package cmd
 
 import (
+	"fmt"
+
+	"github.com/mikelangelo-project/capstan/core"
 	"github.com/mikelangelo-project/capstan/util"
 	"github.com/urfave/cli"
 )
 
 // ConfigPrint prints current capstan configuration to console.
-func ConfigPrint(c *cli.Context) {
+func ConfigPrint(c *cli.Context) error {
 	repo := util.NewRepo(c.GlobalString("u"))
+	fmt.Println("--- global configuration")
 	repo.PrintRepo()
+	fmt.Println()
+
+	fmt.Println("--- curent directory configuration")
+	fmt.Println("CAPSTANIGNORE:")
+	capstanignore := core.CapstanignoreInit("./.capstanignore", true)
+	capstanignore.PrintPatterns()
+
+	return nil
 }
