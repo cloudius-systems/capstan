@@ -311,21 +311,20 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 			if err := persistBootCmdsIntoFiles(data, targetPath, customBoot, ""); err != nil {
 				return err
 			}
+			return nil
 		}
 
 		// Ignore what needs to be ignored.
 		if capstanignore.IsIgnored(relPath) {
 			if verbose {
-				display := true
-				for _, pattern := range core.CAPSTANIGNORE_ALWAYS {
-					if strings.HasPrefix(relPath, strings.Replace(pattern, "/*", "", 1)) {
-						display = false
-						break
-					}
+				suffix := ""
+				if info.IsDir() {
+					suffix = " (entire folder)"
 				}
-				if display {
-					fmt.Println(".capstanignore: ignore", relPath)
-				}
+				fmt.Printf(".capstanignore: ignore %s%s\n", relPath, suffix)
+			}
+			if info.IsDir() {
+				return filepath.SkipDir
 			}
 			return nil
 		}

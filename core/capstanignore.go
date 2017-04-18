@@ -22,7 +22,7 @@ type Capstanignore interface {
 	IsIgnored(path string) bool
 }
 
-var CAPSTANIGNORE_ALWAYS []string = []string{"/meta/*", "/mpm-pkg/*", "/.git/*"}
+var CAPSTANIGNORE_ALWAYS []string = []string{"/meta", "/mpm-pkg", "/.git"}
 
 // CapstanignoreInit creates a new capstanignore struct that is
 // used when deciding whether a file should be included in unikernel
@@ -96,6 +96,11 @@ func (c *capstanignore) AddPattern(pattern string) error {
 	return nil
 }
 
+// IsIgnored returns true if path given is on ignore list.
+// But notice that if a folder is ignored, it is up to caller
+// to ignore all files beneath as well. E.g. if pattern `/myfolder`
+// is used, then IsIgnored will return false for all subfolders and
+// files inside the `/myfolder` directory.
 func (c *capstanignore) IsIgnored(path string) bool {
 	for _, pattern := range c.ignoredC {
 		if pattern.MatchString(path) {

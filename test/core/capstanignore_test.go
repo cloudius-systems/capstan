@@ -140,6 +140,18 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 			"additional test #4",
 			"/myfolder/*", "/myfolder2", false,
 		},
+		{
+			"always ignore /meta",
+			"", "/meta", true,
+		},
+		{
+			"always ignore /mpm-pkg",
+			"", "/mpm-pkg", true,
+		},
+		{
+			"always ignore /.git",
+			"", "/.git", true,
+		},
 	}
 	for i, args := range m {
 		c.Logf("CASE #%d: %s", i, args.comment)
@@ -153,28 +165,5 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 
 		// Expectations.
 		c.Check(ignoreYesNo, Equals, args.shouldIgnore)
-	}
-}
-
-func (s *testingCapstanignoreSuite) TestIsIgnoredAlways(c *C) {
-	paths := map[string]bool{
-		"/meta":              true,
-		"/meta/package.yml":  true,
-		"/meta/":             true,
-		"/mpm-pkg":           true,
-		"/mpm-pkg/":          true,
-		"/mpm-pkg/file":      true,
-		"/.git":              true,
-		"/.git/":             true,
-		"/.git/subpath":      true,
-		"/met":               false,
-		"/mpm":               false,
-		"/.gi":               false,
-		"/long/path/to/file": false,
-	}
-
-	for path, ignored := range paths {
-		capstanignore := core.CapstanignoreInit("")
-		c.Assert(capstanignore.IsIgnored(path), Equals, ignored)
 	}
 }
