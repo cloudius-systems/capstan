@@ -85,14 +85,6 @@ func (c *capstanignore) AddPattern(pattern string) error {
 		return err
 	}
 
-	// also ignore folder when all its content is ignored
-	for strings.HasSuffix(pattern, "/*") {
-		pattern = strings.TrimSuffix(pattern, "/*")
-		safePattern = transformCapstanignoreToRegex(pattern)
-		compiled := regexp.MustCompile(safePattern)
-		c.ignoredC = append(c.ignoredC, compiled)
-	}
-
 	return nil
 }
 

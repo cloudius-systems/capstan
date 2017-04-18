@@ -82,7 +82,7 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 		},
 		{
 			"whole folder one level #2",
-			"/myfolder/*", "/myfolder", true,
+			"/myfolder/*", "/myfolder", false,
 		},
 		{
 			"whole folder one level #3",
@@ -94,7 +94,7 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 		},
 		{
 			"whole folder two levels #1",
-			"/myfolder/subfolder/*", "/myfolder/subfolder", true,
+			"/myfolder/subfolder/*", "/myfolder/subfolder", false,
 		},
 		{
 			"whole folder two levels #2",
@@ -102,11 +102,11 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 		},
 		{
 			"whole folder two whole levels #1",
-			"/myfolder/*/*", "/myfolder", true,
+			"/myfolder/*/*", "/myfolder", false,
 		},
 		{
 			"whole folder two whole levels #2",
-			"/myfolder/*/*", "/myfolder/subfolder", true,
+			"/myfolder/*/*", "/myfolder/subfolder", false,
 		},
 		{
 			"whole folder two whole levels #3",

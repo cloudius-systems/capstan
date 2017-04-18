@@ -6,14 +6,14 @@ Capstan from uploading some subfolders (e.g. .idea/) and that's where `.capstani
 
 
 ## Ignored by default
-There are some files that are ignored (i.e. not copied to the unikernel that you're composing)
+There are some folders that are ignored (i.e. not copied to the unikernel that you're composing)
 even if you don't provide your own `.capstanignore` file:
 ```
-/meta/*
-/mpm-pkg/*
-/.git/*
+/meta
+/mpm-pkg
+/.git
 ```
-These files do not get uploaded to the unikernel even if they exist in your project folder. Go ahead,
+These folders do not get uploaded to the unikernel even if they exist in your project folder. Go ahead,
 verify by running:
 ```bash
 $ capstan config print
@@ -24,9 +24,9 @@ CAPSTAN_DISABLE_KVM: false
 
 --- curent directory configuration
 CAPSTANIGNORE:
-/meta/*
-/mpm-pkg/*
-/.git/*
+/meta
+/mpm-pkg
+/.git
 ```
 
 ## Specify your own .capstanignore
@@ -44,6 +44,9 @@ please find a valid `.capstanignore` file example showing the syntax:
 /**/myfile.txt
 
 # ignores folder 'myfolder' and all its content
+/myfolder
+
+# ignores all files and folders inside 'myfolder', but keeps the folder
 /myfolder/*
 
 # ignores any file with '.txt' suffix in project root directory
@@ -52,6 +55,9 @@ please find a valid `.capstanignore` file example showing the syntax:
 # ignores any file with '.txt' suffix in whole project (recursive)
 /**/*.txt
 
+# ignores any file that is inside any first-level directory (e.g. /result/file.txt),
+# but keeps the folders
+/*/*
 ```
 
 As you can see the syntax is that of .gitignore only you need to start each pattern with slash `/`. Note
