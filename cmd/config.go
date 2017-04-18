@@ -9,6 +9,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/mikelangelo-project/capstan/core"
 	"github.com/mikelangelo-project/capstan/util"
@@ -24,8 +25,16 @@ func ConfigPrint(c *cli.Context) error {
 
 	fmt.Println("--- curent directory configuration")
 	fmt.Println("CAPSTANIGNORE:")
-	capstanignore := core.CapstanignoreInit("./.capstanignore")
-	capstanignore.PrintPatterns()
+	// Read .capstanignore if exists.
+	capstanignorePath := "./.capstanignore"
+	if _, err := os.Stat(capstanignorePath); os.IsNotExist(err) {
+		capstanignorePath = ""
+	}
+	if capstanignore, err := core.CapstanignoreInit(capstanignorePath); err == nil {
+		capstanignore.PrintPatterns()
+	} else {
+		fmt.Println(err)
+	}
 
 	return nil
 }
