@@ -37,7 +37,7 @@ func CapstanignoreInit(path string) (Capstanignore, error) {
 	// Load capstanignore file if path was given.
 	if path != "" {
 		if err := c.LoadFile(path); err != nil {
-			return nil, fmt.Errorf("failed to parse .capstanfile: %s\n", err)
+			return nil, fmt.Errorf("failed to parse .capstanignore: %s\n", err)
 		}
 	}
 

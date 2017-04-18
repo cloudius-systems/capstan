@@ -157,7 +157,7 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 		c.Logf("CASE #%d: %s", i, args.comment)
 
 		// Setup
-		capstanignore := core.CapstanignoreInit("")
+		capstanignore, _ := core.CapstanignoreInit("")
 		capstanignore.AddPattern(args.pattern)
 
 		// This is what we're testing here.
