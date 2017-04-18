@@ -11,9 +11,6 @@ package util
 import (
 	"errors"
 	"fmt"
-	"github.com/mikelangelo-project/capstan/core"
-	"github.com/mikelangelo-project/capstan/image"
-	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"os"
@@ -22,6 +19,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mikelangelo-project/capstan/core"
+	"github.com/mikelangelo-project/capstan/image"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -94,11 +95,10 @@ type ImageInfo struct {
 	Build         string
 }
 
-func (r *Repo) PrintRepo() error {
+func (r *Repo) PrintRepo() {
 	fmt.Printf("CAPSTAN_ROOT: %s\n", r.Path)
 	fmt.Printf("CAPSTAN_REPO_URL: %s\n", r.URL)
 	fmt.Printf("CAPSTAN_DISABLE_KVM: %v\n", r.DisableKvm)
-	return nil
 }
 
 func (r *Repo) ImportImage(imageName string, file string, version string, created string, description string, build string) error {

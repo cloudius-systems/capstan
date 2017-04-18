@@ -55,9 +55,7 @@ func main() {
 					Name:  "print",
 					Usage: "print current capstan configuration",
 					Action: func(c *cli.Context) error {
-						if err := cmd.ConfigPrint(c); err != nil {
-							return cli.NewExitError(err.Error(), EX_DATAERR)
-						}
+						cmd.ConfigPrint(c)
 						return nil
 					},
 				},
