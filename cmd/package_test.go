@@ -8,13 +8,14 @@
 package cmd
 
 import (
-	"github.com/mikelangelo-project/capstan/core"
-	"github.com/mikelangelo-project/capstan/util"
-	. "gopkg.in/check.v1"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/mikelangelo-project/capstan/core"
+	"github.com/mikelangelo-project/capstan/util"
+	. "gopkg.in/check.v1"
 )
 
 // Hook up gocheck into the "go test" runner.
@@ -159,27 +160,5 @@ func (*suite) TestFileHashing(c *C) {
 		c.Assert(err, IsNil)
 
 		c.Assert(hostHash, Equals, hash)
-	}
-}
-
-func (*suite) TestPathIgnored(c *C) {
-	paths := map[string]bool{
-		"/meta":              true,
-		"/meta/package.yml":  true,
-		"/meta/":             true,
-		"/mpm-pkg":           true,
-		"/mpm-pkg/":          true,
-		"/mpm-pkg/file":      true,
-		"/.git":              true,
-		"/.git/":             true,
-		"/.git/subpath":      true,
-		"/met":               false,
-		"/mpm":               false,
-		"/.gi":               false,
-		"/long/path/to/file": false,
-	}
-
-	for path, ignored := range paths {
-		c.Assert(pathIgnored(path), Equals, ignored)
 	}
 }

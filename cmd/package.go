@@ -160,7 +160,7 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbos
 	commandLine = constructBootCmdFromArguments(commandLine, customBoot, packageDir)
 
 	// First, collect the contents of the package.
-	if err := CollectPackage(repo, packageDir, pullMissing, customBoot); err != nil {
+	if err := CollectPackage(repo, packageDir, pullMissing, customBoot, verbose); err != nil {
 		return err
 	}
 
@@ -216,7 +216,7 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbos
 
 // CollectPackage will try to resolve all of the dependencies of the given package
 // and collect the content in the $CWD/mpm-pkg directory.
-func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, customBoot string) error {
+func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, customBoot string, verbose bool) error {
 	// Get the manifest file of the given package.
 	pkg, err := core.ParsePackageManifest(filepath.Join(packageDir, "meta", "package.yaml"))
 	if err != nil {
@@ -272,6 +272,19 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 		}
 	}
 
+	// Read .capstanignore if exists.
+	capstanignorePath := filepath.Join(packageDir, ".capstanignore")
+	if _, err := os.Stat(capstanignorePath); os.IsNotExist(err) {
+		if verbose {
+			fmt.Println("WARN: .capstanignore not found, all files will be uploaded")
+		}
+		capstanignorePath = ""
+	}
+	capstanignore, err := core.CapstanignoreInit(capstanignorePath)
+	if err != nil {
+		return err
+	}
+
 	// Now we need to append the content of the current package into the target directory.
 	// This should override any file from the required packages.
 	err = filepath.Walk(packageDir, func(path string, info os.FileInfo, err error) error {
@@ -290,22 +303,9 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 		}
 
 		relPath := strings.TrimPrefix(path, packageDir)
-		if !pathIgnored(relPath) {
-			switch {
-			case info.Mode()&os.ModeSymlink == os.ModeSymlink:
-				return os.Symlink(link, filepath.Join(targetPath, relPath))
 
-			case info.IsDir():
-				return os.MkdirAll(filepath.Join(targetPath, relPath), info.Mode())
-
-			case info.Mode().IsRegular():
-				return util.CopyLocalFile(filepath.Join(targetPath, relPath), path)
-
-			default:
-				return fmt.Errorf("File %s has unsupported mode %v", path, info.Mode())
-			}
-
-		} else if relPath == "/meta/run.yaml" {
+		// Apply meta/run.yaml before ignoring it.
+		if relPath == "/meta/run.yaml" {
 			// Prepare files with boot commands.
 			data, err := ioutil.ReadFile(path)
 			if err != nil {
@@ -314,9 +314,37 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 			if err := persistBootCmdsIntoFiles(data, targetPath, customBoot, ""); err != nil {
 				return err
 			}
+			return nil
 		}
 
-		return nil
+		// Ignore what needs to be ignored.
+		if capstanignore.IsIgnored(relPath) {
+			if verbose {
+				suffix := ""
+				if info.IsDir() {
+					suffix = " (entire folder)"
+				}
+				fmt.Printf(".capstanignore: ignore %s%s\n", relPath, suffix)
+			}
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		switch {
+		case info.Mode()&os.ModeSymlink == os.ModeSymlink:
+			return os.Symlink(link, filepath.Join(targetPath, relPath))
+
+		case info.IsDir():
+			return os.MkdirAll(filepath.Join(targetPath, relPath), info.Mode())
+
+		case info.Mode().IsRegular():
+			return util.CopyLocalFile(filepath.Join(targetPath, relPath), path)
+
+		default:
+			return fmt.Errorf("File %s has unsupported mode %v", path, info.Mode())
+		}
 	})
 
 	if err != nil {
@@ -351,13 +379,6 @@ func collectDirectoryContents(packageDir string) (map[string]string, error) {
 	})
 
 	return contents, err
-}
-
-func pathIgnored(path string) bool {
-	return path == "" ||
-		strings.HasPrefix(path, "/meta") ||
-		strings.HasPrefix(path, "/mpm-pkg") ||
-		strings.HasPrefix(path, "/.git")
 }
 
 func ImportPackage(repo *util.Repo, packageDir string) error {
