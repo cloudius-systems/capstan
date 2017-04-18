@@ -24,7 +24,7 @@ type Capstanignore interface {
 
 var CAPSTANIGNORE_ALWAYS []string = []string{"/meta", "/mpm-pkg", "/.git"}
 
-// CapstanignoreInit creates a new capstanignore struct that is
+// CapstanignoreInit creates a new Capstanignore struct that is
 // used when deciding whether a file should be included in unikernel
 // or not. You can provide `path` to the .capstanignore file to load
 // it or pass empty string "" if you have none. Note that once having
@@ -49,8 +49,8 @@ func CapstanignoreInit(path string) Capstanignore {
 }
 
 type capstanignore struct {
-	ignored  []string         // list of all ignored patterns
-	ignoredC []*regexp.Regexp // list of compiled patterns
+	patterns         []string         // list of all ignored patterns
+	compiledPatterns []*regexp.Regexp // list of compiled patterns
 }
 
 // LoadFile attempts to parse .capstanignore file on given path.
@@ -61,8 +61,8 @@ func (c *capstanignore) LoadFile(path string) error {
 
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			line := strings.Trim(scanner.Text(), " ")
-			if len(line) == 0 || strings.HasPrefix(line, "#") {
+			line := strings.TrimSpace(scanner.Text())
+			if line == "" || strings.HasPrefix(line, "#") {
 				continue
 			}
 			if errPattern := c.AddPattern(line); errPattern != nil {
@@ -79,8 +79,8 @@ func (c *capstanignore) LoadFile(path string) error {
 func (c *capstanignore) AddPattern(pattern string) error {
 	safePattern := transformCapstanignoreToRegex(pattern)
 	if compiled, err := regexp.Compile(safePattern); err == nil {
-		c.ignored = append(c.ignored, pattern)
-		c.ignoredC = append(c.ignoredC, compiled)
+		c.patterns = append(c.patterns, pattern)
+		c.compiledPatterns = append(c.compiledPatterns, compiled)
 	} else {
 		return err
 	}
@@ -94,7 +94,7 @@ func (c *capstanignore) AddPattern(pattern string) error {
 // is used, then IsIgnored will return false for all subfolders and
 // files inside the `/myfolder` directory.
 func (c *capstanignore) IsIgnored(path string) bool {
-	for _, pattern := range c.ignoredC {
+	for _, pattern := range c.compiledPatterns {
 		if pattern.MatchString(path) {
 			return true
 		}
@@ -103,7 +103,7 @@ func (c *capstanignore) IsIgnored(path string) bool {
 }
 
 func (c *capstanignore) PrintPatterns() {
-	for _, pattern := range c.ignored {
+	for _, pattern := range c.patterns {
 		fmt.Println(pattern)
 	}
 }
