@@ -24,7 +24,7 @@ func ConfigPrint(c *cli.Context) error {
 
 	fmt.Println("--- curent directory configuration")
 	fmt.Println("CAPSTANIGNORE:")
-	capstanignore := core.CapstanignoreInit("./.capstanignore", true)
+	capstanignore := core.CapstanignoreInit("./.capstanignore")
 	capstanignore.PrintPatterns()
 
 	return nil

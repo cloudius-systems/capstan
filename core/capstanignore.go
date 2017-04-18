@@ -31,12 +31,12 @@ var CAPSTANIGNORE_ALWAYS []string = []string{"/meta/*", "/mpm-pkg/*", "/.git/*"}
 // capstanignore struct you can load as many files as you want (using
 // .LoadFile function) or manually add as many patterns as you like
 // (using .AddPattern function).
-func CapstanignoreInit(path string, verbose bool) Capstanignore {
-	c := capstanignore{verbose: verbose}
+func CapstanignoreInit(path string) Capstanignore {
+	c := capstanignore{}
 
 	// Load capstanignore file if path was given.
 	if path != "" {
-		if err := c.LoadFile(path); verbose && err != nil {
+		if err := c.LoadFile(path); err != nil {
 			fmt.Println("WARN: failed to load .capstanignore file:", err)
 		}
 	}
@@ -51,7 +51,6 @@ func CapstanignoreInit(path string, verbose bool) Capstanignore {
 type capstanignore struct {
 	ignored  []string         // list of all ignored patterns
 	ignoredC []*regexp.Regexp // list of compiled patterns
-	verbose  bool
 }
 
 // LoadFile attempts to parse .capstanignore file on given path.
@@ -70,6 +69,8 @@ func (c *capstanignore) LoadFile(path string) error {
 				return errPattern
 			}
 		}
+	} else {
+		return err
 	}
 	return nil
 }

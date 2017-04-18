@@ -272,7 +272,15 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 		}
 	}
 
-	capstanignore := core.CapstanignoreInit(filepath.Join(packageDir, ".capstanignore"), verbose)
+	// Read .capstanignore if exists.
+	capstanignorePath := filepath.Join(packageDir, ".capstanignore")
+	if _, err = os.Stat(capstanignorePath); os.IsNotExist(err) {
+		if verbose {
+			fmt.Println("WARN: .capstanignore not found, all files will be uploaded")
+		}
+		capstanignorePath = ""
+	}
+	capstanignore := core.CapstanignoreInit(capstanignorePath)
 
 	// Now we need to append the content of the current package into the target directory.
 	// This should override any file from the required packages.

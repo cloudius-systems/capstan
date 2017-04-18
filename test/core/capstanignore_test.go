@@ -145,7 +145,7 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 		c.Logf("CASE #%d: %s", i, args.comment)
 
 		// Setup
-		capstanignore := core.CapstanignoreInit("", false)
+		capstanignore := core.CapstanignoreInit("")
 		capstanignore.AddPattern(args.pattern)
 
 		// This is what we're testing here.
@@ -174,7 +174,7 @@ func (s *testingCapstanignoreSuite) TestIsIgnoredAlways(c *C) {
 	}
 
 	for path, ignored := range paths {
-		capstanignore := core.CapstanignoreInit("", false)
+		capstanignore := core.CapstanignoreInit("")
 		c.Assert(capstanignore.IsIgnored(path), Equals, ignored)
 	}
 }
