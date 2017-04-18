@@ -13,7 +13,7 @@ import (
 )
 
 // ConfigPrint prints current capstan configuration to console.
-func ConfigPrint(c *cli.Context) error {
+func ConfigPrint(c *cli.Context) {
 	repo := util.NewRepo(c.GlobalString("u"))
-	return repo.PrintRepo()
+	repo.PrintRepo()
 }
