@@ -141,8 +141,8 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 			"/myfolder/*", "/myfolder2", false,
 		},
 		{
-			"always ignore /meta",
-			"", "/meta", true,
+			"always ignore /meta/*",
+			"", "/meta/package.yaml", true,
 		},
 		{
 			"always ignore /mpm-pkg",

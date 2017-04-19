@@ -315,6 +315,8 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 				return err
 			}
 			return nil
+		} else if relPath == "/meta" { // Prevent empty `/meta` dir from being uploaded.
+			return nil
 		}
 
 		// Ignore what needs to be ignored.
