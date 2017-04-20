@@ -152,6 +152,14 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 			"always ignore /.git",
 			"", "/.git", true,
 		},
+		{
+			"always ignore /.capstanignore",
+			"", "/.capstanignore", true,
+		},
+		{
+			"always ignore /.gitignore",
+			"", "/.gitignore", true,
+		},
 	}
 	for i, args := range m {
 		c.Logf("CASE #%d: %s", i, args.comment)
@@ -166,4 +174,15 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 		// Expectations.
 		c.Check(ignoreYesNo, Equals, args.shouldIgnore)
 	}
+}
+
+func (s *testingCapstanignoreSuite) TestIsIgnoredMeta(c *C) {
+	// Setup
+	capstanignore, _ := core.CapstanignoreInit("")
+
+	// This is what we're testing here.
+	err := capstanignore.AddPattern("/meta")
+
+	// Expectations.
+	c.Check(err, ErrorMatches, "please remove '/meta' from .capstanignore")
 }
