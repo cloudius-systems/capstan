@@ -22,7 +22,9 @@ type Capstanignore interface {
 	IsIgnored(path string) bool
 }
 
-var CAPSTANIGNORE_ALWAYS []string = []string{"/meta/*", "/mpm-pkg", "/.git"}
+var CAPSTANIGNORE_ALWAYS []string = []string{
+	"/meta/*", "/mpm-pkg", "/.git", "/.capstanignore", "/.gitignore",
+}
 
 // CapstanignoreInit creates a new Capstanignore struct that is
 // used when deciding whether a file should be included in unikernel

@@ -152,6 +152,14 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 			"always ignore /.git",
 			"", "/.git", true,
 		},
+		{
+			"always ignore /.capstanignore",
+			"", "/.capstanignore", true,
+		},
+		{
+			"always ignore /.gitignore",
+			"", "/.gitignore", true,
+		},
 	}
 	for i, args := range m {
 		c.Logf("CASE #%d: %s", i, args.comment)
