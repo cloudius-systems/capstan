@@ -175,3 +175,14 @@ func (s *testingCapstanignoreSuite) TestIsIgnored(c *C) {
 		c.Check(ignoreYesNo, Equals, args.shouldIgnore)
 	}
 }
+
+func (s *testingCapstanignoreSuite) TestIsIgnoredMeta(c *C) {
+	// Setup
+	capstanignore, _ := core.CapstanignoreInit("")
+
+	// This is what we're testing here.
+	err := capstanignore.AddPattern("/meta")
+
+	// Expectations.
+	c.Check(err, ErrorMatches, "please remove '/meta' from .capstanignore")
+}

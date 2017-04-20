@@ -79,6 +79,12 @@ func (c *capstanignore) LoadFile(path string) error {
 
 // AddPattern adds a pattern to be ignored.
 func (c *capstanignore) AddPattern(pattern string) error {
+	// Protect user from strange behavior when ignoring whole /meta folder.
+	// (runscript files don't get created if ignored)
+	if pattern == "/meta" {
+		return fmt.Errorf("please remove '/meta' from .capstanignore")
+	}
+
 	safePattern := transformCapstanignoreToRegex(pattern)
 	if compiled, err := regexp.Compile(safePattern); err == nil {
 		c.patterns = append(c.patterns, pattern)
