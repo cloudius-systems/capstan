@@ -151,6 +151,7 @@ func main() {
 				cli.StringFlag{Name: "execute,e", Usage: "set the command line to execute"},
 				cli.StringFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with"},
 				cli.BoolFlag{Name: "persist", Usage: "persist instance parameters (only relevant for qemu instances)"},
+				cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
 			},
 			Action: func(c *cli.Context) error {
 				// Check for orphaned instances (those with osv.monitor and disk.qcow2, but
@@ -178,6 +179,15 @@ func main() {
 				// Boot from script unless bootcmd was manually provided.
 				if config.Cmd == "" {
 					config.Cmd = runtime.BootCmdForScript(c.String("boot"))
+				}
+
+				// Prepend environment variables to the command.
+				if env, err := util.ParseEnvironmentList(c.StringSlice("env")); err == nil {
+					if config.Cmd, err = runtime.PrependEnvsPrefix(config.Cmd, env); err != nil {
+						return err
+					}
+				} else {
+					return err
 				}
 
 				if !isValidHypervisor(config.Hypervisor) {
