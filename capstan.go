@@ -183,7 +183,7 @@ func main() {
 
 				// Prepend environment variables to the command.
 				if env, err := util.ParseEnvironmentList(c.StringSlice("env")); err == nil {
-					if config.Cmd, err = runtime.PrependEnvsPrefix(config.Cmd, env); err != nil {
+					if config.Cmd, err = runtime.PrependEnvsPrefix(config.Cmd, env, false); err != nil {
 						return err
 					}
 				} else {

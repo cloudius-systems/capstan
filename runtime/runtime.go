@@ -9,8 +9,9 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/mikelangelo-project/capstan/nat"
 	"strings"
+
+	"github.com/mikelangelo-project/capstan/nat"
 )
 
 type RuntimeType string
@@ -114,7 +115,7 @@ func (r CommonRuntime) Validate() error {
 // BuildBootCmd equips runtime-specific bootcmd with common parts.
 func (r CommonRuntime) BuildBootCmd(bootCmd string) (string, error) {
 	// Prepend environment variables
-	newBootCmd, err := PrependEnvsPrefix(bootCmd, r.GetEnv())
+	newBootCmd, err := PrependEnvsPrefix(bootCmd, r.GetEnv(), true)
 	if err != nil {
 		return "", err
 	}
@@ -139,10 +140,17 @@ func PickRuntime(runtimeName RuntimeType) (Runtime, error) {
 // PrependEnvsPrefix prepends all key-values of env map to the boot cmd give.
 // It prepends each pair in a form of "--env={KEY}={VALUE}".
 // Also performs check that neither key nor value contains space.
-func PrependEnvsPrefix(cmd string, env map[string]string) (string, error) {
+// Argument `soft` means that operator '?=' is used that only sets env
+// variable if it's not set yet.
+func PrependEnvsPrefix(cmd string, env map[string]string, soft bool) (string, error) {
+	operator := "="
+	if soft {
+		operator = "?="
+	}
+
 	s := ""
 	for k, v := range env {
-		s += fmt.Sprintf("--env=%s=%s ", k, v)
+		s += fmt.Sprintf("--env=%s%s%s ", k, operator, v)
 	}
 	return fmt.Sprintf("%s%s", s, cmd), nil
 }
