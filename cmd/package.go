@@ -9,6 +9,7 @@ package cmd
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -65,7 +66,9 @@ func BuildPackage(packageDir string) (string, error) {
 
 	defer mpmfile.Close()
 
-	tarball := tar.NewWriter(mpmfile)
+	gzWriter := gzip.NewWriter(mpmfile)
+	defer gzWriter.Close()
+	tarball := tar.NewWriter(gzWriter)
 	defer tarball.Close()
 
 	err = filepath.Walk(packageDir, func(path string, info os.FileInfo, err error) error {
@@ -74,6 +77,8 @@ func BuildPackage(packageDir string) (string, error) {
 		}
 
 		relPath := strings.TrimPrefix(path, packageDir)
+
+		// TODO(miha-plesko): respect .capstanignore instead hard-coding
 
 		// Skip the MPM package file or the collected package content..
 		if filepath.Base(path) == mpmname || strings.HasPrefix(relPath, "/mpm-pkg") {
@@ -401,7 +406,16 @@ func ImportPackage(repo *util.Repo, packageDir string) error {
 }
 
 func extractPackageContent(pkgreader io.Reader, target, pkgName string) error {
-	tarReader := tar.NewReader(pkgreader)
+	var tarReader *tar.Reader
+
+	// Load package (tar.gz or tar supported).
+	if gzReader, err := gzip.NewReader(pkgreader); err == nil {
+		tarReader = tar.NewReader(gzReader)
+	} else if err == gzip.ErrHeader {
+		tarReader = tar.NewReader(pkgreader)
+	} else {
+		return err
+	}
 
 	for {
 		header, err := tarReader.Next()
