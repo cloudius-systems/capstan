@@ -405,13 +405,14 @@ func ImportPackage(repo *util.Repo, packageDir string) error {
 	return repo.ImportPackage(pkg, packagePath)
 }
 
-func extractPackageContent(pkgreader io.Reader, target, pkgName string) error {
+func extractPackageContent(pkgreader io.ReadSeeker, target, pkgName string) error {
 	var tarReader *tar.Reader
 
 	// Load package (tar.gz or tar supported).
 	if gzReader, err := gzip.NewReader(pkgreader); err == nil {
 		tarReader = tar.NewReader(gzReader)
 	} else if err == gzip.ErrHeader {
+		pkgreader.Seek(0, 0) // revert offset that gzReader has corrupted
 		tarReader = tar.NewReader(pkgreader)
 	} else {
 		return err
