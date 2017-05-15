@@ -379,7 +379,7 @@ func (r *Repo) ImportPackage(pkg core.Package, packagePath string) error {
 	return nil
 }
 
-func (r *Repo) GetPackage(pkgname string) (io.Reader, error) {
+func (r *Repo) GetPackage(pkgname string) (io.ReadSeeker, error) {
 	pkgpath := r.PackagePath(pkgname)
 
 	// Make sure the package does exist.
