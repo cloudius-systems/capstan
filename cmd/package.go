@@ -412,7 +412,7 @@ func extractPackageContent(pkgreader io.ReadSeeker, target, pkgName string) erro
 	if gzReader, err := gzip.NewReader(pkgreader); err == nil {
 		tarReader = tar.NewReader(gzReader)
 	} else if err == gzip.ErrHeader {
-		pkgreader.Seek(0, 0) // revert offset that gzReader has corrupted
+		pkgreader.Seek(0, io.SeekStart) // revert offset that gzReader has corrupted
 		tarReader = tar.NewReader(pkgreader)
 	} else {
 		return err
