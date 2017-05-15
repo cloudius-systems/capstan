@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/mikelangelo-project/capstan",
-	"GoVersion": "go1.6",
+	"GoVersion": "go1.7",
 	"Packages": [
 		"./..."
 	],

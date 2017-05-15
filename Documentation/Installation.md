@@ -45,7 +45,7 @@ use it simply with `capstan --help`.
 
 ## Install Capstan from source (advanced)
 
-### Install Go 1.6+
+### Install Go 1.7+
 Capstan is a Go project and needs to be compiled first. But heads up, compiling Go project is trivial,
 as long as you have Go installed. Consult [official documentation](https://golang.org/doc/install)
 to learn how to install Go, or use this bash snippet to do it for you:
