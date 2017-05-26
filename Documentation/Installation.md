@@ -43,6 +43,12 @@ $ wget -O - https://raw.githubusercontent.com/mikelangelo-project/capstan/master
 You can then use Capstan tool with `$HOME/bin/capstan --help` or include `$HOME/bin` into `PATH` and
 use it simply with `capstan --help`.
 
+First thing to do after installing Capstan binary is to pull base image from repository:
+```
+$ capstan pull mike/osv-loader
+```
+There you go, happy unikernel creating!
+
 ## Install Capstan from source (advanced)
 
 ### Install Go 1.7+
