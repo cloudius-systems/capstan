@@ -27,7 +27,7 @@ func (conf nodeJsRuntime) GetRuntimeDescription() string {
 	return "Run JavaScript NodeJS 4.4.5 application"
 }
 func (conf nodeJsRuntime) GetDependencies() []string {
-	return []string{"eu.mikelangelo-project.app.node-4.4.5"}
+	return []string{"node-4.4.5"}
 }
 func (conf nodeJsRuntime) Validate() error {
 	if conf.Main == "" {

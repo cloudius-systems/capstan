@@ -243,7 +243,7 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 	// The bootstrap package is implicitly required by every application package,
 	// so we add it to the list of required packages. Even if user has added
 	// the bootstrap manually, this will not result in overhead.
-	pkg.Require = append(pkg.Require, "eu.mikelangelo-project.osv.bootstrap")
+	pkg.Require = append(pkg.Require, "osv.bootstrap")
 
 	// Look for all dependencies and make sure they are all available in the repository.
 	requiredPackages, err := repo.GetPackageDependencies(pkg, pullMissing)

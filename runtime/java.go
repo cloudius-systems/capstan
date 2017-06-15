@@ -31,10 +31,10 @@ func (conf javaRuntime) GetRuntimeName() string {
 	return string(Java)
 }
 func (conf javaRuntime) GetRuntimeDescription() string {
-	return "Run Java 1.7.0 application"
+	return "Run Java application"
 }
 func (conf javaRuntime) GetDependencies() []string {
-	return []string{"eu.mikelangelo-project.osv.java"}
+	return []string{"openjdk8-zulu-compact1"}
 }
 func (conf javaRuntime) Validate() error {
 	if conf.Main == "" {
@@ -75,7 +75,7 @@ main: <name>
 
 # REQUIRED
 # A list of paths where classes and other resources can be found.
-# Example value: classpath: 
+# Example value: classpath:
 #                   - /
 #                   - /package1
 classpath:
@@ -92,8 +92,8 @@ args:
 # OPTIONAL
 # A list of JVM args (e.g. Xmx, Xms)
 # Example value: jvmargs:
-#                   - Xmx1000m 
-#                   - Djava.net.preferIPv4Stack=true 
+#                   - Xmx1000m
+#                   - Djava.net.preferIPv4Stack=true
 #                   - Dhadoop.log.dir=/hdfs/logs
 jvmargs:
    <list>

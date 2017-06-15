@@ -144,8 +144,8 @@ $ capstan runtime list
 
 RUNTIME             DESCRIPTION                                       DEPENDENCIES
 native              Run arbitrary command inside OSv                  []
-node                Run JavaScript NodeJS 4.4.5 application           [eu.mikelangelo-project.app.node-4.4.5]
-java                Run Java 1.7.0 application                        [eu.mikelangelo-project.osv.java]
+node                Run JavaScript NodeJS 4.4.5 application           [app.node-4.4.5]
+java                Run Java 1.7.0 application                        [osv.java]
 ```
 
 To generate template for `meta/run.yaml` go to your package root directory and execute command:
@@ -304,23 +304,23 @@ Interface) tool in our own application, initialise a package using
 ``--require`` option:
 
 ```
-$ capstan package init --name "com.example.app" --title "Example App" --author "Example User" --require eu.mikelangelo-project.osv.cli
+$ capstan package init --name "com.example.app" --title "Example App" --author "Example User" --require osv.cli
 ```
 
 The same can be achieved by manually adding one or more required packages in ``meta/package.yaml``:
 
 ```
-name: eu.mikelangelo-project.app.demo
+name: app.demo
 title: DEMO App
 author: lemmy
 require:
-    - eu.mikelangelo-project.osv.cli
+    - osv.cli
 ```
 
 When applications are composed, the required packages are recursively inspected
 and the content of all of them is added to the application. For example, the
-``eu.mikelangelo-project.osv.cli`` package requires
-``eu.mikelangelo-project.osv.httpserver`` which gets added automatically as
+``osv.cli`` package requires
+``osv.httpserver`` which gets added automatically as
 well.
 
 A package may override the content of any of its required packages which allows
@@ -337,13 +337,13 @@ refer to required packages.
 $ capstan package list
 
 Name                                               Description                    Version
-eu.mikelangelo-project.app.hadoop-hdfs             Hadoop HDFS                    2.7.2
-eu.mikelangelo-project.openfoam.core               OpenFOAM Core                  2.4.0
-eu.mikelangelo-project.openfoam.simplefoam         OpenFOAM simpleFoam            2.4.0
-eu.mikelangelo-project.osv.bootstrap               OSv Bootstrap                  0.24-46-g464f4e0
-eu.mikelangelo-project.osv.cli                     OSv Command Line Interface     0.24-46-g464f4e0
-eu.mikelangelo-project.osv.httpserver              OSv HTTP REST Server           0.24-46-g464f4e0
-eu.mikelangelo-project.osv.java                    Java JRE 1.7.0                 1.7.0-openjdk-1.7.0.60-2.4.7.4.fc20.x86_64
+app.hadoop-hdfs             Hadoop HDFS                    2.7.2
+openfoam.core               OpenFOAM Core                  2.4.0
+openfoam.simplefoam         OpenFOAM simpleFoam            2.4.0
+osv.bootstrap               OSv Bootstrap                  0.24-46-g464f4e0
+osv.cli                     OSv Command Line Interface     0.24-46-g464f4e0
+osv.httpserver              OSv HTTP REST Server           0.24-46-g464f4e0
+osv.java                    Java JRE 1.7.0                 1.7.0-openjdk-1.7.0.60-2.4.7.4.fc20.x86_64
 ```
 
 ### Collecting package content
@@ -454,11 +454,11 @@ If you have included CLI into your application, you may launch it right away:
 ```
 $ capstan run -e /cli/cli.so
 
-Updating image ``/home/lemmy/.capstan/repository/eu.mikelangelo-project.app.demo/eu.mikelangelo-project.app.demo.qemu...
+Updating image ``/home/lemmy/.capstan/repository/app.demo/app.demo.qemu...
 Setting cmdline: /tools/cpiod.so --prefix /
 Uploading files 287 / 287 [====================================================] 100.00 % 0
 All files uploaded
-Created instance: eu.mikelangelo-project.app.demo
+Created instance: app.demo
 Setting cmdline: /cli/cli.so
 OSv v0.24-78-g69bd35e
 eth0: 192.168.122.15
@@ -470,14 +470,14 @@ Goodbye
 
 Capstan provides support for composing and running Java-based applications. To
 enable Java application, one must add a dependency to
-``eu.mikelangelo-project.osv.java``, for example:
+``osv.java``, for example:
 
 ```
-name: eu.mikelangelo-project.app.hellojava
+name: app.hellojava
 title: Hello Java
 author: lemmy
 require:
-    - eu.mikelangelo-project.osv.java
+    - osv.java
 ```
 
 Additionally, you have to provide another manifest file configuring the Java

@@ -21,7 +21,7 @@ name: my-super-application
 title: DEMO App
 author: lemmy (lemmy@email.com)
 require:
-    - eu.mikelangelo-project.osv.cli
+    - osv.cli
 ```
 The first three parameters are simple metadata and are used later if you decide to publish your
 application as a package to make it available for everyone. Be careful, though, that you pick unique
@@ -29,31 +29,31 @@ name for your package to avoid collisions with other users.
 
 The most interesting attribute is the one named `require`. This is where you list all the packages
 that you would like to have them included in your final unikernel. In this example we've listed only
-one, `eu.mikelangelo-project.osv.cli`. You can omit the whole attribute if you don't need any
+one, `osv.cli`. You can omit the whole attribute if you don't need any
 precompiled packages. A list of all packages in the remote repository can be obtained by executing:
 ```bash
 $ capstan package search
 Name                                               Description                       Version
-eu.mikelangelo-project.app.hadoop-hdfs             Hadoop HDFS                       2.7.2
-eu.mikelangelo-project.app.hello-node              NodeJS-4.4.5                      4.4.5
-eu.mikelangelo-project.app.mysql-5.6.21            MySQL-5.6.21                      5.6.21
-eu.mikelangelo-project.app.node-4.4.5              NodeJS-4.4.5                      4.4.5
-eu.mikelangelo-project.erlang                      Erlang                            18.0
-eu.mikelangelo-project.ompi                        Open MPI                          1.10
-eu.mikelangelo-project.openfoam.core               OpenFOAM Core                     2.4.0
-eu.mikelangelo-project.openfoam.pimplefoam         OpenFOAM pimpleFoam               2.4.0
-eu.mikelangelo-project.openfoam.pisofoam           OpenFOAM pisoFoam                 2.4.0
-eu.mikelangelo-project.openfoam.poroussimplefoam   OpenFOAM porousSimpleFoam         2.4.0
-eu.mikelangelo-project.openfoam.potentialfoam      OpenFOAM potentialFoam            2.4.0
-eu.mikelangelo-project.openfoam.rhoporoussimplefoam OpenFOAM rhoPorousSimpleFoam     2.4.0
-eu.mikelangelo-project.openfoam.rhosimplefoam      OpenFOAM rhoSimpleFoam            2.4.0
-eu.mikelangelo-project.openfoam.simplefoam         OpenFOAM simpleFoam               2.4.0
-eu.mikelangelo-project.osv.bootstrap               OSv Bootstrap                     v0.24-216-g1cf8972
-eu.mikelangelo-project.osv.cli                     OSv Command Line Interface        v0.24-216-g1cf8972
-eu.mikelangelo-project.osv.cloud-init              cloud-init                        v0.24-216-g1cf8972
-eu.mikelangelo-project.osv.httpserver              OSv HTTP REST Server              v0.24-216-g1cf8972
-eu.mikelangelo-project.osv.java                    Java JRE 1.7.0                    v0.24-216-g1cf8972
-eu.mikelangelo-project.osv.nfs                     OSv NFS Client Tools              v0.24-216-g1cf8972
+app.hadoop-hdfs             Hadoop HDFS                       2.7.2
+app.hello-node              NodeJS-4.4.5                      4.4.5
+app.mysql-5.6.21            MySQL-5.6.21                      5.6.21
+app.node-4.4.5              NodeJS-4.4.5                      4.4.5
+erlang                      Erlang                            18.0
+ompi                        Open MPI                          1.10
+openfoam.core               OpenFOAM Core                     2.4.0
+openfoam.pimplefoam         OpenFOAM pimpleFoam               2.4.0
+openfoam.pisofoam           OpenFOAM pisoFoam                 2.4.0
+openfoam.poroussimplefoam   OpenFOAM porousSimpleFoam         2.4.0
+openfoam.potentialfoam      OpenFOAM potentialFoam            2.4.0
+openfoam.rhoporoussimplefoam OpenFOAM rhoPorousSimpleFoam     2.4.0
+openfoam.rhosimplefoam      OpenFOAM rhoSimpleFoam            2.4.0
+openfoam.simplefoam         OpenFOAM simpleFoam               2.4.0
+osv.bootstrap               OSv Bootstrap                     v0.24-216-g1cf8972
+osv.cli                     OSv Command Line Interface        v0.24-216-g1cf8972
+osv.cloud-init              cloud-init                        v0.24-216-g1cf8972
+osv.httpserver              OSv HTTP REST Server              v0.24-216-g1cf8972
+osv.java                    Java JRE 1.7.0                    v0.24-216-g1cf8972
+osv.nfs                     OSv NFS Client Tools              v0.24-216-g1cf8972
 ```
 Then to download desired package into your local repository execute:
 ```bash
@@ -99,8 +99,8 @@ $ capstan runtime list
 
 RUNTIME    DESCRIPTION                                 DEPENDENCIES
 native     Run arbitrary command inside OSv            []
-node       Run JavaScript NodeJS 4.4.5 application     [eu.mikelangelo-project.app.node-4.4.5]
-java       Run Java 1.7.0 application                  [eu.mikelangelo-project.osv.java]
+node       Run JavaScript NodeJS 4.4.5 application     [app.node-4.4.5]
+java       Run Java 1.7.0 application                  [osv.java]
 ```
 And then Capstan can tell us what settings are supported for each runtime. For example, for NodeJS
 one can view expected content of the run.yaml file by executing:
@@ -156,7 +156,7 @@ $ capstan package init \
    --name "my-super-application" \
    --title "DEMO App" \
    --author "lemmy (lemmy@email.com)" \
-   --require eu.mikelangelo-project.osv.cli
+   --require osv.cli
 ```
 This will create a meta subdirectory and ``meta/package.yaml`` file with the
 given content. Then to initialize meta/run.yaml file, use:
