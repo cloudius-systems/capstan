@@ -66,7 +66,7 @@ case by using `--verbose` flag:
 ```bash
 $ capstan package collect --verbose
 Resolved runtime into: node
-Prepending 'node' runtime dependencies to dep list: [eu.mikelangelo-project.app.node-4.4.5]
+Prepending 'node' runtime dependencies to dep list: [app.node-4.4.5]
 .capstanignore: ignore /bin
 .capstanignore: ignore /bin/osv-launch-services.sh
 .capstanignore: ignore /bin/osv-launch-worker.sh

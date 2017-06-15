@@ -169,7 +169,7 @@ $ cd $PROJECT_ROOT
 $ capstan package compose com.example.word-finder --size 200MB
 (1)  Resolved runtime into: node
 (2)  Using named configuration: 'word_count'
-(3)  Prepending 'node' runtime dependencies to dep list: [eu.mikelangelo-project.app.node-4.4.5]
+(3)  Prepending 'node' runtime dependencies to dep list: [app.node-4.4.5]
 (4)  Importing com.example.word-finder...
 (5)  Importing into ...capstan/repository/com.example.word-finder/com.example.word-finder.qemu
 (6)  Uploading files to ...capstan/repository/com.example.word-finder/com.example.word-finder.qemu...
