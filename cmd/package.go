@@ -266,12 +266,12 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 
 	// First collect everything from the required packages.
 	for _, req := range requiredPackages {
-		reqpkg, err := repo.GetPackage(req.Name)
+		reader, err := repo.GetPackageTarReader(req.Name)
 		if err != nil {
 			return err
 		}
 
-		err = extractPackageContent(reqpkg, targetPath, req.Name)
+		err = extractPackageContent(reader, targetPath, req.Name)
 		if err != nil {
 			return err
 		}
@@ -405,19 +405,7 @@ func ImportPackage(repo *util.Repo, packageDir string) error {
 	return repo.ImportPackage(pkg, packagePath)
 }
 
-func extractPackageContent(pkgreader io.ReadSeeker, target, pkgName string) error {
-	var tarReader *tar.Reader
-
-	// Load package (tar.gz or tar supported).
-	if gzReader, err := gzip.NewReader(pkgreader); err == nil {
-		tarReader = tar.NewReader(gzReader)
-	} else if err == gzip.ErrHeader {
-		pkgreader.Seek(0, io.SeekStart) // revert offset that gzReader has corrupted
-		tarReader = tar.NewReader(pkgreader)
-	} else {
-		return err
-	}
-
+func extractPackageContent(tarReader *tar.Reader, target, pkgName string) error {
 	for {
 		header, err := tarReader.Next()
 		if err != nil {
@@ -516,7 +504,7 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 			"'capstan package pull %s'", packageName, packageName)
 	}
 
-	pkgTar, err := repo.GetPackage(packageName)
+	tarReader, err := repo.GetPackageTarReader(packageName)
 	if err != nil {
 		return err
 	}
@@ -524,7 +512,6 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 	var pkg *core.Package
 	var cmdConf *core.CmdConfig
 
-	tarReader := tar.NewReader(pkgTar)
 	for {
 		header, err := tarReader.Next()
 		if err != nil {
