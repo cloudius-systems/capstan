@@ -511,6 +511,7 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 
 	var pkg *core.Package
 	var cmdConf *core.CmdConfig
+	var readme string
 
 	for {
 		header, err := tarReader.Next()
@@ -522,7 +523,6 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 			return err
 		}
 
-		// Read meta/package.yaml
 		if strings.HasSuffix(header.Name, "meta/package.yaml") {
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
@@ -532,10 +532,7 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 			if err := pkg.Parse(data); err != nil {
 				return err
 			}
-		}
-
-		// Read meta/run.yaml
-		if strings.HasSuffix(header.Name, "meta/run.yaml") {
+		} else if strings.HasSuffix(header.Name, "meta/run.yaml") {
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
 				return err
@@ -543,10 +540,16 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 			if cmdConf, err = core.ParsePackageRunManifestData(data); err != nil {
 				return err
 			}
+		} else if strings.HasSuffix(header.Name, "meta/README.md") {
+			data, err := ioutil.ReadAll(tarReader)
+			if err != nil {
+				return err
+			}
+			readme = string(data)
 		}
 
 		// Stop reading if we have all the information
-		if pkg != nil && cmdConf != nil {
+		if pkg != nil && cmdConf != nil && readme != "" {
 			break
 		}
 	}
@@ -593,6 +596,13 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 		fmt.Println("-----------------------------------------")
 	} else {
 		fmt.Println("No package execution information was found.")
+	}
+
+	fmt.Println("")
+
+	if readme != "" {
+		fmt.Println("PACKAGE DOCUMENTATION")
+		fmt.Println(readme)
 	}
 
 	return nil
