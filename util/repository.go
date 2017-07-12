@@ -9,6 +9,8 @@
 package util
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -388,6 +390,24 @@ func (r *Repo) GetPackage(pkgname string) (io.ReadSeeker, error) {
 	}
 
 	return os.Open(pkgpath)
+}
+
+// GetPackageTarReader returns tar reader for package with given name.
+func (r *Repo) GetPackageTarReader(pkgname string) (*tar.Reader, error) {
+	reader, err := r.GetPackage(pkgname)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load package (tar.gz or tar supported).
+	if gzReader, err := gzip.NewReader(reader); err == nil {
+		return tar.NewReader(gzReader), nil
+	} else if err == gzip.ErrHeader {
+		reader.Seek(0, io.SeekStart) // revert offset that gzReader has corrupted
+		return tar.NewReader(reader), nil
+	} else {
+		return nil, err
+	}
 }
 
 func (r *Repo) GetPackageDependencies(pkg core.Package, downloadMissing bool) ([]core.Package, error) {

@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
+	"regexp"
 
 	. "gopkg.in/check.v1"
 )
@@ -92,4 +93,45 @@ func (checker *tarGzEqualsChecker) Check(params []interface{}, names []string) (
 	}
 
 	return isOk, ""
+}
+
+// The MatchesMultiline checker verifies that the string provided as the obtained
+// value (or the string resulting from obtained.String()) matches the
+// regular expression provided and is matched against multiline string.
+//
+// For example:
+//
+//     c.Assert(v, Matches, "perm.*denied")
+//
+var MatchesMultiline Checker = &matchesMultilineChecker{
+	&CheckerInfo{Name: "Matches", Params: []string{"value", "regex"}},
+}
+
+type matchesMultilineChecker struct {
+	*CheckerInfo
+}
+
+func (checker *matchesMultilineChecker) Check(params []interface{}, names []string) (result bool, error string) {
+	return matchesMultiline(params[0], params[1])
+}
+
+func matchesMultiline(value, regex interface{}) (result bool, error string) {
+	reStr, ok := regex.(string)
+	if !ok {
+		return false, "Regex must be a string"
+	}
+	valueStr, valueIsStr := value.(string)
+	if !valueIsStr {
+		if valueWithStr, valueHasStr := value.(fmt.Stringer); valueHasStr {
+			valueStr, valueIsStr = valueWithStr.String(), true
+		}
+	}
+	if valueIsStr {
+		matches, err := regexp.MatchString(reStr, valueStr)
+		if err != nil {
+			return false, "Can't compile regex: " + err.Error()
+		}
+		return matches, ""
+	}
+	return false, "Obtained value is not a string and has no .String()"
 }

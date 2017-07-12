@@ -557,8 +557,10 @@ func main() {
 						packageName := c.Args()[0]
 
 						// Describe the package
-						if err := cmd.DescribePackage(repo, packageName); err != nil {
+						if s, err := cmd.DescribePackage(repo, packageName); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
+						} else {
+							fmt.Println(s)
 						}
 
 						return nil

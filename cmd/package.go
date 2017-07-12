@@ -266,12 +266,12 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 
 	// First collect everything from the required packages.
 	for _, req := range requiredPackages {
-		reqpkg, err := repo.GetPackage(req.Name)
+		reader, err := repo.GetPackageTarReader(req.Name)
 		if err != nil {
 			return err
 		}
 
-		err = extractPackageContent(reqpkg, targetPath, req.Name)
+		err = extractPackageContent(reader, targetPath, req.Name)
 		if err != nil {
 			return err
 		}
@@ -405,19 +405,7 @@ func ImportPackage(repo *util.Repo, packageDir string) error {
 	return repo.ImportPackage(pkg, packagePath)
 }
 
-func extractPackageContent(pkgreader io.ReadSeeker, target, pkgName string) error {
-	var tarReader *tar.Reader
-
-	// Load package (tar.gz or tar supported).
-	if gzReader, err := gzip.NewReader(pkgreader); err == nil {
-		tarReader = tar.NewReader(gzReader)
-	} else if err == gzip.ErrHeader {
-		pkgreader.Seek(0, io.SeekStart) // revert offset that gzReader has corrupted
-		tarReader = tar.NewReader(pkgreader)
-	} else {
-		return err
-	}
-
+func extractPackageContent(tarReader *tar.Reader, target, pkgName string) error {
 	for {
 		header, err := tarReader.Next()
 		if err != nil {
@@ -510,21 +498,21 @@ func ensureDirectoryStructureForFile(currfilepath string) error {
 }
 
 // DescribePackage describes package with given name without extracting it.
-func DescribePackage(repo *util.Repo, packageName string) error {
+func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 	if !repo.PackageExists(packageName) {
-		return fmt.Errorf("Package %s does not exist in your local repository. Pull it using "+
+		return "", fmt.Errorf("Package %s does not exist in your local repository. Pull it using "+
 			"'capstan package pull %s'", packageName, packageName)
 	}
 
-	pkgTar, err := repo.GetPackage(packageName)
+	tarReader, err := repo.GetPackageTarReader(packageName)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	var pkg *core.Package
 	var cmdConf *core.CmdConfig
+	var readme string
 
-	tarReader := tar.NewReader(pkgTar)
 	for {
 		header, err := tarReader.Next()
 		if err != nil {
@@ -532,83 +520,92 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 				// Have we reached till the end of the tar?
 				break
 			}
-			return err
+			return "", err
 		}
 
-		// Read meta/package.yaml
 		if strings.HasSuffix(header.Name, "meta/package.yaml") {
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
-				return err
+				return "", err
 			}
 			pkg = &core.Package{}
 			if err := pkg.Parse(data); err != nil {
-				return err
+				return "", err
 			}
-		}
-
-		// Read meta/run.yaml
-		if strings.HasSuffix(header.Name, "meta/run.yaml") {
+		} else if strings.HasSuffix(header.Name, "meta/run.yaml") {
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
-				return err
+				return "", err
 			}
 			if cmdConf, err = core.ParsePackageRunManifestData(data); err != nil {
-				return err
+				return "", err
 			}
+		} else if strings.HasSuffix(header.Name, "meta/README.md") {
+			data, err := ioutil.ReadAll(tarReader)
+			if err != nil {
+				return "", err
+			}
+			readme = string(data)
 		}
 
 		// Stop reading if we have all the information
-		if pkg != nil && cmdConf != nil {
+		if pkg != nil && cmdConf != nil && readme != "" {
 			break
 		}
 	}
 
-	fmt.Println("PACKAGE METADATA")
+	s := fmt.Sprintln("PACKAGE METADATA")
 	if pkg != nil {
-		fmt.Println("name:", pkg.Name)
-		fmt.Println("title:", pkg.Title)
-		fmt.Println("author:", pkg.Author)
+		s += fmt.Sprintln("name:", pkg.Name)
+		s += fmt.Sprintln("title:", pkg.Title)
+		s += fmt.Sprintln("author:", pkg.Author)
 
 		if len(pkg.Require) > 0 {
-			fmt.Println("required packages:")
+			s += fmt.Sprintln("required packages:")
 			for _, r := range pkg.Require {
-				fmt.Printf("   * %s\n", r)
+				s += fmt.Sprintf("   * %s\n", r)
 			}
 		}
 	} else {
-		return fmt.Errorf("package is not valid: missing meta/package.yaml")
+		return "", fmt.Errorf("package is not valid: missing meta/package.yaml")
 	}
 
-	fmt.Println("")
+	s += fmt.Sprintln()
 
 	if cmdConf != nil {
-		fmt.Println("PACKAGE EXECUTION")
-		fmt.Println("runtime:", cmdConf.RuntimeType)
+		s += fmt.Sprintln("PACKAGE EXECUTION")
+		s += fmt.Sprintln("runtime:", cmdConf.RuntimeType)
 		if cmdConf.ConfigSetDefault == "" && len(cmdConf.ConfigSets) == 1 {
 			for configName := range cmdConf.ConfigSets {
-				fmt.Println("default configuration:", configName)
+				s += fmt.Sprintln("default configuration:", configName)
 			}
 		} else {
-			fmt.Println("default configuration:", cmdConf.ConfigSetDefault)
+			s += fmt.Sprintln("default configuration:", cmdConf.ConfigSetDefault)
 		}
 
-		fmt.Println("-----------------------------------------")
-		fmt.Printf("%-25s | %s\n", "CONFIGURATION NAME", "BOOT COMMAND")
-		fmt.Println("-----------------------------------------")
+		s += fmt.Sprintln("-----------------------------------------")
+		s += fmt.Sprintf("%-25s | %s\n", "CONFIGURATION NAME", "BOOT COMMAND")
+		s += fmt.Sprintln("-----------------------------------------")
 		for configName := range cmdConf.ConfigSets {
 			bootCmd, err := cmdConf.ConfigSets[configName].GetBootCmd()
 			if err != nil {
-				return err
+				return "", err
 			}
-			fmt.Printf("%-25s | %s\n", configName, bootCmd)
+			s += fmt.Sprintf("%-25s | %s\n", configName, bootCmd)
 		}
-		fmt.Println("-----------------------------------------")
+		s += fmt.Sprintln("-----------------------------------------")
 	} else {
-		fmt.Println("No package execution information was found.")
+		s += fmt.Sprintln("No package execution information was found.")
 	}
 
-	return nil
+	s += fmt.Sprintln("")
+
+	if readme != "" {
+		s += fmt.Sprintln("PACKAGE DOCUMENTATION")
+		s += fmt.Sprintln(readme)
+	}
+
+	return s, nil
 }
 
 // persistBootCmdsIntoFiles iterates configuration sets and generates bootcmd file for each.
