@@ -8,6 +8,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -27,6 +28,7 @@ type suite struct {
 	capstanBinary string
 	packageDir    string
 	packageFiles  map[string]string
+	repo          *util.Repo
 }
 
 func (s *suite) SetUpSuite(c *C) {
@@ -39,8 +41,11 @@ func (s *suite) SetUpTest(c *C) {
 		"/meta/package.yaml":  PackageYamlText,
 		"/file.txt":           DefaultText,
 		"/data/data-file.txt": DefaultText,
+		"/meta/README.md":     DefaultText,
 	}
 	PrepareFiles(s.packageDir, s.packageFiles)
+	s.repo = util.NewRepo(util.DefaultRepositoryUrl)
+	s.repo.Path = c.MkDir()
 }
 
 var _ = Suite(&suite{})
@@ -185,4 +190,16 @@ func (s *suite) TestBuildPackage(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(resultFile, Equals, filepath.Join(s.packageDir, "package-name.mpm"))
 	c.Check(resultFile, TarGzEquals, s.packageFiles)
+}
+
+func (s *suite) TestDescribePackage(c *C) {
+	// Prepare
+	ImportPackage(s.repo, s.packageDir)
+
+	// This is what we're testing here.
+	descr, err := DescribePackage(s.repo, "package-name")
+
+	// Expectations.
+	c.Assert(err, IsNil)
+	c.Check(descr, MatchesMultiline, fmt.Sprintf(".*PACKAGE DOCUMENTATION\n%s\n", DefaultText))
 }

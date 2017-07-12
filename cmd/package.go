@@ -498,15 +498,15 @@ func ensureDirectoryStructureForFile(currfilepath string) error {
 }
 
 // DescribePackage describes package with given name without extracting it.
-func DescribePackage(repo *util.Repo, packageName string) error {
+func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 	if !repo.PackageExists(packageName) {
-		return fmt.Errorf("Package %s does not exist in your local repository. Pull it using "+
+		return "", fmt.Errorf("Package %s does not exist in your local repository. Pull it using "+
 			"'capstan package pull %s'", packageName, packageName)
 	}
 
 	tarReader, err := repo.GetPackageTarReader(packageName)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	var pkg *core.Package
@@ -520,30 +520,30 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 				// Have we reached till the end of the tar?
 				break
 			}
-			return err
+			return "", err
 		}
 
 		if strings.HasSuffix(header.Name, "meta/package.yaml") {
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
-				return err
+				return "", err
 			}
 			pkg = &core.Package{}
 			if err := pkg.Parse(data); err != nil {
-				return err
+				return "", err
 			}
 		} else if strings.HasSuffix(header.Name, "meta/run.yaml") {
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
-				return err
+				return "", err
 			}
 			if cmdConf, err = core.ParsePackageRunManifestData(data); err != nil {
-				return err
+				return "", err
 			}
 		} else if strings.HasSuffix(header.Name, "meta/README.md") {
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
-				return err
+				return "", err
 			}
 			readme = string(data)
 		}
@@ -554,58 +554,58 @@ func DescribePackage(repo *util.Repo, packageName string) error {
 		}
 	}
 
-	fmt.Println("PACKAGE METADATA")
+	s := fmt.Sprintln("PACKAGE METADATA")
 	if pkg != nil {
-		fmt.Println("name:", pkg.Name)
-		fmt.Println("title:", pkg.Title)
-		fmt.Println("author:", pkg.Author)
+		s += fmt.Sprintln("name:", pkg.Name)
+		s += fmt.Sprintln("title:", pkg.Title)
+		s += fmt.Sprintln("author:", pkg.Author)
 
 		if len(pkg.Require) > 0 {
-			fmt.Println("required packages:")
+			s += fmt.Sprintln("required packages:")
 			for _, r := range pkg.Require {
-				fmt.Printf("   * %s\n", r)
+				s += fmt.Sprintf("   * %s\n", r)
 			}
 		}
 	} else {
-		return fmt.Errorf("package is not valid: missing meta/package.yaml")
+		return "", fmt.Errorf("package is not valid: missing meta/package.yaml")
 	}
 
-	fmt.Println("")
+	s += fmt.Sprintln()
 
 	if cmdConf != nil {
-		fmt.Println("PACKAGE EXECUTION")
-		fmt.Println("runtime:", cmdConf.RuntimeType)
+		s += fmt.Sprintln("PACKAGE EXECUTION")
+		s += fmt.Sprintln("runtime:", cmdConf.RuntimeType)
 		if cmdConf.ConfigSetDefault == "" && len(cmdConf.ConfigSets) == 1 {
 			for configName := range cmdConf.ConfigSets {
-				fmt.Println("default configuration:", configName)
+				s += fmt.Sprintln("default configuration:", configName)
 			}
 		} else {
-			fmt.Println("default configuration:", cmdConf.ConfigSetDefault)
+			s += fmt.Sprintln("default configuration:", cmdConf.ConfigSetDefault)
 		}
 
-		fmt.Println("-----------------------------------------")
-		fmt.Printf("%-25s | %s\n", "CONFIGURATION NAME", "BOOT COMMAND")
-		fmt.Println("-----------------------------------------")
+		s += fmt.Sprintln("-----------------------------------------")
+		s += fmt.Sprintf("%-25s | %s\n", "CONFIGURATION NAME", "BOOT COMMAND")
+		s += fmt.Sprintln("-----------------------------------------")
 		for configName := range cmdConf.ConfigSets {
 			bootCmd, err := cmdConf.ConfigSets[configName].GetBootCmd()
 			if err != nil {
-				return err
+				return "", err
 			}
-			fmt.Printf("%-25s | %s\n", configName, bootCmd)
+			s += fmt.Sprintf("%-25s | %s\n", configName, bootCmd)
 		}
-		fmt.Println("-----------------------------------------")
+		s += fmt.Sprintln("-----------------------------------------")
 	} else {
-		fmt.Println("No package execution information was found.")
+		s += fmt.Sprintln("No package execution information was found.")
 	}
 
-	fmt.Println("")
+	s += fmt.Sprintln("")
 
 	if readme != "" {
-		fmt.Println("PACKAGE DOCUMENTATION")
-		fmt.Println(readme)
+		s += fmt.Sprintln("PACKAGE DOCUMENTATION")
+		s += fmt.Sprintln(readme)
 	}
 
-	return nil
+	return s, nil
 }
 
 // persistBootCmdsIntoFiles iterates configuration sets and generates bootcmd file for each.
