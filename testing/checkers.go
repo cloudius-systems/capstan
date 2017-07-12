@@ -14,6 +14,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 
@@ -83,6 +84,62 @@ func (checker *tarGzEqualsChecker) Check(params []interface{}, names []string) (
 		}
 
 		obtained[header.Name] = string(data)
+	}
+
+	isOk := reflect.DeepEqual(obtained, params[1])
+
+	// When match is false, we show user the content, not the filepath.
+	if !isOk {
+		params[0] = obtained
+	}
+
+	return isOk, ""
+}
+
+// DirEquals checker checks that given directory contains exactly given files
+// with given content.
+//
+// For example:
+//
+//     c.Assert("/tmp/mydir", DirEquals, map[string]string{"/file01.txt": "Exact content"})
+//
+var DirEquals Checker = &dirEqualsChecker{
+	&CheckerInfo{Name: "DirEquals", Params: []string{"obtained", "expected"}},
+}
+
+type dirEqualsChecker struct {
+	*CheckerInfo
+}
+
+func (checker *dirEqualsChecker) Check(params []interface{}, names []string) (result bool, error string) {
+	defer func() {
+		if v := recover(); v != nil {
+			result = false
+			error = fmt.Sprint(v)
+		}
+	}()
+
+	dirPath, ok := params[0].(string)
+	if !ok {
+		return false, "Obtained value must be a path to directory"
+	}
+
+	// Open and loop directory.
+	files, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		return false, fmt.Sprintf("Obtained value must be a path to directory: %s", err.Error())
+	}
+	obtained := map[string]string{}
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+
+		data, err := ioutil.ReadFile(filepath.Join(dirPath, f.Name()))
+		if err != nil {
+			return false, fmt.Sprintf("failed to read file '%s' from directory: %s", f.Name(), err.Error())
+		}
+		obtained[f.Name()] = string(data)
 	}
 
 	isOk := reflect.DeepEqual(obtained, params[1])

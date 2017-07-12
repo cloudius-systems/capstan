@@ -203,3 +203,140 @@ func (s *suite) TestDescribePackage(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(descr, MatchesMultiline, fmt.Sprintf(".*PACKAGE DOCUMENTATION\n%s\n", DefaultText))
 }
+
+func (s *suite) TestRecursiveRunYamls(c *C) {
+	// Prepare.
+	s.importFakeOSvBootstrapPkg(c)
+	s.importFakeDemoPkg(c)
+	packageYamlText := `
+name: package-name
+title: PackageTitle
+author: package-author
+require:
+  - fake.demo
+`
+	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "package.yaml"), []byte(packageYamlText), 0700)
+
+	// This is what we're testing here.
+	err := CollectPackage(s.repo, s.packageDir, false, "", false)
+
+	// Expectations.
+	c.Assert(err, IsNil)
+	expectedBoots := map[string]string{
+		"demoBoot1": "echo Demo1",
+		"demoBoot2": "echo Demo2",
+	}
+	c.Check(filepath.Join(s.packageDir, "mpm-pkg", "run"), DirEquals, expectedBoots)
+}
+
+func (s *suite) TestRecursiveRunYamlsWithOwnRunYaml(c *C) {
+	// Prepare.
+	s.importFakeOSvBootstrapPkg(c)
+	s.importFakeDemoPkg(c)
+	packageYamlText := `
+name: package-name
+title: PackageTitle
+author: package-author
+require:
+  - fake.demo
+`
+	runYamlText := `
+runtime: native
+config_set:
+  ownBoot:
+    bootcmd: echo MyBoot
+`
+	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "package.yaml"), []byte(packageYamlText), 0700)
+	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "run.yaml"), []byte(runYamlText), 0700)
+
+	// This is what we're testing here.
+	err := CollectPackage(s.repo, s.packageDir, false, "", false)
+
+	// Expectations.
+	c.Assert(err, IsNil)
+	expectedBoots := map[string]string{
+		"demoBoot1": "echo Demo1",
+		"demoBoot2": "echo Demo2",
+		"ownBoot":   "echo MyBoot",
+	}
+	c.Check(filepath.Join(s.packageDir, "mpm-pkg", "run"), DirEquals, expectedBoots)
+}
+
+func (s *suite) TestRecursiveRunYamlsWithOwnRunYamlOverwrite(c *C) {
+	// Prepare.
+	s.importFakeOSvBootstrapPkg(c)
+	s.importFakeDemoPkg(c)
+	packageYamlText := `
+name: package-name
+title: PackageTitle
+author: package-author
+require:
+  - fake.demo
+`
+	runYamlText := `
+runtime: native
+config_set:
+  demoBoot1:
+    bootcmd: echo MyBoot
+`
+	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "package.yaml"), []byte(packageYamlText), 0700)
+	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "run.yaml"), []byte(runYamlText), 0700)
+
+	// This is what we're testing here.
+	err := CollectPackage(s.repo, s.packageDir, false, "", false)
+
+	// Expectations.
+	c.Assert(err, IsNil)
+	expectedBoots := map[string]string{
+		"demoBoot1": "echo MyBoot",
+		"demoBoot2": "echo Demo2",
+	}
+	c.Check(filepath.Join(s.packageDir, "mpm-pkg", "run"), DirEquals, expectedBoots)
+}
+
+//
+// Utility
+//
+
+func (s *suite) importFakeOSvBootstrapPkg(c *C) {
+	packageYamlText := `
+name: osv.bootstrap
+title: PackageTitle
+author: package-author
+`
+	files := map[string]string{
+		"/meta/package.yaml":                packageYamlText,
+		"/meta/README.md":                   DefaultText,
+		"/osv-bootstrap-file.txt":           DefaultText,
+		"/data/osv-bootstrap-data-file.txt": DefaultText,
+	}
+	tmpDir := c.MkDir()
+	PrepareFiles(tmpDir, files)
+	ImportPackage(s.repo, tmpDir)
+}
+
+func (s *suite) importFakeDemoPkg(c *C) {
+	packageYamlText := `
+name: fake.demo
+title: Fake Demo
+author: Demo Author
+`
+	runYamlText := `
+runtime: native
+config_set:
+  demoBoot1:
+    bootcmd: echo Demo1
+  demoBoot2:
+    bootcmd: echo Demo2
+`
+	files := map[string]string{
+		"/meta/package.yaml":            packageYamlText,
+		"/meta/run.yaml":                runYamlText,
+		"/meta/README.md":               DefaultText,
+		"/fake-demo-file.txt":           DefaultText,
+		"/data/fake-demo-data-file.txt": DefaultText,
+	}
+	tmpDir := c.MkDir()
+	PrepareFiles(tmpDir, files)
+	ImportPackage(s.repo, tmpDir)
+}
