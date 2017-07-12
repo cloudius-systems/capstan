@@ -15,6 +15,8 @@ import (
 
 	"github.com/mikelangelo-project/capstan/core"
 	"github.com/mikelangelo-project/capstan/util"
+
+	. "github.com/mikelangelo-project/capstan/testing"
 	. "gopkg.in/check.v1"
 )
 
@@ -23,10 +25,22 @@ func Test(t *testing.T) { TestingT(t) }
 
 type suite struct {
 	capstanBinary string
+	packageDir    string
+	packageFiles  map[string]string
 }
 
 func (s *suite) SetUpSuite(c *C) {
 	s.capstanBinary, _ = filepath.Abs("../capstan")
+}
+
+func (s *suite) SetUpTest(c *C) {
+	s.packageDir = c.MkDir()
+	s.packageFiles = map[string]string{
+		"/meta/package.yaml":  PackageYamlText,
+		"/file.txt":           DefaultText,
+		"/data/data-file.txt": DefaultText,
+	}
+	PrepareFiles(s.packageDir, s.packageFiles)
 }
 
 var _ = Suite(&suite{})
@@ -161,4 +175,14 @@ func (*suite) TestFileHashing(c *C) {
 
 		c.Assert(hostHash, Equals, hash)
 	}
+}
+
+func (s *suite) TestBuildPackage(c *C) {
+	// This is what we're testing here.
+	resultFile, err := BuildPackage(s.packageDir)
+
+	// Expectations.
+	c.Assert(err, IsNil)
+	c.Check(resultFile, Equals, filepath.Join(s.packageDir, "package-name.mpm"))
+	c.Check(resultFile, TarGzEquals, s.packageFiles)
 }
