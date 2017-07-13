@@ -294,6 +294,53 @@ config_set:
 	c.Check(filepath.Join(s.packageDir, "mpm-pkg", "run"), DirEquals, expectedBoots)
 }
 
+func (s *suite) TestAbsTarPathMatches(c *C) {
+	m := []struct {
+		comment     string
+		tarPath     string
+		pathPattern string
+		shouldMatch bool
+	}{
+		{
+			"absolute pattern #1",
+			"/meta/run.yaml", "/meta/run.yaml", true,
+		},
+		{
+			"absolute pattern #2",
+			"meta/run.yaml", "/meta/run.yaml", true,
+		},
+		{
+			"absolute pattern #3",
+			"mydir/meta/run.yaml", "/meta/run.yaml", false,
+		},
+		{
+			"relative pattern #1",
+			"/meta/run.yaml", "meta/run.yaml", true,
+		},
+		{
+			"relative pattern #2",
+			"meta/run.yaml", "meta/run.yaml", true,
+		},
+		{
+			"relative pattern #3",
+			"mydir/meta/run.yaml", "meta/run.yaml", false,
+		},
+		{
+			"all in dir",
+			"/meta/run.yaml", "/meta/.*", true,
+		},
+	}
+	for i, args := range m {
+		c.Logf("CASE #%d: %s", i, args.comment)
+
+		// This is what we're testing here.
+		match := absTarPathMatches(args.tarPath, args.pathPattern)
+
+		// Expectations.
+		c.Check(match, Equals, args.shouldMatch)
+	}
+}
+
 //
 // Utility
 //
