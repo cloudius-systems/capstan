@@ -416,7 +416,7 @@ func extractPackageContent(tarReader *tar.Reader, target, pkgName string) error 
 			return err
 		}
 
-		if header.Name == "meta/run.yaml" {
+		if header.Name == "/meta/run.yaml" {
 			// Prepare files with boot commands for this package.
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
