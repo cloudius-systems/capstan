@@ -10,6 +10,12 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"github.com/mikelangelo-project/capstan/core"
 	"github.com/mikelangelo-project/capstan/hypervisor/gce"
 	"github.com/mikelangelo-project/capstan/hypervisor/qemu"
@@ -18,11 +24,6 @@ import (
 	"github.com/mikelangelo-project/capstan/image"
 	"github.com/mikelangelo-project/capstan/runtime"
 	"github.com/mikelangelo-project/capstan/util"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
@@ -170,7 +171,8 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 			if err != nil {
 				return err
 			}
-			err = ComposePackage(repo, sz, true, false, true, "", wd, pkg.Name, config.Cmd)
+			bootOpts := BootOptions{Boot: config.Cmd}
+			err = ComposePackage(repo, sz, true, false, true, wd, pkg.Name, &bootOpts)
 			if err != nil {
 				return err
 			}

@@ -107,7 +107,7 @@ func (*suite) TestComposeNonPackageFails(c *C) {
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-app"
 
-	err := ComposePackage(repo, imageSize, false, false, false, "", tmp, appName, "")
+	err := ComposePackage(repo, imageSize, false, false, false, tmp, appName, &BootOptions{})
 
 	c.Assert(err, NotNil)
 }
@@ -128,7 +128,7 @@ func (*suite) TestComposeCorruptPackageFails(c *C) {
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-app"
 
-	err = ComposePackage(repo, imageSize, false, false, false, "", tmp, appName, "")
+	err = ComposePackage(repo, imageSize, false, false, false, tmp, appName, &BootOptions{})
 	c.Assert(err, NotNil)
 }
 

@@ -160,6 +160,16 @@ func main() {
 					return cli.NewExitError(err, EX_DATAERR)
 				}
 
+				bootOpts := cmd.BootOptions{
+					Cmd:     c.String("execute"),
+					Boot:    c.String("boot"),
+					EnvList: c.StringSlice("env"),
+				}
+				bootCmd, err := bootOpts.GetCmd()
+				if err != nil {
+					return cli.NewExitError(err, EX_DATAERR)
+				}
+
 				config := &runtime.RunConfig{
 					InstanceName: c.Args().First(),
 					ImageName:    c.String("i"),
@@ -172,22 +182,8 @@ func main() {
 					NatRules:     nat.Parse(c.StringSlice("f")),
 					GCEUploadDir: c.String("gce-upload-dir"),
 					MAC:          c.String("mac"),
-					Cmd:          c.String("execute"),
+					Cmd:          bootCmd,
 					Persist:      c.Bool("persist"),
-				}
-
-				// Boot from script unless bootcmd was manually provided.
-				if config.Cmd == "" {
-					config.Cmd = runtime.BootCmdForScript(c.String("boot"))
-				}
-
-				// Prepend environment variables to the command.
-				if env, err := util.ParseEnvironmentList(c.StringSlice("env")); err == nil {
-					if config.Cmd, err = runtime.PrependEnvsPrefix(config.Cmd, env, false); err != nil {
-						return err
-					}
-				} else {
-					return err
 				}
 
 				if !isValidHypervisor(config.Hypervisor) {
@@ -424,6 +420,7 @@ func main() {
 						cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
 						cli.StringFlag{Name: "boot", Usage: "specify default config_set name to boot unikernel with"},
+						cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
 					},
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
@@ -449,8 +446,15 @@ func main() {
 						// Always use the current directory for the package to compose.
 						packageDir, _ := os.Getwd()
 
+						bootOpts := cmd.BootOptions{
+							Cmd:        c.String("run"),
+							Boot:       c.String("boot"),
+							EnvList:    c.StringSlice("env"),
+							PackageDir: packageDir,
+						}
+
 						if err := cmd.ComposePackage(repo, imageSize, updatePackage, verbose, pullMissing,
-							c.String("boot"), packageDir, appName, c.String("run")); err != nil {
+							packageDir, appName, &bootOpts); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
@@ -586,6 +590,7 @@ func main() {
 							cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 							cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
 							cli.StringFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with"},
+							cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
 						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
 					ArgsUsage:   "image-name",
 					Description: "Compose package, build .qcow2 image and upload it to OpenStack under nickname <image-name>.",
