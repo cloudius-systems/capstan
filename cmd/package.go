@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/mikelangelo-project/capstan/core"
@@ -416,7 +417,7 @@ func extractPackageContent(tarReader *tar.Reader, target, pkgName string) error 
 			return err
 		}
 
-		if header.Name == "/meta/run.yaml" {
+		if absTarPathMatches(header.Name, "/meta/run.yaml") {
 			// Prepare files with boot commands for this package.
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
@@ -426,9 +427,7 @@ func extractPackageContent(tarReader *tar.Reader, target, pkgName string) error 
 				return err
 			}
 			continue
-		} else if strings.HasPrefix(header.Name, "/meta/") || strings.HasPrefix(header.Name, "meta/") {
-			// Sometimes path starts with slash and sometimes not. Best to catch both here.
-
+		} else if absTarPathMatches(header.Name, "/meta/.*") {
 			// Skip other manifest data
 			continue
 		}
@@ -523,7 +522,7 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 			return "", err
 		}
 
-		if strings.HasSuffix(header.Name, "meta/package.yaml") {
+		if absTarPathMatches(header.Name, "/meta/package.yaml") {
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
 				return "", err
@@ -532,7 +531,7 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 			if err := pkg.Parse(data); err != nil {
 				return "", err
 			}
-		} else if strings.HasSuffix(header.Name, "meta/run.yaml") {
+		} else if absTarPathMatches(header.Name, "/meta/run.yaml") {
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
 				return "", err
@@ -540,7 +539,7 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 			if cmdConf, err = core.ParsePackageRunManifestData(data); err != nil {
 				return "", err
 			}
-		} else if strings.HasSuffix(header.Name, "meta/README.md") {
+		} else if absTarPathMatches(header.Name, "/meta/README.md") {
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
 				return "", err
@@ -687,4 +686,14 @@ func constructBootCmdFromArguments(commandLine, customBoot, packageDir string) s
 	// Fallback is empty bootcmd.
 	fmt.Println("Empty command line will be set for this image")
 	return ""
+}
+
+// absTarPathMatches tells whether the tar header name matches the path pattern.
+// This function is needed since some tar files prefix its header names
+// with / and some not. NOTE: 'pathPattern' is always considered absolute path
+// regardles if it starts with / or not. 'tarPath' parameter should be header.Name.
+func absTarPathMatches(tarPath, pathPattern string) (res bool) {
+	pathPattern = strings.TrimPrefix(pathPattern, "/")
+	res, _ = regexp.MatchString(fmt.Sprintf("^/?%s$", pathPattern), tarPath)
+	return
 }
