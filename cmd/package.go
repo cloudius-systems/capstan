@@ -154,8 +154,8 @@ func BuildPackage(packageDir string) (string, error) {
 // by comparing previous MD5 hashes to the ones in the current package
 // directory. Only modified files are uploaded and no file deletions are
 // possible at this time.
-func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbose bool,
-	pullMissing bool, customBoot string, packageDir string, appName string, commandLine string) error {
+func ComposePackage(repo *util.Repo, imageSize int64, updatePackage, verbose, pullMissing bool,
+	packageDir, appName string, bootOpts *BootOptions) error {
 
 	// Package content should be collected in a subdirectory called mpm-pkg.
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
@@ -163,10 +163,13 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage bool, verbos
 	defer os.RemoveAll(targetPath)
 
 	// Construct final bootcmd for the image.
-	commandLine = constructBootCmdFromArguments(commandLine, customBoot, packageDir)
+	commandLine, err := bootOpts.GetCmd()
+	if err != nil {
+		return err
+	}
 
 	// First, collect the contents of the package.
-	if err := CollectPackage(repo, packageDir, pullMissing, customBoot, verbose); err != nil {
+	if err := CollectPackage(repo, packageDir, pullMissing, bootOpts.Boot, verbose); err != nil {
 		return err
 	}
 
@@ -658,34 +661,48 @@ func persistBootCmdsIntoFiles(runYamlData []byte, mpmFolder, customBoot string, 
 	return nil
 }
 
-// constructBootCmdFromArguments builds bootcmd based on three parameters (in this order):
+type BootOptions struct {
+	Cmd        string
+	Boot       string
+	EnvList    []string
+	PackageDir string
+}
+
+// GetCmd builds final bootcmd based on three parameters (in this order):
 // * --run <commandLine>
 // * --boot <customBoot>
 // * config_set_default: <> (read from meta/run.yaml within packageDir)
-func constructBootCmdFromArguments(commandLine, customBoot, packageDir string) string {
-	// Direct commandLine has highest priority (--run <commandLine>).
-	if commandLine != "" {
+func (b *BootOptions) GetCmd() (string, error) {
+	command := ""
+
+	if b.Cmd != "" { // Direct commandLine has highest priority (--run <commandLine>).
 		fmt.Println("Command line will be set based on --run parameter")
-		return commandLine
-	}
-
-	// Configuration name has second-highest priority (--boot <customBoot>).
-	if customBoot != "" {
+		command = b.Cmd
+	} else if b.Boot != "" { // Configuration name has second-highest priority (--boot <customBoot>).
 		fmt.Println("Command line will be set based on --boot parameter")
-		return runtime.BootCmdForScript(customBoot)
-	}
-
-	// Default configuration in yaml has third-highest priority (config_set_default: <>).
-	if data, err := ioutil.ReadFile(filepath.Join(packageDir, "meta", "run.yaml")); err == nil {
-		if cmdConf, err := core.ParsePackageRunManifestData(data); err == nil && cmdConf.ConfigSetDefault != "" {
-			fmt.Println("Command line will be set based on config_set_default attribute of meta/run.yaml")
-			return runtime.BootCmdForScript(cmdConf.ConfigSetDefault)
+		command = runtime.BootCmdForScript(b.Boot)
+	} else if b.PackageDir != "" { // Default configuration in yaml has third-highest priority (config_set_default: <>).
+		if data, err := ioutil.ReadFile(filepath.Join(b.PackageDir, "meta", "run.yaml")); err == nil {
+			if cmdConf, err := core.ParsePackageRunManifestData(data); err == nil && cmdConf.ConfigSetDefault != "" {
+				fmt.Println("Command line will be set based on config_set_default attribute of meta/run.yaml")
+				command = runtime.BootCmdForScript(cmdConf.ConfigSetDefault)
+			}
 		}
+	} else { // Fallback is empty bootcmd.
+		fmt.Println("Empty command line will be set for this image")
+		command = ""
 	}
 
-	// Fallback is empty bootcmd.
-	fmt.Println("Empty command line will be set for this image")
-	return ""
+	// Prepend environment variables to the command.
+	if env, err := util.ParseEnvironmentList(b.EnvList); err == nil {
+		if command, err = runtime.PrependEnvsPrefix(command, env, false); err != nil {
+			return "", err
+		}
+	} else {
+		return "", err
+	}
+
+	return command, nil
 }
 
 // absTarPathMatches tells whether the tar header name matches the path pattern.

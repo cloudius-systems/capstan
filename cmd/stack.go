@@ -10,10 +10,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/mikelangelo-project/capstan/provider/openstack"
 	"github.com/mikelangelo-project/capstan/util"
 	"github.com/urfave/cli"
-	"os"
 )
 
 // OpenStackPush picks best flavor, composes package, builds .qcow2 image and uploads it to OpenStack.
@@ -62,9 +63,16 @@ func OpenStackPush(c *cli.Context) error {
 	// flavor.Disk is in GB, we need MB
 	sizeMB := 1024 * int64(flavor.Disk)
 
+	bootOpts := BootOptions{
+		Cmd:        c.String("run"),
+		Boot:       c.String("boot"),
+		EnvList:    c.StringSlice("env"),
+		PackageDir: packageDir,
+	}
+
 	// Compose image locally.
 	fmt.Printf("Creating image of user-usable size %d MB.\n", sizeMB)
-	err = ComposePackage(repo, sizeMB, false, verbose, pullMissing, c.String("boot"), packageDir, appName, c.String("run"))
+	err = ComposePackage(repo, sizeMB, false, verbose, pullMissing, packageDir, appName, &bootOpts)
 	if err != nil {
 		return err
 	}
