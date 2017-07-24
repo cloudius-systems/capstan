@@ -5,33 +5,33 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-package core
+package runtime
 
 import (
 	"fmt"
-	"github.com/mikelangelo-project/capstan/runtime"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 // cmdConfigInternal is used just for meta/run.yaml unmarshalling.
 type cmdConfigInternal struct {
-	Runtime          runtime.RuntimeType               `yaml:"runtime"`
+	Runtime          RuntimeType                       `yaml:"runtime"`
 	ConfigSet        map[string]map[string]interface{} `yaml:"config_set"`
 	ConfigSetDefault string                            `yaml:"config_set_default"`
 }
 
 // CmdConfig is a result that parsing meta/run.yaml yields.
 type CmdConfig struct {
-	RuntimeType      runtime.RuntimeType
+	RuntimeType      RuntimeType
 	ConfigSetDefault string
 
 	// ConfigSets is a map of available <config-name>:<runtime> pairs.
 	// The map is built based on meta/run.yaml.
-	ConfigSets map[string]runtime.Runtime
+	ConfigSets map[string]Runtime
 }
 
 // PackageRunManifestGeneral parses meta/run.yaml file into blank RunConfig.
@@ -45,7 +45,7 @@ type CmdConfig struct {
 //    with different values for (b).
 // NOTE: when Capstan needs to know what packages to require, it needs (a), but
 //    not (b). And this function returns exactly this, (a) without (b).
-func PackageRunManifestGeneral(cmdConfigFile string) (runtime.Runtime, error) {
+func PackageRunManifestGeneral(cmdConfigFile string) (Runtime, error) {
 
 	// Take meta/run.yaml from the current directory if not provided.
 	if cmdConfigFile == "." {
@@ -74,7 +74,7 @@ func PackageRunManifestGeneral(cmdConfigFile string) (runtime.Runtime, error) {
 	fmt.Printf("Resolved runtime into: %s\n", internal.Runtime)
 
 	// Return blank implementation of runtime interface.
-	blankRuntime, err := runtime.PickRuntime(internal.Runtime)
+	blankRuntime, err := PickRuntime(internal.Runtime)
 	return blankRuntime, err
 }
 
@@ -92,7 +92,7 @@ func ParsePackageRunManifestData(cmdConfigData []byte) (*CmdConfig, error) {
 		res.ConfigSetDefault = internal.ConfigSetDefault
 	}
 
-	res.ConfigSets = make(map[string]runtime.Runtime)
+	res.ConfigSets = make(map[string]Runtime)
 
 	// We are marshalling the `map[interface{}]interface{}` data here (containing single
 	// configuration set parameters) so that we will be able to unmarshal it in the next
@@ -109,7 +109,7 @@ func ParsePackageRunManifestData(cmdConfigData []byte) (*CmdConfig, error) {
 	// interface.
 	for k := range internal.ConfigSet {
 		// Prepare empty runtime struct that will be used for unmarshalling.
-		theRuntime, err := runtime.PickRuntime(internal.Runtime)
+		theRuntime, err := PickRuntime(internal.Runtime)
 		if err != nil {
 			return nil, err
 		}
@@ -133,7 +133,7 @@ func ParsePackageRunManifestData(cmdConfigData []byte) (*CmdConfig, error) {
 }
 
 // selectConfigSetByName selects appropriate config set and returns it.
-func (r *CmdConfig) selectConfigSetByName(name string) (runtime.Runtime, error) {
+func (r *CmdConfig) selectConfigSetByName(name string) (Runtime, error) {
 	availableNames := fmt.Sprintf("['%s']", strings.Join(keysOfMap(r.ConfigSets), "', '"))
 
 	// Handle unspecified configuration name.
@@ -158,7 +158,7 @@ func (r *CmdConfig) selectConfigSetByName(name string) (runtime.Runtime, error) 
 }
 
 // keysOfMap does nothing but returns a list of all the keys in a map.
-func keysOfMap(myMap map[string]runtime.Runtime) []string {
+func keysOfMap(myMap map[string]Runtime) []string {
 	keys := make([]string, len(myMap))
 	i := 0
 	for k := range myMap {

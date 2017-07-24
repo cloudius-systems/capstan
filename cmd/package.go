@@ -232,16 +232,16 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 		return err
 	}
 
-	runtime, err := core.PackageRunManifestGeneral(filepath.Join(packageDir, "meta", "run.yaml"))
+	genRuntime, err := runtime.PackageRunManifestGeneral(filepath.Join(packageDir, "meta", "run.yaml"))
 	if err != nil {
 		return err
 	}
 
 	// If runtime is known, then we add runtime dependencies to the list.
-	if runtime != nil && len(runtime.GetDependencies()) > 0 {
+	if genRuntime != nil && len(genRuntime.GetDependencies()) > 0 {
 		fmt.Printf("Prepending '%s' runtime dependencies to dep list: %s\n",
-			runtime.GetRuntimeName(), runtime.GetDependencies())
-		pkg.Require = append(runtime.GetDependencies(), pkg.Require...)
+			genRuntime.GetRuntimeName(), genRuntime.GetDependencies())
+		pkg.Require = append(genRuntime.GetDependencies(), pkg.Require...)
 	}
 
 	// The bootstrap package is implicitly required by every application package,
@@ -362,8 +362,8 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 		return err
 	}
 
-	if runtime != nil {
-		if err := runtime.OnCollect(targetPath); err != nil {
+	if genRuntime != nil {
+		if err := genRuntime.OnCollect(targetPath); err != nil {
 			return err
 		}
 	}
@@ -512,7 +512,7 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 	}
 
 	var pkg *core.Package
-	var cmdConf *core.CmdConfig
+	var cmdConf *runtime.CmdConfig
 	var readme string
 
 	for {
@@ -539,7 +539,7 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if cmdConf, err = core.ParsePackageRunManifestData(data); err != nil {
+			if cmdConf, err = runtime.ParsePackageRunManifestData(data); err != nil {
 				return "", err
 			}
 		} else if absTarPathMatches(header.Name, "/meta/README.md") {
@@ -615,7 +615,7 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 // Argument mpmFolder should point to the root of the OSv i.e. mpm-pkg folder. Prefix is used to
 // prefix 'default' configuration filename. E.g. prefix "abc" results in filename /run/abc-default.
 func persistBootCmdsIntoFiles(runYamlData []byte, mpmFolder, customBoot string, prefix string) error {
-	cmdConf, err := core.ParsePackageRunManifestData(runYamlData)
+	cmdConf, err := runtime.ParsePackageRunManifestData(runYamlData)
 	if err != nil {
 		return err
 	}
@@ -683,7 +683,7 @@ func (b *BootOptions) GetCmd() (string, error) {
 		command = runtime.BootCmdForScript(b.Boot)
 	} else if b.PackageDir != "" { // Default configuration in yaml has third-highest priority (config_set_default: <>).
 		if data, err := ioutil.ReadFile(filepath.Join(b.PackageDir, "meta", "run.yaml")); err == nil {
-			if cmdConf, err := core.ParsePackageRunManifestData(data); err == nil && cmdConf.ConfigSetDefault != "" {
+			if cmdConf, err := runtime.ParsePackageRunManifestData(data); err == nil && cmdConf.ConfigSetDefault != "" {
 				fmt.Println("Command line will be set based on config_set_default attribute of meta/run.yaml")
 				command = runtime.BootCmdForScript(cmdConf.ConfigSetDefault)
 			}
