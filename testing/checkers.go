@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strings"
 
 	. "gopkg.in/check.v1"
 )
@@ -191,4 +192,61 @@ func matchesMultiline(value, regex interface{}) (result bool, error string) {
 		return matches, ""
 	}
 	return false, "Obtained value is not a string and has no .String()"
+}
+
+// The BootCmdEquals checker verifies that the bootCmd string (possibly with --env prefixes)
+// matches the expected boot command and environment variables. Three arguments are required
+// to the right of the checker:
+// - bootCmd string that contains only the bootcmd without --env prefixes
+// - env map[string]string that defines expected environment variables
+// - soft bool that switches between '=' (when false) and '?=' (when true) operator
+//
+// For example:
+//
+//     c.Assert("--env=A=1 /node server.js", BootCmdEquals, "/node server.js", map[string]string{"A": "1"}, true)
+//
+var BootCmdEquals Checker = &bootCmdEqualsChecker{
+	&CheckerInfo{Name: "BootCmdEquals", Params: []string{"obtained", "bootcmd", "env"}},
+}
+
+type bootCmdEqualsChecker struct {
+	*CheckerInfo
+}
+
+func (checker *bootCmdEqualsChecker) Check(params []interface{}, names []string) (result bool, error string) {
+	obtained, ok := params[0].(string)
+	if !ok {
+		return false, "Obtained value must be a string."
+	}
+	bootCmd, ok := params[1].(string)
+	if !ok {
+		return false, "First expected value must be a string."
+	}
+	env, ok := params[2].([]string)
+	if !ok {
+		return false, "Second expected value must be a list of expected --env prefixes."
+	}
+
+	if err := CheckBootCmd(obtained, bootCmd, env); err == nil {
+		return true, ""
+	} else {
+		return false, err.Error()
+	}
+}
+
+func CheckBootCmd(obtained, bootCmd string, env []string) error {
+	for _, val := range env {
+		envString := fmt.Sprintf("%s ", val)
+		if strings.Contains(obtained, envString) {
+			obtained = strings.Replace(obtained, envString, "", 1)
+		} else {
+			return fmt.Errorf("missing '%s'", envString)
+		}
+	}
+
+	if obtained != bootCmd {
+		return fmt.Errorf("bootcmd '%s' does not equal '%s'", obtained, bootCmd)
+	}
+
+	return nil
 }
