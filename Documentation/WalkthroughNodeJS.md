@@ -2,7 +2,7 @@
 
 Lets walk through all the steps needed to run your NodeJS application inside OSv unikernel using
 Capstan. This step-by-step tutorial assumes that you have Capstan already
-[installed](Documentation/Installation.md), but you know absolutely nothing about how to use it.
+[installed](Installation.md), but you know absolutely nothing about how to use it.
 
 OK, suppose I'm a web developer and I've developed some awesome NodeJS server. I ran it hundreds of times
 on my local machine during the development, but now it's time to go live! Typically I would ask our
@@ -201,7 +201,7 @@ command is calculated based on the content of your meta/run.yaml. To be honest, 
 command that will ever be executed in unikernel. Aren't unikernels simple?
 
 \* *It is possible to change the boot command even for the composed unikernel. See
-[documentation](Documentation/generated/CLI.md#capstanrun)
+[documentation](generated/CLI.md#capstanrun)
 for more details.*
 
 ## STEP 4: Run unikernel
