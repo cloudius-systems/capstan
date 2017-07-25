@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/mikelangelo-project/capstan/core"
@@ -208,14 +209,7 @@ func (s *suite) TestRecursiveRunYamls(c *C) {
 	// Prepare.
 	s.importFakeOSvBootstrapPkg(c)
 	s.importFakeDemoPkg(c)
-	packageYamlText := `
-name: package-name
-title: PackageTitle
-author: package-author
-require:
-  - fake.demo
-`
-	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "package.yaml"), []byte(packageYamlText), 0700)
+	s.requireFakeDemoPkg(c)
 
 	// This is what we're testing here.
 	err := CollectPackage(s.repo, s.packageDir, false, "", false)
@@ -233,21 +227,13 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYaml(c *C) {
 	// Prepare.
 	s.importFakeOSvBootstrapPkg(c)
 	s.importFakeDemoPkg(c)
-	packageYamlText := `
-name: package-name
-title: PackageTitle
-author: package-author
-require:
-  - fake.demo
-`
-	runYamlText := `
-runtime: native
-config_set:
-  ownBoot:
-    bootcmd: echo MyBoot
-`
-	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "package.yaml"), []byte(packageYamlText), 0700)
-	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "run.yaml"), []byte(runYamlText), 0700)
+	s.requireFakeDemoPkg(c)
+	s.setRunYaml(`
+		runtime: native
+		config_set:
+		  ownBoot:
+		    bootcmd: echo MyBoot
+	`, c)
 
 	// This is what we're testing here.
 	err := CollectPackage(s.repo, s.packageDir, false, "", false)
@@ -266,21 +252,13 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYamlOverwrite(c *C) {
 	// Prepare.
 	s.importFakeOSvBootstrapPkg(c)
 	s.importFakeDemoPkg(c)
-	packageYamlText := `
-name: package-name
-title: PackageTitle
-author: package-author
-require:
-  - fake.demo
-`
-	runYamlText := `
-runtime: native
-config_set:
-  demoBoot1:
-    bootcmd: echo MyBoot
-`
-	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "package.yaml"), []byte(packageYamlText), 0700)
-	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "run.yaml"), []byte(runYamlText), 0700)
+	s.requireFakeDemoPkg(c)
+	s.setRunYaml(`
+		runtime: native
+		config_set:
+		  demoBoot1:
+		    bootcmd: echo MyBoot
+	`, c)
 
 	// This is what we're testing here.
 	err := CollectPackage(s.repo, s.packageDir, false, "", false)
@@ -346,11 +324,11 @@ func (s *suite) TestAbsTarPathMatches(c *C) {
 //
 
 func (s *suite) importFakeOSvBootstrapPkg(c *C) {
-	packageYamlText := `
-name: osv.bootstrap
-title: PackageTitle
-author: package-author
-`
+	packageYamlText := fixIndent(`
+		name: osv.bootstrap
+		title: PackageTitle
+		author: package-author
+	`)
 	files := map[string]string{
 		"/meta/package.yaml":                packageYamlText,
 		"/meta/README.md":                   DefaultText,
@@ -363,19 +341,19 @@ author: package-author
 }
 
 func (s *suite) importFakeDemoPkg(c *C) {
-	packageYamlText := `
-name: fake.demo
-title: Fake Demo
-author: Demo Author
-`
-	runYamlText := `
-runtime: native
-config_set:
-  demoBoot1:
-    bootcmd: echo Demo1
-  demoBoot2:
-    bootcmd: echo Demo2
-`
+	packageYamlText := fixIndent(`
+		name: fake.demo
+		title: Fake Demo
+		author: Demo Author
+	`)
+	runYamlText := fixIndent(`
+		runtime: native
+		config_set:
+		  demoBoot1:
+		    bootcmd: echo Demo1
+		  demoBoot2:
+		    bootcmd: echo Demo2
+	`)
 	files := map[string]string{
 		"/meta/package.yaml":            packageYamlText,
 		"/meta/run.yaml":                runYamlText,
@@ -383,7 +361,36 @@ config_set:
 		"/fake-demo-file.txt":           DefaultText,
 		"/data/fake-demo-data-file.txt": DefaultText,
 	}
+	s.importPkg(files, c)
+}
+
+func (s *suite) importPkg(files map[string]string, c *C) {
 	tmpDir := c.MkDir()
 	PrepareFiles(tmpDir, files)
 	ImportPackage(s.repo, tmpDir)
+}
+
+// requireFakeDemoPkg sets such meta/package.yaml to our demo package that it
+// requires fake.demo package.
+func (s *suite) requireFakeDemoPkg(c *C) {
+	packageYamlText := fixIndent(`
+		name: package-name
+		title: PackageTitle
+		author: package-author
+		require:
+		  - fake.demo
+	`)
+	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "package.yaml"), []byte(packageYamlText), 0700)
+}
+
+// setRunYaml sets given content of meta/run.yaml to our demo package.
+func (s *suite) setRunYaml(runYamlText string, c *C) {
+	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "run.yaml"), []byte(fixIndent(runYamlText)), 0700)
+}
+
+// fixIndent moves the inline yaml content to the very left.
+// This way we are able to write inline yaml content that is
+// nicely aligned with other code.
+func fixIndent(s string) string {
+	return strings.Replace(s, "\t", "", -1)
 }
