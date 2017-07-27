@@ -30,15 +30,19 @@ func (conf nodeJsRuntime) GetDependencies() []string {
 	return []string{"node-4.4.5"}
 }
 func (conf nodeJsRuntime) Validate() error {
-	if conf.Main == "" {
-		return fmt.Errorf("'main' must be provided")
+	inherit := conf.Base != ""
+
+	if !inherit {
+		if conf.Main == "" {
+			return fmt.Errorf("'main' must be provided")
+		}
 	}
 
-	return conf.CommonRuntime.Validate()
+	return conf.CommonRuntime.Validate(inherit)
 }
-func (conf nodeJsRuntime) GetBootCmd() (string, error) {
+func (conf nodeJsRuntime) GetBootCmd(cmdConfs map[string]*CmdConfig, env map[string]string) (string, error) {
 	cmd := fmt.Sprintf("node %s", conf.Main)
-	return conf.CommonRuntime.BuildBootCmd(cmd)
+	return conf.CommonRuntime.BuildBootCmd(cmd, cmdConfs, env)
 }
 func (conf nodeJsRuntime) OnCollect(targetPath string) error {
 	return nil

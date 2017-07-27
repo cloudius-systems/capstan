@@ -37,19 +37,23 @@ func (conf javaRuntime) GetDependencies() []string {
 	return []string{"openjdk8-zulu-compact1"}
 }
 func (conf javaRuntime) Validate() error {
-	if conf.Main == "" {
-		return fmt.Errorf("'main' must be provided")
+	inherit := conf.Base != ""
+
+	if !inherit {
+		if conf.Main == "" {
+			return fmt.Errorf("'main' must be provided")
+		}
+
+		if conf.Classpath == nil {
+			return fmt.Errorf("'classpath' must be provided")
+		}
 	}
 
-	if conf.Classpath == nil {
-		return fmt.Errorf("'classpath' must be provided")
-	}
-
-	return conf.CommonRuntime.Validate()
+	return conf.CommonRuntime.Validate(inherit)
 }
-func (conf javaRuntime) GetBootCmd() (string, error) {
+func (conf javaRuntime) GetBootCmd(cmdConfs map[string]*CmdConfig, env map[string]string) (string, error) {
 	cmd := fmt.Sprintf("java.so %s io.osv.isolated.MultiJarLoader -mains /etc/javamains", conf.GetJvmArgs())
-	return conf.CommonRuntime.BuildBootCmd(cmd)
+	return conf.CommonRuntime.BuildBootCmd(cmd, cmdConfs, env)
 }
 func (conf javaRuntime) OnCollect(targetPath string) error {
 	// Check if /etc folder is already available. This is where we are going to store

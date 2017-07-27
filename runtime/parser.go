@@ -34,6 +34,13 @@ type CmdConfig struct {
 	ConfigSets map[string]Runtime
 }
 
+// AllCmdConfigs is a result that parsing meta/run.yamls of all required
+// packages yields.
+type AllCmdConfigs struct {
+	cmdConfigs map[string]*CmdConfig
+	order      []string
+}
+
 // PackageRunManifestGeneral parses meta/run.yaml file into blank RunConfig.
 // By 'blank' we mean that the struct has no fields populated, but it is of
 // correct type i.e. appropriate implementation of Runtime interface.
@@ -155,6 +162,54 @@ func (r *CmdConfig) selectConfigSetByName(name string) (Runtime, error) {
 	}
 
 	return r.ConfigSets[name], nil
+}
+
+func (c *AllCmdConfigs) Add(pkgName string, cmdConfig *CmdConfig) {
+	if c.cmdConfigs == nil {
+		c.cmdConfigs = map[string]*CmdConfig{}
+	}
+	c.cmdConfigs[pkgName] = cmdConfig
+	c.order = append(c.order, pkgName)
+}
+
+func (c *AllCmdConfigs) Persist(mpmDir string) error {
+	// Prepare directory to store bootcmd files in.
+	targetDir := filepath.Join(mpmDir, "run")
+	if _, err := os.Stat(targetDir); err != nil {
+		if err = os.MkdirAll(targetDir, 0775); err != nil {
+			return err
+		}
+	}
+
+	// Persist runscript scripts for all config_sets of all packages.
+	for _, pkgName := range c.order {
+		cmdConf := c.cmdConfigs[pkgName]
+		if cmdConf == nil {
+			continue
+		}
+
+		for confName := range cmdConf.ConfigSets {
+			currConf := cmdConf.ConfigSets[confName]
+			// Validate.
+			if err := currConf.Validate(); err != nil {
+				return fmt.Errorf("Validation failed for configuration set '%s': %s", confName, err)
+			}
+
+			// Calculate boot command.
+			bootCmd, err := currConf.GetBootCmd(c.cmdConfigs, map[string]string{})
+			if err != nil {
+				return err
+			}
+
+			// Persist to file.
+			cmdFile := filepath.Join(targetDir, confName)
+			if err := ioutil.WriteFile(cmdFile, []byte(bootCmd), 0700); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // keysOfMap does nothing but returns a list of all the keys in a map.
