@@ -15,7 +15,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strings"
 
@@ -23,11 +22,16 @@ import (
 )
 
 // TarGzEquals checker checks that given tar.gz archive contains exactly given files
-// with given content.
+// with given content. Argument 'expected' must be a map[string]interface{} where
+// key is path of the file and value is one of type:
+// * string           - file content must match exactly for checker to succed
+// * func(string)error- file content is passed to this function and it must return nil
+//                      for checker to succeed
 //
 // For example:
 //
 //     c.Assert("/tmp/archive.tar.gz", TarGzEquals, map[string]string{"/file01.txt": "Exact content"})
+//     c.Assert("/tmp/archive.tar.gz", TarGzEquals, map[string]string{"/file01.txt": func(val string)error{return nil}})
 //
 var TarGzEquals Checker = &tarGzEqualsChecker{
 	&CheckerInfo{Name: "TarGzEquals", Params: []string{"obtained", "expected"}},
@@ -50,16 +54,38 @@ func (checker *tarGzEqualsChecker) Check(params []interface{}, names []string) (
 		return false, "Obtained value must be a path to tar.gz file"
 	}
 
+	expected, ok := params[1].(map[string]interface{})
+	if !ok {
+		return false, "Expected value must be map[string]interface{}"
+	}
+
+	obtained, err := loadTarGz(tarGzPath)
+	if err != nil {
+		return false, err.Error()
+	}
+
+	// Compare.
+	if err := compareMaps(obtained, expected); err != nil {
+		// When match is false, we show user the content, not the filepath.
+		params[0] = obtained
+
+		return false, err.Error()
+	}
+
+	return true, ""
+}
+
+func loadTarGz(tarGzPath string) (map[string]string, error) {
 	// Open and read tar.gz file.
 	f, err := os.Open(tarGzPath)
 	if err != nil {
-		return false, fmt.Sprintf("Obtained value must be a path to tar.gz file: %s", err.Error())
+		return nil, fmt.Errorf("Obtained value must be a path to tar.gz file: %s", err.Error())
 	}
 	defer f.Close()
 
 	gzReader, err := gzip.NewReader(f)
 	if err != nil {
-		return false, fmt.Sprintf("failed to decompress tar.gz: %s", err.Error())
+		return nil, fmt.Errorf("failed to decompress tar.gz: %s", err.Error())
 	}
 	tarReader := tar.NewReader(gzReader)
 
@@ -71,7 +97,7 @@ func (checker *tarGzEqualsChecker) Check(params []interface{}, names []string) (
 				// Have we reached till the end of the tar?
 				break
 			}
-			return false, fmt.Sprintf("failed to parse tar: %s", err.Error())
+			return nil, fmt.Errorf("failed to parse tar: %s", err.Error())
 		}
 
 		// This checker only focuses on files, for the sake of simplicity.
@@ -81,28 +107,26 @@ func (checker *tarGzEqualsChecker) Check(params []interface{}, names []string) (
 
 		data, err := ioutil.ReadAll(tarReader)
 		if err != nil {
-			return false, fmt.Sprintf("failed to read file '%s' from tar: %s", header.Name, err.Error())
+			return nil, fmt.Errorf("failed to read file '%s' from tar: %s", header.Name, err.Error())
 		}
 
 		obtained[header.Name] = string(data)
 	}
 
-	isOk := reflect.DeepEqual(obtained, params[1])
-
-	// When match is false, we show user the content, not the filepath.
-	if !isOk {
-		params[0] = obtained
-	}
-
-	return isOk, ""
+	return obtained, nil
 }
 
 // DirEquals checker checks that given directory contains exactly given files
-// with given content.
+// with given content. Argument 'expected' must be a map[string]interface{} where
+// key is path of the file and value is one of type:
+// * string           - file content must match exactly for checker to succed
+// * func(string)error- file content is passed to this function and it must return nil
+//                      for checker to succeed
 //
 // For example:
 //
 //     c.Assert("/tmp/mydir", DirEquals, map[string]string{"/file01.txt": "Exact content"})
+//     c.Assert("/tmp/mydir", DirEquals, map[string]string{"/file01.txt": func(val string)error{return nil}})
 //
 var DirEquals Checker = &dirEqualsChecker{
 	&CheckerInfo{Name: "DirEquals", Params: []string{"obtained", "expected"}},
@@ -125,10 +149,32 @@ func (checker *dirEqualsChecker) Check(params []interface{}, names []string) (re
 		return false, "Obtained value must be a path to directory"
 	}
 
+	expected, ok := params[1].(map[string]interface{})
+	if !ok {
+		return false, "Expected value must be map[string]interface{}"
+	}
+
+	obtained, err := loadDir(dirPath)
+	if err != nil {
+		return false, err.Error()
+	}
+
+	// Compare.
+	if err := compareMaps(obtained, expected); err != nil {
+		// When match is false, we show user the content, not the filepath.
+		params[0] = obtained
+
+		return false, err.Error()
+	}
+
+	return true, ""
+}
+
+func loadDir(dirPath string) (map[string]string, error) {
 	// Open and loop directory.
 	files, err := ioutil.ReadDir(dirPath)
 	if err != nil {
-		return false, fmt.Sprintf("Obtained value must be a path to directory: %s", err.Error())
+		return nil, fmt.Errorf("Obtained value must be a path to directory: %s", err.Error())
 	}
 	obtained := map[string]string{}
 	for _, f := range files {
@@ -138,19 +184,37 @@ func (checker *dirEqualsChecker) Check(params []interface{}, names []string) (re
 
 		data, err := ioutil.ReadFile(filepath.Join(dirPath, f.Name()))
 		if err != nil {
-			return false, fmt.Sprintf("failed to read file '%s' from directory: %s", f.Name(), err.Error())
+			return nil, fmt.Errorf("failed to read file '%s' from directory: %s", f.Name(), err.Error())
 		}
 		obtained[f.Name()] = string(data)
 	}
+	return obtained, nil
+}
 
-	isOk := reflect.DeepEqual(obtained, params[1])
-
-	// When match is false, we show user the content, not the filepath.
-	if !isOk {
-		params[0] = obtained
+func compareMaps(obtained map[string]string, expected map[string]interface{}) error {
+	if len(obtained) != len(expected) {
+		return fmt.Errorf("obtained map key is not as expected")
 	}
 
-	return isOk, ""
+	for key, val := range expected {
+		_, exists := obtained[key]
+		if !exists {
+			return fmt.Errorf("expected key '%s' not found in obtained map", key)
+		}
+
+		if expectedString, ok := val.(string); ok {
+			if expectedString != obtained[key] {
+				return fmt.Errorf("mismatch for key '%s': '%s' != '%s'", key, val, obtained[key])
+			}
+		} else if expectedFn, ok := val.(func(string) error); ok {
+			if err := expectedFn(obtained[key]); err != nil {
+				return fmt.Errorf("mismatch for key '%s': %s", key, err.Error())
+			}
+		} else {
+			return fmt.Errorf("Invalid expectation for key '%s'", key)
+		}
+	}
+	return nil
 }
 
 // The MatchesMultiline checker verifies that the string provided as the obtained

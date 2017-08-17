@@ -190,7 +190,13 @@ func (s *suite) TestBuildPackage(c *C) {
 	// Expectations.
 	c.Assert(err, IsNil)
 	c.Check(resultFile, Equals, filepath.Join(s.packageDir, "package-name.mpm"))
-	c.Check(resultFile, TarGzEquals, s.packageFiles)
+	expectedFiles := map[string]interface{}{
+		"/meta/package.yaml":  PackageYamlText,
+		"/file.txt":           DefaultText,
+		"/data/data-file.txt": DefaultText,
+		"/meta/README.md":     DefaultText,
+	}
+	c.Check(resultFile, TarGzEquals, expectedFiles)
 }
 
 func (s *suite) TestDescribePackage(c *C) {
@@ -216,7 +222,7 @@ func (s *suite) TestRecursiveRunYamls(c *C) {
 
 	// Expectations.
 	c.Assert(err, IsNil)
-	expectedBoots := map[string]string{
+	expectedBoots := map[string]interface{}{
 		"demoBoot1": "echo Demo1",
 		"demoBoot2": "echo Demo2",
 	}
@@ -240,7 +246,7 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYaml(c *C) {
 
 	// Expectations.
 	c.Assert(err, IsNil)
-	expectedBoots := map[string]string{
+	expectedBoots := map[string]interface{}{
 		"demoBoot1": "echo Demo1",
 		"demoBoot2": "echo Demo2",
 		"ownBoot":   "echo MyBoot",
@@ -265,9 +271,40 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYamlOverwrite(c *C) {
 
 	// Expectations.
 	c.Assert(err, IsNil)
-	expectedBoots := map[string]string{
+	expectedBoots := map[string]interface{}{
 		"demoBoot1": "echo MyBoot",
 		"demoBoot2": "echo Demo2",
+	}
+	c.Check(filepath.Join(s.packageDir, "mpm-pkg", "run"), DirEquals, expectedBoots)
+}
+
+func (s *suite) TestRecursiveRunYamlsWithOwnRunYamlEnv(c *C) {
+	// Prepare.
+	s.importFakeOSvBootstrapPkg(c)
+	s.importFakeDemoPkg(c)
+	s.requireFakeDemoPkg(c)
+	s.setRunYaml(`
+		runtime: native
+		config_set:
+		  demoBoot1:
+		    bootcmd: echo MyBoot
+		    env:
+		      PORT: 8000
+		      HOST: localhost
+		  demoBoot2:
+		    bootcmd: echo MyBoot2
+		    env:
+		      PORT: 3000
+	`, c)
+
+	// This is what we're testing here.
+	err := CollectPackage(s.repo, s.packageDir, false, "", false)
+
+	// Expectations.
+	c.Assert(err, IsNil)
+	expectedBoots := map[string]interface{}{
+		"demoBoot1": checkBootCmd("echo MyBoot", []string{"--env=PORT?=8000", "--env=HOST?=localhost"}),
+		"demoBoot2": checkBootCmd("echo MyBoot2", []string{"--env=PORT?=3000"}),
 	}
 	c.Check(filepath.Join(s.packageDir, "mpm-pkg", "run"), DirEquals, expectedBoots)
 }
@@ -393,4 +430,9 @@ func (s *suite) setRunYaml(runYamlText string, c *C) {
 // nicely aligned with other code.
 func fixIndent(s string) string {
 	return strings.Replace(s, "\t", "", -1)
+}
+
+// checkBootCmd prepares lambda function that can be passed to DirEquals.
+func checkBootCmd(bootCmd string, env []string) func(string) error {
+	return func(v string) error { return CheckBootCmd(v, bootCmd, env) }
 }
