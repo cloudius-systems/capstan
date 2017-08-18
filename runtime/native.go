@@ -7,9 +7,7 @@
 
 package runtime
 
-import (
-	"fmt"
-)
+import "fmt"
 
 type nativeRuntime struct {
 	CommonRuntime `yaml:"-,inline"`
@@ -30,15 +28,19 @@ func (conf nativeRuntime) GetDependencies() []string {
 	return []string{}
 }
 func (conf nativeRuntime) Validate() error {
-	if conf.BootCmd == "" {
-		return fmt.Errorf("'bootcmd' must be provided")
+	inherit := conf.Base != ""
+
+	if !inherit {
+		if conf.BootCmd == "" {
+			return fmt.Errorf("'bootcmd' must be provided")
+		}
 	}
 
-	return conf.CommonRuntime.Validate()
+	return conf.CommonRuntime.Validate(inherit)
 }
-func (conf nativeRuntime) GetBootCmd() (string, error) {
+func (conf nativeRuntime) GetBootCmd(cmdConfs map[string]*CmdConfig, env map[string]string) (string, error) {
 	cmd := conf.BootCmd
-	return conf.CommonRuntime.BuildBootCmd(cmd)
+	return conf.CommonRuntime.BuildBootCmd(cmd, cmdConfs, env)
 }
 func (conf nativeRuntime) OnCollect(targetPath string) error {
 	return nil

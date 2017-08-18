@@ -148,3 +148,15 @@ func RemoveOrphanedInstances(verbose bool) error {
 
 	return nil
 }
+
+func ExtendMap(m map[string]string, additional map[string]string) {
+	if m == nil || additional == nil {
+		return
+	}
+
+	for key, value := range additional {
+		if _, exists := m[key]; !exists {
+			m[key] = value
+		}
+	}
+}

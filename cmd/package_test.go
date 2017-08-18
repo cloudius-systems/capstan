@@ -356,6 +356,402 @@ func (s *suite) TestAbsTarPathMatches(c *C) {
 	}
 }
 
+func (s *suite) TestRuntimeInheritance(c *C) {
+	// Prepare.
+	s.importFakeOSvBootstrapPkg(c)
+
+	m := []struct {
+		comment         string
+		runYamlText     string
+		demoRunYamlText string
+		expected        map[string]interface{}
+	}{
+		{
+			"basic",
+			`
+				runtime: native
+				config_set:
+				  ownBoot:
+				    base: "fake.demo:demoBoot1"
+			`,
+			"",
+			map[string]interface{}{
+				"demoBoot1": "echo Demo1",
+				"demoBoot2": "echo Demo2",
+				"ownBoot":   "echo Demo1",
+			},
+		},
+		{
+			"with own env",
+			`
+				runtime: native
+				config_set:
+				  ownBoot:
+				    base: "fake.demo:demoBoot1"
+				    env:
+				      PORT: 8000
+			`,
+			"",
+			map[string]interface{}{
+				"demoBoot1": "echo Demo1",
+				"demoBoot2": "echo Demo2",
+				"ownBoot":   "--env=PORT?=8000 echo Demo1",
+			},
+		},
+		{
+			"with own env forced",
+			`
+				runtime: native
+				config_set:
+				  ownBoot:
+				    base: "fake.demo:demoBoot1"
+				    env:
+				      PORT: 8000
+			`,
+			`
+				runtime: native
+				config_set:
+				  demoBoot1:
+				    bootcmd: echo Demo1
+				    env:
+				      PORT: 1111
+			`,
+			map[string]interface{}{
+				"demoBoot1": "--env=PORT?=1111 echo Demo1",
+				"ownBoot":   "--env=PORT?=8000 echo Demo1",
+			},
+		},
+		{
+			"with own env forced doesn't interfere",
+			`
+				runtime: native
+				config_set:
+				  ownBoot:
+				    base: "fake.demo:demoBoot1"
+				    env:
+				      PORT: 8000
+				  ownBoot2:
+				    base: "fake.demo:demoBoot1"
+			`,
+			`
+				runtime: native
+				config_set:
+				  demoBoot1:
+				    bootcmd: echo Demo1
+				    env:
+				      PORT: 1111
+			`,
+			map[string]interface{}{
+				"demoBoot1": "--env=PORT?=1111 echo Demo1",
+				"ownBoot":   "--env=PORT?=8000 echo Demo1",
+				"ownBoot2":  "--env=PORT?=1111 echo Demo1",
+			},
+		},
+		{
+			"with own env forced combined",
+			`
+				runtime: native
+				config_set:
+				  ownBoot:
+				    base: "fake.demo:demoBoot1"
+				    env:
+				      PORT: 8000
+			`,
+			`
+				runtime: native
+				config_set:
+				  demoBoot1:
+				    bootcmd: echo Demo1
+				    env:
+				      PORT: 1111
+				      HOST: localhost
+			`,
+			map[string]interface{}{
+				"demoBoot1": checkBootCmd("echo Demo1", []string{"--env=HOST?=localhost", "--env=PORT?=1111"}),
+				"ownBoot":   checkBootCmd("echo Demo1", []string{"--env=HOST?=localhost", "--env=PORT?=8000"}),
+			},
+		},
+	}
+	for i, args := range m {
+		c.Logf("CASE #%d: %s", i, args.comment)
+		s.requireFakeDemoPkg(c)
+		// Prepare
+		if args.demoRunYamlText != "" {
+			s.importFakeDemoPkgWithRunYaml(args.demoRunYamlText, c)
+		} else {
+			s.importFakeDemoPkg(c)
+		}
+		s.setRunYaml(args.runYamlText, c)
+
+		// This is what we're testing here.
+		err := CollectPackage(s.repo, s.packageDir, false, "", false)
+
+		// Expectations.
+		c.Assert(err, IsNil)
+		c.Check(filepath.Join(s.packageDir, "mpm-pkg", "run"), DirEquals, args.expected)
+	}
+}
+
+func (s *suite) TestRuntimeInheritInvalid(c *C) {
+	// Prepare.
+	s.importFakeOSvBootstrapPkg(c)
+	s.importFakeDemoPkg(c)
+	s.requireFakeDemoPkg(c)
+
+	m := []struct {
+		comment     string
+		runYamlText string
+		error       string
+	}{
+		{
+			"invalid package",
+			`
+			runtime: native
+			config_set:
+			  ownBoot:
+			    base: "unknown:demoBoot1"
+			`,
+			"Failed to inherit from 'unknown': package not included or has no meta/run.yaml",
+		},
+		{
+			"invalid config_set",
+			`
+			runtime: native
+			config_set:
+			  ownBoot:
+			    base: "fake.demo:unknown"
+			`,
+			"Failed to inherit 'fake.demo:unknown': config_set does not exist",
+		},
+		{
+			"empty base",
+			`
+			runtime: native
+			config_set:
+			  ownBoot:
+			    base:
+			`,
+			"Validation failed for configuration set 'ownBoot': 'bootcmd' must be provided",
+		},
+		{
+			"invalid base #1",
+			`
+			runtime: native
+			config_set:
+			  ownBoot:
+			    base: ":"
+			`,
+			"Failed to inherit from '': package not included or has no meta/run.yaml",
+		},
+		{
+			"invalid base #2",
+			`
+			runtime: native
+			config_set:
+			  ownBoot:
+			    base: "missing-column"
+			`,
+			"Validation failed for configuration set 'ownBoot': 'base' must be in format <pkg_name>:<config_set>",
+		},
+	}
+	for i, args := range m {
+		c.Logf("CASE #%d: %s", i, args.comment)
+
+		// Prepare
+		s.setRunYaml(args.runYamlText, c)
+
+		// This is what we're testing here.
+		err := CollectPackage(s.repo, s.packageDir, false, "", false)
+
+		// Expectations.
+		c.Assert(err, NotNil)
+		c.Check(err, ErrorMatches, args.error)
+	}
+}
+
+func (s *suite) TestRuntimeInheritanceTwoLevels(c *C) {
+	// Prepare.
+	s.importFakeOSvBootstrapPkg(c)
+
+	m := []struct {
+		comment          string
+		runYamlText      string
+		demoRunYamlText  string
+		demo2RunYamlText string
+		expected         map[string]interface{}
+	}{
+		{
+			"simple",
+			`
+				runtime: native
+				config_set:
+				  ownBoot:
+				    base: "fake.demo:intermediate"
+			`,
+			`
+				runtime: native
+				config_set:
+				  intermediate:
+				    base: "fake.demo2:deepest"
+			`,
+			`
+				runtime: native
+				config_set:
+				  deepest:
+				    bootcmd: echo Deepest
+				    env:
+				      PORT: 1111
+			`,
+			map[string]interface{}{
+				"ownBoot":      "--env=PORT?=1111 echo Deepest",
+				"intermediate": "--env=PORT?=1111 echo Deepest",
+				"deepest":      "--env=PORT?=1111 echo Deepest",
+			},
+		},
+		{
+			"my env wins #1",
+			`
+				runtime: native
+				config_set:
+				  ownBoot:
+				    base: "fake.demo:intermediate"
+				    env:
+				      PORT: 8000
+			`,
+			`
+				runtime: native
+				config_set:
+				  intermediate:
+				    base: "fake.demo2:deepest"
+			`,
+			`
+				runtime: native
+				config_set:
+				  deepest:
+				    bootcmd: echo Deepest
+				    env:
+				      PORT: 1111
+			`,
+			map[string]interface{}{
+				"ownBoot":      "--env=PORT?=8000 echo Deepest",
+				"intermediate": "--env=PORT?=1111 echo Deepest",
+				"deepest":      "--env=PORT?=1111 echo Deepest",
+			},
+		},
+		{
+			"my env wins #2",
+			`
+				runtime: native
+				config_set:
+				  ownBoot:
+				    base: "fake.demo:intermediate"
+				    env:
+				      PORT: 8000
+			`,
+			`
+				runtime: native
+				config_set:
+				  intermediate:
+				    base: "fake.demo2:deepest"
+				    env:
+				      PORT: 1234
+			`,
+			`
+				runtime: native
+				config_set:
+				  deepest:
+				    bootcmd: echo Deepest
+				    env:
+				      PORT: 1111
+			`,
+			map[string]interface{}{
+				"ownBoot":      "--env=PORT?=8000 echo Deepest",
+				"intermediate": "--env=PORT?=1234 echo Deepest",
+				"deepest":      "--env=PORT?=1111 echo Deepest",
+			},
+		},
+		{
+			"my additional env",
+			`
+				runtime: native
+				config_set:
+				  ownBoot:
+				    base: "fake.demo:intermediate"
+				    env:
+				      PORT: 8000
+				      HOST: localhost
+			`,
+			`
+				runtime: native
+				config_set:
+				  intermediate:
+				    base: "fake.demo2:deepest"
+				    env:
+				      PORT: 1234
+			`,
+			`
+				runtime: native
+				config_set:
+				  deepest:
+				    bootcmd: echo Deepest
+				    env:
+				      PORT: 1111
+			`,
+			map[string]interface{}{
+				"ownBoot":      checkBootCmd("echo Deepest", []string{"--env=PORT?=8000", "--env=HOST?=localhost"}),
+				"intermediate": "--env=PORT?=1234 echo Deepest",
+				"deepest":      "--env=PORT?=1111 echo Deepest",
+			},
+		},
+		{
+			"intermediate wins",
+			`
+				runtime: native
+				config_set:
+				  ownBoot:
+				    base: "fake.demo:intermediate"
+			`,
+			`
+				runtime: native
+				config_set:
+				  intermediate:
+				    base: "fake.demo2:deepest"
+				    env:
+				      PORT: 1234
+			`,
+			`
+				runtime: native
+				config_set:
+				  deepest:
+				    bootcmd: echo Deepest
+				    env:
+				      PORT: 1111
+			`,
+			map[string]interface{}{
+				"ownBoot":      "--env=PORT?=1234 echo Deepest",
+				"intermediate": "--env=PORT?=1234 echo Deepest",
+				"deepest":      "--env=PORT?=1111 echo Deepest",
+			},
+		},
+	}
+	for i, args := range m {
+		c.Logf("CASE #%d: %s", i, args.comment)
+		s.requireFakeDemoPkgOneAndTwo(c)
+		// Prepare
+		s.importFakeDemoPkgWithRunYaml(args.demoRunYamlText, c)
+		s.importFakeDemo2PkgWithRunYaml(args.demo2RunYamlText, c)
+
+		s.setRunYaml(args.runYamlText, c)
+
+		// This is what we're testing here.
+		err := CollectPackage(s.repo, s.packageDir, false, "", false)
+
+		// Expectations.
+		c.Assert(err, IsNil)
+		c.Check(filepath.Join(s.packageDir, "mpm-pkg", "run"), DirEquals, args.expected)
+	}
+}
+
 //
 // Utility
 //
@@ -401,6 +797,34 @@ func (s *suite) importFakeDemoPkg(c *C) {
 	s.importPkg(files, c)
 }
 
+func (s *suite) importFakeDemoPkgWithRunYaml(runYamlText string, c *C) {
+	packageYamlText := fixIndent(`
+		name: fake.demo
+		title: Fake Demo
+		author: Demo Author
+	`)
+
+	files := map[string]string{
+		"/meta/package.yaml": packageYamlText,
+		"/meta/run.yaml":     fixIndent(runYamlText),
+	}
+	s.importPkg(files, c)
+}
+
+func (s *suite) importFakeDemo2PkgWithRunYaml(runYamlText string, c *C) {
+	packageYamlText := fixIndent(`
+		name: fake.demo2
+		title: Fake Demo2
+		author: Demo Author2
+	`)
+
+	files := map[string]string{
+		"/meta/package.yaml": packageYamlText,
+		"/meta/run.yaml":     fixIndent(runYamlText),
+	}
+	s.importPkg(files, c)
+}
+
 func (s *suite) importPkg(files map[string]string, c *C) {
 	tmpDir := c.MkDir()
 	PrepareFiles(tmpDir, files)
@@ -416,6 +840,18 @@ func (s *suite) requireFakeDemoPkg(c *C) {
 		author: package-author
 		require:
 		  - fake.demo
+	`)
+	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "package.yaml"), []byte(packageYamlText), 0700)
+}
+
+func (s *suite) requireFakeDemoPkgOneAndTwo(c *C) {
+	packageYamlText := fixIndent(`
+		name: package-name
+		title: PackageTitle
+		author: package-author
+		require:
+		  - fake.demo
+		  - fake.demo2
 	`)
 	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "package.yaml"), []byte(packageYamlText), 0700)
 }

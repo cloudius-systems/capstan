@@ -268,6 +268,8 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 		return err
 	}
 
+	allCmdConfigs := &runtime.AllCmdConfigs{}
+
 	// First collect everything from the required packages.
 	for _, req := range requiredPackages {
 		reader, err := repo.GetPackageTarReader(req.Name)
@@ -275,10 +277,11 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 			return err
 		}
 
-		err = extractPackageContent(reader, targetPath, req.Name)
+		cmdConf, err := extractPackageContent(reader, targetPath, req.Name)
 		if err != nil {
 			return err
 		}
+		allCmdConfigs.Add(req.Name, cmdConf)
 	}
 
 	// Read .capstanignore if exists.
@@ -320,9 +323,11 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 			if err != nil {
 				return err
 			}
-			if err := persistBootCmdsIntoFiles(data, targetPath, customBoot, ""); err != nil {
+			cmdConf, err := runtime.ParsePackageRunManifestData(data)
+			if err != nil {
 				return err
 			}
+			allCmdConfigs.Add(pkg.Name, cmdConf)
 			return nil
 		} else if relPath == "/meta" { // Prevent empty `/meta` dir from being uploaded.
 			return nil
@@ -357,6 +362,11 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 			return fmt.Errorf("File %s has unsupported mode %v", path, info.Mode())
 		}
 	})
+
+	// Persist all boot commands into /run directory.
+	if err := allCmdConfigs.Persist(targetPath); err != nil {
+		return err
+	}
 
 	if err != nil {
 		return err
@@ -409,7 +419,8 @@ func ImportPackage(repo *util.Repo, packageDir string) error {
 	return repo.ImportPackage(pkg, packagePath)
 }
 
-func extractPackageContent(tarReader *tar.Reader, target, pkgName string) error {
+func extractPackageContent(tarReader *tar.Reader, target, pkgName string) (*runtime.CmdConfig, error) {
+	var cmdConf *runtime.CmdConfig
 	for {
 		header, err := tarReader.Next()
 		if err != nil {
@@ -417,17 +428,18 @@ func extractPackageContent(tarReader *tar.Reader, target, pkgName string) error 
 				// Have we reached till the end of the tar?
 				break
 			}
-			return err
+			return nil, err
 		}
 
 		if absTarPathMatches(header.Name, "/meta/run.yaml") {
 			// Prepare files with boot commands for this package.
 			data, err := ioutil.ReadAll(tarReader)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			if err := persistBootCmdsIntoFiles(data, target, "", pkgName); err != nil {
-				return err
+			cmdConf, err = runtime.ParsePackageRunManifestData(data)
+			if err != nil {
+				return nil, err
 			}
 			continue
 		} else if absTarPathMatches(header.Name, "/meta/.*") {
@@ -441,7 +453,7 @@ func extractPackageContent(tarReader *tar.Reader, target, pkgName string) error 
 		switch {
 		case info.Mode()&os.ModeSymlink == os.ModeSymlink:
 			if err := ensureDirectoryStructureForFile(path); err != nil {
-				return fmt.Errorf("Could not prepare directory structure for %s: %s", path, err)
+				return nil, fmt.Errorf("Could not prepare directory structure for %s: %s", path, err)
 			}
 
 			// Create symbolic link. Ignore any error that might occur locally as
@@ -450,33 +462,33 @@ func extractPackageContent(tarReader *tar.Reader, target, pkgName string) error 
 
 		case info.IsDir():
 			if err = os.MkdirAll(path, info.Mode()); err != nil {
-				return err
+				return nil, err
 			}
 
 		case info.Mode().IsRegular():
 			if err := ensureDirectoryStructureForFile(path); err != nil {
-				return fmt.Errorf("Could not prepare directory structure for %s: %s", path, err)
+				return nil, fmt.Errorf("Could not prepare directory structure for %s: %s", path, err)
 			}
 
 			writer, err := os.Create(path)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			_, err = io.Copy(writer, tarReader)
 			err = os.Chmod(path, os.FileMode(header.Mode))
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			writer.Close()
 
 		default:
-			return fmt.Errorf("File %s has unsupported mode %v", path, info.Mode())
+			return nil, fmt.Errorf("File %s has unsupported mode %v", path, info.Mode())
 		}
 	}
 
-	return nil
+	return cmdConf, nil
 }
 
 // PullPackage looks for the package in remote repository and tries to import
@@ -589,7 +601,7 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 		s += fmt.Sprintf("%-25s | %s\n", "CONFIGURATION NAME", "BOOT COMMAND")
 		s += fmt.Sprintln("-----------------------------------------")
 		for configName := range cmdConf.ConfigSets {
-			bootCmd, err := cmdConf.ConfigSets[configName].GetBootCmd()
+			bootCmd, err := cmdConf.ConfigSets[configName].GetBootCmd(nil, nil)
 			if err != nil {
 				return "", err
 			}
@@ -608,57 +620,6 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 	}
 
 	return s, nil
-}
-
-// persistBootCmdsIntoFiles iterates configuration sets and generates bootcmd file for each.
-// These files can then be used by OSv bootloader to run thread based on --boot parameter.
-// Argument mpmFolder should point to the root of the OSv i.e. mpm-pkg folder. Prefix is used to
-// prefix 'default' configuration filename. E.g. prefix "abc" results in filename /run/abc-default.
-func persistBootCmdsIntoFiles(runYamlData []byte, mpmFolder, customBoot string, prefix string) error {
-	cmdConf, err := runtime.ParsePackageRunManifestData(runYamlData)
-	if err != nil {
-		return err
-	}
-
-	// Prepare folder to store bootcmd files in.
-	targetFolder := filepath.Join(mpmFolder, "run")
-	if _, err := os.Stat(targetFolder); err != nil {
-		if err = os.MkdirAll(targetFolder, 0775); err != nil {
-			return err
-		}
-	}
-
-	// Calculate bootcmd for each config set and persist it to file.
-	for confName := range cmdConf.ConfigSets {
-		currConf := cmdConf.ConfigSets[confName]
-
-		// Validate.
-		if err := currConf.Validate(); err != nil {
-			return fmt.Errorf("Validation failed for configuration set '%s': %s", confName, err)
-		}
-
-		// Calculate boot command.
-		bootCmd, err := currConf.GetBootCmd()
-		if err != nil {
-			return err
-		}
-
-		// Persist to file.
-		cmdFile := filepath.Join(targetFolder, confName)
-		if err := ioutil.WriteFile(cmdFile, []byte(bootCmd), 0775); err != nil {
-			return err
-		}
-	}
-
-	// Argument --boot <name> has greater priority than config_set_default in meta/run.yaml
-	if customBoot != "" {
-		cmdConf.ConfigSetDefault = customBoot
-	}
-
-	// TODO: Add symbolic links to point to default configset of each package.
-	// Use name 'default' for this package's link and '{prefix}-default' for other.
-
-	return nil
 }
 
 type BootOptions struct {
