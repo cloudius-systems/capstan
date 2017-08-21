@@ -44,9 +44,6 @@ func (conf nodeJsRuntime) GetBootCmd(cmdConfs map[string]*CmdConfig, env map[str
 	cmd := fmt.Sprintf("node %s", conf.Main)
 	return conf.CommonRuntime.BuildBootCmd(cmd, cmdConfs, env)
 }
-func (conf nodeJsRuntime) OnCollect(targetPath string) error {
-	return nil
-}
 func (conf nodeJsRuntime) GetYamlTemplate() string {
 	return `
 # REQUIRED

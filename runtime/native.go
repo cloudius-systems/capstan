@@ -42,9 +42,6 @@ func (conf nativeRuntime) GetBootCmd(cmdConfs map[string]*CmdConfig, env map[str
 	cmd := conf.BootCmd
 	return conf.CommonRuntime.BuildBootCmd(cmd, cmdConfs, env)
 }
-func (conf nativeRuntime) OnCollect(targetPath string) error {
-	return nil
-}
 func (conf nativeRuntime) GetYamlTemplate() string {
 	return `
 # REQUIRED

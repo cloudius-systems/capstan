@@ -65,10 +65,6 @@ type Runtime interface {
 	// is this runtime used for, 50 chars
 	GetRuntimeDescription() string
 
-	// OnCollect is a callback to run when collecting package
-	// (accepts directroy path of the package)
-	OnCollect(string) error
-
 	// GetYamlTemplate provides a string containing yaml content with
 	// as much help text as possible.
 	// NOTE: provide only runtime-specific part of yaml, see runtime/node.go for example.
