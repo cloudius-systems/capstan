@@ -362,20 +362,13 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, custom
 			return fmt.Errorf("File %s has unsupported mode %v", path, info.Mode())
 		}
 	})
-
-	// Persist all boot commands into /run directory.
-	if err := allCmdConfigs.Persist(targetPath); err != nil {
-		return err
-	}
-
 	if err != nil {
 		return err
 	}
 
-	if genRuntime != nil {
-		if err := genRuntime.OnCollect(targetPath); err != nil {
-			return err
-		}
+	// Persist all boot commands into /run directory.
+	if err := allCmdConfigs.Persist(targetPath); err != nil {
+		return err
 	}
 
 	return nil
