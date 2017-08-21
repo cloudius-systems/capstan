@@ -12,7 +12,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/mikelangelo-project/capstan/core"
@@ -757,7 +756,7 @@ func (s *suite) TestRuntimeInheritanceTwoLevels(c *C) {
 //
 
 func (s *suite) importFakeOSvBootstrapPkg(c *C) {
-	packageYamlText := fixIndent(`
+	packageYamlText := FixIndent(`
 		name: osv.bootstrap
 		title: PackageTitle
 		author: package-author
@@ -774,12 +773,12 @@ func (s *suite) importFakeOSvBootstrapPkg(c *C) {
 }
 
 func (s *suite) importFakeDemoPkg(c *C) {
-	packageYamlText := fixIndent(`
+	packageYamlText := FixIndent(`
 		name: fake.demo
 		title: Fake Demo
 		author: Demo Author
 	`)
-	runYamlText := fixIndent(`
+	runYamlText := FixIndent(`
 		runtime: native
 		config_set:
 		  demoBoot1:
@@ -798,7 +797,7 @@ func (s *suite) importFakeDemoPkg(c *C) {
 }
 
 func (s *suite) importFakeDemoPkgWithRunYaml(runYamlText string, c *C) {
-	packageYamlText := fixIndent(`
+	packageYamlText := FixIndent(`
 		name: fake.demo
 		title: Fake Demo
 		author: Demo Author
@@ -806,13 +805,13 @@ func (s *suite) importFakeDemoPkgWithRunYaml(runYamlText string, c *C) {
 
 	files := map[string]string{
 		"/meta/package.yaml": packageYamlText,
-		"/meta/run.yaml":     fixIndent(runYamlText),
+		"/meta/run.yaml":     FixIndent(runYamlText),
 	}
 	s.importPkg(files, c)
 }
 
 func (s *suite) importFakeDemo2PkgWithRunYaml(runYamlText string, c *C) {
-	packageYamlText := fixIndent(`
+	packageYamlText := FixIndent(`
 		name: fake.demo2
 		title: Fake Demo2
 		author: Demo Author2
@@ -820,7 +819,7 @@ func (s *suite) importFakeDemo2PkgWithRunYaml(runYamlText string, c *C) {
 
 	files := map[string]string{
 		"/meta/package.yaml": packageYamlText,
-		"/meta/run.yaml":     fixIndent(runYamlText),
+		"/meta/run.yaml":     FixIndent(runYamlText),
 	}
 	s.importPkg(files, c)
 }
@@ -834,7 +833,7 @@ func (s *suite) importPkg(files map[string]string, c *C) {
 // requireFakeDemoPkg sets such meta/package.yaml to our demo package that it
 // requires fake.demo package.
 func (s *suite) requireFakeDemoPkg(c *C) {
-	packageYamlText := fixIndent(`
+	packageYamlText := FixIndent(`
 		name: package-name
 		title: PackageTitle
 		author: package-author
@@ -845,7 +844,7 @@ func (s *suite) requireFakeDemoPkg(c *C) {
 }
 
 func (s *suite) requireFakeDemoPkgOneAndTwo(c *C) {
-	packageYamlText := fixIndent(`
+	packageYamlText := FixIndent(`
 		name: package-name
 		title: PackageTitle
 		author: package-author
@@ -858,14 +857,7 @@ func (s *suite) requireFakeDemoPkgOneAndTwo(c *C) {
 
 // setRunYaml sets given content of meta/run.yaml to our demo package.
 func (s *suite) setRunYaml(runYamlText string, c *C) {
-	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "run.yaml"), []byte(fixIndent(runYamlText)), 0700)
-}
-
-// fixIndent moves the inline yaml content to the very left.
-// This way we are able to write inline yaml content that is
-// nicely aligned with other code.
-func fixIndent(s string) string {
-	return strings.Replace(s, "\t", "", -1)
+	ioutil.WriteFile(filepath.Join(s.packageDir, "meta", "run.yaml"), []byte(FixIndent(runYamlText)), 0700)
 }
 
 // checkBootCmd prepares lambda function that can be passed to DirEquals.
