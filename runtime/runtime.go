@@ -21,6 +21,7 @@ const (
 	Native RuntimeType = "native"
 	NodeJS RuntimeType = "node"
 	Java   RuntimeType = "java"
+	Python RuntimeType = "python"
 )
 
 var SupportedRuntimes []RuntimeType = []RuntimeType{
@@ -187,6 +188,8 @@ func PickRuntime(runtimeName RuntimeType) (Runtime, error) {
 		return &nodeJsRuntime{}, nil
 	case Java:
 		return &javaRuntime{}, nil
+	case Python:
+		return &pythonRuntime{}, nil
 	}
 
 	return nil, fmt.Errorf("Unknown runtime: '%s'\n", runtimeName)
