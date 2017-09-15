@@ -169,6 +169,22 @@ func (s *suite) TestInitPackage(c *C) {
 				created: {TIMESTAMP}
 			`,
 		},
+		{
+			"with platform",
+			core.Package{
+				Name:     "name",
+				Title:    "title",
+				Author:   "author",
+				Platform: "Ubuntu-14.04",
+			},
+			`
+				name: name
+				title: title
+				author: author
+				created: {TIMESTAMP}
+				platform: Ubuntu-14.04
+			`,
+		},
 	}
 	for i, args := range m {
 		c.Logf("CASE #%d: %s", i, args.comment)

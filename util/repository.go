@@ -239,8 +239,8 @@ func (r *Repo) ListImages() {
 	}
 }
 
-func (r *Repo) ListPackages() {
-	fmt.Println(FileInfoHeader())
+func (r *Repo) ListPackages() string {
+	res := fmt.Sprintln(FileInfoHeader())
 	packages, _ := ioutil.ReadDir(r.PackagesPath())
 	for _, p := range packages {
 		if filepath.Ext(p.Name()) == ".yaml" {
@@ -251,9 +251,10 @@ func (r *Repo) ListPackages() {
 				continue
 			}
 
-			fmt.Println(pkg.String())
+			res += fmt.Sprintln(pkg.String())
 		}
 	}
+	return res
 }
 
 func (r *Repo) DefaultImage() string {
