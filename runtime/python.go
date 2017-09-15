@@ -30,8 +30,7 @@ func (conf pythonRuntime) GetDependencies() []string {
 	return []string{"python-2.7"}
 }
 func (conf pythonRuntime) Validate() error {
-	inherit := conf.Base != ""
-	return conf.CommonRuntime.Validate(inherit)
+	return conf.CommonRuntime.Validate()
 }
 func (conf pythonRuntime) GetBootCmd(cmdConfs map[string]*CmdConfig, env map[string]string) (string, error) {
 	conf.Base = "python-2.7:python"

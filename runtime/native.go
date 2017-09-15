@@ -28,15 +28,13 @@ func (conf nativeRuntime) GetDependencies() []string {
 	return []string{}
 }
 func (conf nativeRuntime) Validate() error {
-	inherit := conf.Base != ""
-
-	if !inherit {
+	if conf.Base == "" {
 		if conf.BootCmd == "" {
 			return fmt.Errorf("'bootcmd' must be provided")
 		}
 	}
 
-	return conf.CommonRuntime.Validate(inherit)
+	return conf.CommonRuntime.Validate()
 }
 func (conf nativeRuntime) GetBootCmd(cmdConfs map[string]*CmdConfig, env map[string]string) (string, error) {
 	cmd := conf.BootCmd
