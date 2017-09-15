@@ -251,9 +251,6 @@ func (r *Repo) ListPackages() {
 				continue
 			}
 
-			// Set the modification time to the one of the package manifest file.
-			pkg.ModTime = p.ModTime()
-
 			fmt.Println(pkg.String())
 		}
 	}

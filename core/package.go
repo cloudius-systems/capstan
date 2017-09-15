@@ -9,22 +9,20 @@ package core
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
-	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 type Package struct {
 	Name    string
 	Title   string
-	Author  string            "author,omitempty"
-	Version string            "version,omitempty"
-	Require []string          "require,omitempty"
-	Binary  map[string]string "binary,omitempty"
-	// ModTime is currently used only for setting the modification time of local
-	// packages. It is ignored by the YAML parser.
-	ModTime time.Time "-"
+	Author  string            `yaml:"author,omitempty"`
+	Version string            `yaml:"version,omitempty"`
+	Require []string          `yaml:"require,omitempty"`
+	Binary  map[string]string `yaml:"binary,omitempty"`
+	Created YamlTime          `yaml:"created"`
 }
 
 func (p *Package) Parse(data []byte) error {
@@ -70,5 +68,5 @@ func ParsePackageManifest(manifestFile string) (Package, error) {
 }
 
 func (p *Package) String() string {
-	return fmt.Sprintf("%-50s %-50s %-25s %-15s", p.Name, p.Title, p.Version, p.ModTime.Format(time.RFC3339))
+	return fmt.Sprintf("%-50s %-50s %-25s %-15s", p.Name, p.Title, p.Version, p.Created)
 }

@@ -217,6 +217,59 @@ func compareMaps(obtained map[string]string, expected map[string]interface{}) er
 	return nil
 }
 
+// FileMatches checker checks that given file contains given regexp.
+//
+// For example:
+//
+//     c.Assert("/tmp/myfile", FileMatches, "Part of the content.+")
+//
+var FileMatches Checker = &fileMatchesChecker{
+	&CheckerInfo{Name: "FileMatches", Params: []string{"obtained", "expected"}},
+}
+
+type fileMatchesChecker struct {
+	*CheckerInfo
+}
+
+func (checker *fileMatchesChecker) Check(params []interface{}, names []string) (result bool, error string) {
+	defer func() {
+		if v := recover(); v != nil {
+			result = false
+			error = fmt.Sprint(v)
+		}
+	}()
+
+	path, ok := params[0].(string)
+	if !ok {
+		return false, "Obtained value must be a path to file"
+	}
+
+	expected, ok := params[1].(string)
+	if !ok {
+		return false, "Expected value must be a string"
+	}
+	regex, err := regexp.Compile(expected)
+	if err != nil {
+		return false, err.Error()
+	}
+
+	obtainedRaw, err := ioutil.ReadFile(path)
+	if err != nil {
+		return false, err.Error()
+	}
+	obtained := string(obtainedRaw)
+
+	// Compare.
+	if !regex.MatchString(obtained) {
+		// When match is false, we show user the content, not the filepath.
+		params[0] = obtained
+
+		return false, "Obtained is different than expected"
+	}
+
+	return true, ""
+}
+
 // The MatchesMultiline checker verifies that the string provided as the obtained
 // value (or the string resulting from obtained.String()) matches the
 // regular expression provided and is matched against multiline string.

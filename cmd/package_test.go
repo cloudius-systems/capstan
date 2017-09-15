@@ -12,7 +12,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/mikelangelo-project/capstan/core"
 	"github.com/mikelangelo-project/capstan/util"
@@ -96,6 +98,91 @@ func (*suite) TestMinimalPackageYaml(c *C) {
 	var nameAuthorPackage core.Package
 	err := nameAuthorPackage.Parse([]byte(minimalYaml))
 	c.Assert(err, IsNil)
+}
+
+func (s *suite) TestInitPackage(c *C) {
+	m := []struct {
+		comment         string
+		pkg             core.Package
+		expectedPkgYaml string
+	}{
+		{
+			"simplest case",
+			core.Package{
+				Name:   "name",
+				Title:  "title",
+				Author: "author",
+			},
+			`
+				name: name
+				title: title
+				author: author
+				created: {TIMESTAMP}
+			`,
+		},
+		{
+			"with version",
+			core.Package{
+				Name:    "name",
+				Title:   "title",
+				Author:  "author",
+				Version: "1.2.3",
+			},
+			`
+				name: name
+				title: title
+				author: author
+				version: 1.2.3
+				created: {TIMESTAMP}
+			`,
+		},
+		{
+			"with require",
+			core.Package{
+				Name:    "name",
+				Title:   "title",
+				Author:  "author",
+				Require: []string{"demo1", "demo2"},
+			},
+			`
+				name: name
+				title: title
+				author: author
+				require:
+				- demo1
+				- demo2
+				created: {TIMESTAMP}
+			`,
+		},
+		{
+			"with created",
+			core.Package{
+				Name:    "name",
+				Title:   "title",
+				Author:  "author",
+				Created: core.YamlTime{time.Now()},
+			},
+			`
+				name: name
+				title: title
+				author: author
+				created: {TIMESTAMP}
+			`,
+		},
+	}
+	for i, args := range m {
+		c.Logf("CASE #%d: %s", i, args.comment)
+
+		// Prepare.
+		expected := FixIndent(strings.Replace(args.expectedPkgYaml, "{TIMESTAMP}", TIMESTAMP_REGEX, -1))
+
+		// This is what we're testing here.
+		err := InitPackage(s.packageDir, &args.pkg)
+
+		// Expectations.
+		c.Assert(err, IsNil)
+		c.Check(filepath.Join(s.packageDir, "meta", "package.yaml"), FileMatches, expected)
+	}
 }
 
 func (*suite) TestComposeNonPackageFails(c *C) {
