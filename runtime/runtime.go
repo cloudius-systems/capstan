@@ -121,17 +121,15 @@ base: "<package-name>:<config_set>"
 `
 }
 
-func (r CommonRuntime) Validate(inherit bool) error {
+func (r CommonRuntime) Validate() error {
 	for k, v := range r.Env {
 		if strings.Contains(k, " ") || strings.Contains(v, " ") {
 			return fmt.Errorf("spaces not allowed in env key/value: '%s':'%s'", k, v)
 		}
 	}
 
-	if inherit {
-		if r.Base == "" {
-			return fmt.Errorf("'base' must be provided")
-		}
+	// Common validation in case of bootcmd inheritance
+	if r.Base != "" {
 		if !strings.Contains(r.Base, ":") {
 			return fmt.Errorf("'base' must be in format <pkg_name>:<config_set>")
 		}

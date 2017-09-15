@@ -36,9 +36,7 @@ func (conf javaRuntime) GetDependencies() []string {
 	return []string{"openjdk8-zulu-compact1"}
 }
 func (conf javaRuntime) Validate() error {
-	inherit := conf.Base != ""
-
-	if !inherit {
+	if conf.Base == "" {
 		if conf.Main == "" {
 			return fmt.Errorf("'main' must be provided")
 		}
@@ -48,7 +46,7 @@ func (conf javaRuntime) Validate() error {
 		}
 	}
 
-	return conf.CommonRuntime.Validate(inherit)
+	return conf.CommonRuntime.Validate()
 }
 func (conf javaRuntime) GetBootCmd(cmdConfs map[string]*CmdConfig, env map[string]string) (string, error) {
 	if conf.Base == "" { // Allow user to use e.g. "openjdk7:java" package instead default one.
