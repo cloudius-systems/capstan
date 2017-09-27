@@ -20,7 +20,7 @@ import (
 
 	"github.com/cheggaaa/pb"
 	"github.com/mikelangelo-project/capstan/core"
-	"gopkg.in/yaml.v1"
+	"gopkg.in/yaml.v2"
 )
 
 type FileInfo struct {

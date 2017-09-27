@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"github.com/mikelangelo-project/capstan/nat"
 	"github.com/mikelangelo-project/capstan/util"
-	"gopkg.in/yaml.v1"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net"
 	"os"

@@ -10,7 +10,7 @@ package runtime
 import (
 	. "github.com/mikelangelo-project/capstan/testing"
 	. "gopkg.in/check.v1"
-	yaml "gopkg.in/yaml.v1"
+	"gopkg.in/yaml.v2"
 )
 
 type pythonSuite struct {
