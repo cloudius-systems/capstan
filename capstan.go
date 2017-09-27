@@ -343,6 +343,7 @@ func main() {
 						cli.StringFlag{Name: "version,v", Usage: "package version"},
 						cli.StringSliceFlag{Name: "require", Usage: "specify package dependency"},
 						cli.StringFlag{Name: "runtime", Usage: "runtime to stub package for. Use 'capstan runtime list' to list all"},
+						cli.StringFlag{Name: "p, platform", Usage: "platform where package was built on"},
 					},
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) > 1 {
@@ -374,11 +375,12 @@ func main() {
 						// Initialise the package structure. The version may be empty as it is not
 						// mandatory field.
 						p := &core.Package{
-							Name:    c.String("name"),
-							Title:   c.String("title"),
-							Author:  c.String("author"),
-							Version: c.String("version"),
-							Require: c.StringSlice("require"),
+							Name:     c.String("name"),
+							Title:    c.String("title"),
+							Author:   c.String("author"),
+							Version:  c.String("version"),
+							Require:  c.StringSlice("require"),
+							Platform: c.String("platform"),
 						}
 
 						// Init package
@@ -488,7 +490,7 @@ func main() {
 					Action: func(c *cli.Context) error {
 						repo := util.NewRepo(c.GlobalString("u"))
 
-						repo.ListPackages()
+						fmt.Print(repo.ListPackages())
 
 						return nil
 					},

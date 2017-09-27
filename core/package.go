@@ -11,18 +11,20 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
 
 type Package struct {
-	Name    string
-	Title   string
-	Author  string            `yaml:"author,omitempty"`
-	Version string            `yaml:"version,omitempty"`
-	Require []string          `yaml:"require,omitempty"`
-	Binary  map[string]string `yaml:"binary,omitempty"`
-	Created YamlTime          `yaml:"created"`
+	Name     string
+	Title    string
+	Author   string            `yaml:"author,omitempty"`
+	Version  string            `yaml:"version,omitempty"`
+	Require  []string          `yaml:"require,omitempty"`
+	Binary   map[string]string `yaml:"binary,omitempty"`
+	Created  YamlTime          `yaml:"created"`
+	Platform string            `yaml:"platform,omitempty"`
 }
 
 func (p *Package) Parse(data []byte) error {
@@ -68,5 +70,6 @@ func ParsePackageManifest(manifestFile string) (Package, error) {
 }
 
 func (p *Package) String() string {
-	return fmt.Sprintf("%-50s %-50s %-25s %-15s", p.Name, p.Title, p.Version, p.Created)
+	res := fmt.Sprintf("%-50s %-50s %-15s %-20s %-15s", p.Name, p.Title, p.Version, p.Created, p.Platform)
+	return strings.TrimSpace(res)
 }

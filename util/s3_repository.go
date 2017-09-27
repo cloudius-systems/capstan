@@ -11,15 +11,16 @@ import (
 	"compress/gzip"
 	"encoding/xml"
 	"fmt"
-	"github.com/cheggaaa/pb"
-	"github.com/mikelangelo-project/capstan/core"
-	"gopkg.in/yaml.v1"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/cheggaaa/pb"
+	"github.com/mikelangelo-project/capstan/core"
+	"gopkg.in/yaml.v1"
 )
 
 type FileInfo struct {
@@ -46,11 +47,12 @@ type FilesInfo struct {
 }
 
 func FileInfoHeader() string {
-	return fmt.Sprintf("%-50s %-50s %-25s %-15s", "Name", "Description", "Version", "Created")
+	res := fmt.Sprintf("%-50s %-50s %-15s %-20s %-15s", "Name", "Description", "Version", "Created", "Platform")
+	return strings.TrimSpace(res)
 }
 
 func (f *FileInfo) String() string {
-	return fmt.Sprintf("%-50s %-50s %-25s %-15s", f.Namespace+"/"+f.Name, f.Description, f.Version, f.Created)
+	return fmt.Sprintf("%-50s %-50s %-15s %-20s", f.Namespace+"/"+f.Name, f.Description, f.Version, f.Created)
 }
 
 func MakeFileInfo(path, ns, name string) *FileInfo {
