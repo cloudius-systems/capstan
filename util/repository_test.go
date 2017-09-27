@@ -146,7 +146,7 @@ func (s *suite) TestImageList(c *C) {
 			`,
 			`
 				Name         {39}Description {40}Version {9}Created {14}Platform
-				mike/myimage {39}description {40}        {9}        {14}N/A
+				mike/myimage {39}description {40}        {9}N/A     {14}N/A
 			`,
 		},
 		{
@@ -157,7 +157,7 @@ func (s *suite) TestImageList(c *C) {
 			`,
 			`
 				Name         {39}Description {40}Version {9}Created {14}Platform
-				mike/myimage {39}            {40}        {9}        {14}N/A
+				mike/myimage {39}            {40}        {9}N/A     {14}N/A
 			`,
 		},
 		{
@@ -166,7 +166,7 @@ func (s *suite) TestImageList(c *C) {
 			"",
 			`
 				Name         {39}Description {40}Version {9}Created {14}Platform
-				mike/myimage {39}            {40}        {9}        {14}N/A
+				mike/myimage {39}            {40}        {9}N/A     {14}N/A
 			`,
 		},
 		{
@@ -190,7 +190,7 @@ func (s *suite) TestImageList(c *C) {
 			"",
 			`
 				Name    {44}Description {40}Version {9}Created {14}Platform
-				myimage {44}            {40}        {9}        {14}N/A
+				myimage {44}            {40}        {9}N/A     {14}N/A
 			`,
 		},
 	}

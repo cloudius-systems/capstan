@@ -28,7 +28,7 @@ type FileInfo struct {
 	Name        string
 	Description string
 	Version     string
-	Created     string
+	Created     core.YamlTime `yaml:"created"`
 	Platform    string
 }
 
