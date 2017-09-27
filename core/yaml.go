@@ -8,7 +8,6 @@
 package core
 
 import (
-	// "fmt"
 	"time"
 )
 
@@ -20,8 +19,11 @@ type YamlTime struct {
 
 // MarshalYAML transforms YamlTime object into a RFC3339 string.
 func (t YamlTime) MarshalYAML() (interface{}, error) {
-	v, _ := t.Time.(time.Time)
-	return v.Format(time.RFC3339), nil
+	if v, ok := t.Time.(time.Time); ok {
+		return v.Format(time.RFC3339), nil
+	} else {
+		return "N/A", nil
+	}
 }
 
 // UnmarshalYAML parses string into YamlTime object. Following formats
@@ -47,6 +49,6 @@ func (t YamlTime) String() string {
 	if v, ok := t.Time.(time.Time); ok {
 		return v.Format(FRIENDLY_TIME_F)
 	} else {
-		return "?"
+		return "N/A"
 	}
 }

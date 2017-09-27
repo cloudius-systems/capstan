@@ -44,14 +44,22 @@ func (*yamlSuite) TestYamlTimeFieldMarshall(c *C) {
 			"2017-09-14T18:08:16.123456789+02:00",
 			"created: 2017-09-14T18:08:16+02:00",
 		},
+		{
+			"empty",
+			"",
+			"created: N/A",
+		},
 	}
 	for i, args := range m {
 		c.Logf("CASE #%d: %s", i, args.comment)
 
 		// Prepare
-		t, _ := time.Parse(time.RFC3339, args.created)
+		yamlTime := YamlTime{}
+		if t, _ := time.Parse(time.RFC3339, args.created); args.created != "" {
+			yamlTime.Time = t
+		}
 		obj := yamlWithTimeFieldStruct{
-			Created: YamlTime{t},
+			Created: yamlTime,
 		}
 
 		// This is what we're testing here.
@@ -88,12 +96,12 @@ func (*yamlSuite) TestYamlTimeFieldUnmarshall(c *C) {
 		{
 			"empty",
 			"created: ",
-			"?",
+			"N/A",
 		},
 		{
 			"missing",
 			"",
-			"?",
+			"N/A",
 		},
 	}
 	for i, args := range m {
