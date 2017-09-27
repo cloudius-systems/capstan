@@ -51,3 +51,8 @@ func PrepareFiles(directory string, files map[string]string) error {
 
 	return nil
 }
+
+func ClearDirectory(directory string) {
+	os.RemoveAll(directory)
+	os.Mkdir(directory, 0777)
+}

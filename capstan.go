@@ -269,7 +269,7 @@ func main() {
 			Usage:     "list images",
 			Action: func(c *cli.Context) error {
 				repo := util.NewRepo(c.GlobalString("u"))
-				repo.ListImages()
+				fmt.Print(repo.ListImages())
 
 				return nil
 			},
