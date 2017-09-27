@@ -130,10 +130,11 @@ func (s *suite) TestImageList(c *C) {
 				format_version: 1
 				version: 9aba80a
 				created: 2017-08-02 08:16
+				platform: Ubuntu-14.04
 			`,
 			`
 				Name         {39}Description {40}Version {9}Created          {5}Platform
-				mike/myimage {39}description {40}9aba80a {9}2017-08-02 08:16
+				mike/myimage {39}description {40}9aba80a {9}2017-08-02 08:16 {5}Ubuntu-14.04
 			`,
 		},
 		{
@@ -145,7 +146,7 @@ func (s *suite) TestImageList(c *C) {
 			`,
 			`
 				Name         {39}Description {40}Version {9}Created {14}Platform
-				mike/myimage {39}description
+				mike/myimage {39}description {40}        {9}        {14}N/A
 			`,
 		},
 		{
@@ -156,7 +157,7 @@ func (s *suite) TestImageList(c *C) {
 			`,
 			`
 				Name         {39}Description {40}Version {9}Created {14}Platform
-				mike/myimage
+				mike/myimage {39}            {40}        {9}        {14}N/A
 			`,
 		},
 		{
@@ -165,7 +166,7 @@ func (s *suite) TestImageList(c *C) {
 			"",
 			`
 				Name         {39}Description {40}Version {9}Created {14}Platform
-				mike/myimage
+				mike/myimage {39}            {40}        {9}        {14}N/A
 			`,
 		},
 		{
@@ -176,10 +177,11 @@ func (s *suite) TestImageList(c *C) {
 				format_version: 1
 				version: 9aba80a
 				created: 2017-08-02 08:16
+				platform: Ubuntu-14.04
 			`,
 			`
 				Name    {44}Description {40}Version {9}Created          {5}Platform
-				myimage {44}description {40}9aba80a {9}2017-08-02 08:16
+				myimage {44}description {40}9aba80a {9}2017-08-02 08:16 {5}Ubuntu-14.04
 			`,
 		},
 		{
@@ -188,7 +190,7 @@ func (s *suite) TestImageList(c *C) {
 			"",
 			`
 				Name    {44}Description {40}Version {9}Created {14}Platform
-				myimage
+				myimage {44}            {40}        {9}        {14}N/A
 			`,
 		},
 	}

@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -89,9 +90,8 @@ func TestImportCommand(t *testing.T) {
 		t.Errorf("capstan: %v", err)
 	}
 	outLines := strings.Split(string(out), "\n")
-	if g, e := outLines[1], "example"; g != e {
-		t.Errorf("capstan: want %q, got %q", e, g)
-
+	if g, e := outLines[1], "example .*\n"; regexp.MustCompile(e).MatchString(g) {
+		t.Errorf("capstan: want prefix %q, got %q", e, g)
 	}
 }
 
@@ -135,9 +135,8 @@ func TestRmiCommand(t *testing.T) {
 		t.Errorf("capstan: %v", err)
 	}
 	outLines := strings.Split(string(out), "\n")
-	if g, e := outLines[1]+"\n"+outLines[2], "example1\nexample2"; g != e {
+	if g, e := outLines[1]+"\n"+outLines[2], "example1 .*\nexample2 .*\n"; regexp.MustCompile(e).MatchString(g) {
 		t.Errorf("capstan: want %q, got %q", e, g)
-
 	}
 
 	cmd = runCapstan([]string{"rmi", "example1"}, root)
@@ -156,8 +155,7 @@ func TestRmiCommand(t *testing.T) {
 		t.Errorf("capstan: %v", err)
 	}
 	outLines = strings.Split(string(out), "\n")
-	if g, e := outLines[1], "example2"; g != e {
+	if g, e := outLines[1], "example2 .*\n"; regexp.MustCompile(e).MatchString(g) {
 		t.Errorf("capstan: want %q, got %q", e, g)
-
 	}
 }
