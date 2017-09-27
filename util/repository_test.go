@@ -9,6 +9,7 @@
 package util_test
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/mikelangelo-project/capstan/cmd"
@@ -108,6 +109,104 @@ func (s *suite) TestPackageList(c *C) {
 
 		// This is what we're testing here.
 		txt := s.repo.ListPackages()
+
+		// Expectations.
+		c.Check(txt, MatchesMultiline, FixIndent(args.expected))
+	}
+}
+
+func (s *suite) TestImageList(c *C) {
+	m := []struct {
+		comment   string
+		imagePath string
+		indexYaml string
+		expected  string
+	}{
+		{
+			"usual case",
+			"mike/myimage",
+			`
+				description: description
+				format_version: 1
+				version: 9aba80a
+				created: 2017-08-02 08:16
+			`,
+			`
+				Name         {39}Description {40}Version {9}Created          {5}Platform
+				mike/myimage {39}description {40}9aba80a {9}2017-08-02 08:16
+			`,
+		},
+		{
+			"missing fields",
+			"mike/myimage",
+			`
+				description: description
+				format_version: 1
+			`,
+			`
+				Name         {39}Description {40}Version {9}Created {14}Platform
+				mike/myimage {39}description
+			`,
+		},
+		{
+			"invalid index.yaml",
+			"mike/myimage",
+			`
+				xyz
+			`,
+			`
+				Name         {39}Description {40}Version {9}Created {14}Platform
+				mike/myimage
+			`,
+		},
+		{
+			"missing index.yaml",
+			"mike/myimage",
+			"",
+			`
+				Name         {39}Description {40}Version {9}Created {14}Platform
+				mike/myimage
+			`,
+		},
+		{
+			"usual case (no namespace)",
+			"myimage",
+			`
+				description: description
+				format_version: 1
+				version: 9aba80a
+				created: 2017-08-02 08:16
+			`,
+			`
+				Name    {44}Description {40}Version {9}Created          {5}Platform
+				myimage {44}description {40}9aba80a {9}2017-08-02 08:16
+			`,
+		},
+		{
+			"missing index.yaml (no namespace)",
+			"myimage",
+			"",
+			`
+				Name    {44}Description {40}Version {9}Created {14}Platform
+				myimage
+			`,
+		},
+	}
+	for i, args := range m {
+		c.Logf("CASE #%d: %s", i, args.comment)
+
+		// Prepare.
+		ClearDirectory(s.repo.Path)
+		files := map[string]string{
+			fmt.Sprintf("repository/%s/myimage.qemu", args.imagePath): DefaultText,
+		}
+		if args.indexYaml != "" {
+			files[fmt.Sprintf("repository/%s/index.yaml", args.imagePath)] = FixIndent(args.indexYaml)
+		}
+		PrepareFiles(s.repo.Path, files)
+
+		// This is what we're testing here.
+		txt := s.repo.ListImages()
 
 		// Expectations.
 		c.Check(txt, MatchesMultiline, FixIndent(args.expected))

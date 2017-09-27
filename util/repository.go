@@ -212,31 +212,30 @@ func (r *Repo) PackageManifest(packageName string) string {
 	return filepath.Join(r.Path, "packages", fmt.Sprintf("%s.yaml", packageName))
 }
 
-func (r *Repo) ListImages() {
-	fmt.Println(FileInfoHeader())
+func (r *Repo) ListImages() string {
+	res := fmt.Sprintln(FileInfoHeader())
 	namespaces, _ := ioutil.ReadDir(r.RepoPath())
 	for _, n := range namespaces {
 		images, _ := ioutil.ReadDir(filepath.Join(r.RepoPath(), n.Name()))
-		nrImages := 0
-		nrFiles := 0
 		for _, i := range images {
+			namespace := ""
+			directory := n.Name()
+
 			if i.IsDir() {
-				info := MakeFileInfo(r.RepoPath(), n.Name(), i.Name())
-				if info == nil {
-					fmt.Println(n.Name() + "/" + i.Name())
-				} else {
-					fmt.Println(info.String())
-				}
-				nrImages++
-			} else {
-				nrFiles++
+				namespace = n.Name()
+				directory = i.Name()
+			} else if !strings.HasSuffix(i.Name(), ".qemu") {
+				continue
 			}
-		}
-		// Image is directly at repository root with no namespace:
-		if nrImages == 0 && nrFiles != 0 {
-			fmt.Println(n.Name())
+			info, err := ParseIndexYaml(r.RepoPath(), namespace, directory)
+			if err != nil {
+				fmt.Println(err)
+				info = &FileInfo{Name: directory, Namespace: namespace}
+			}
+			res += fmt.Sprintln(info.String())
 		}
 	}
+	return res
 }
 
 func (r *Repo) ListPackages() string {
@@ -330,7 +329,7 @@ func (r *Repo) InitializeImage(loaderImage string, imageName string, imageSize i
 	}
 
 	// The image can now be imported into Capstan's repository.
-	return r.ImportImage(imageName, imagePath, "", time.Now().Format(time.RFC3339), "", "")
+	return r.ImportImage(imageName, imagePath, "", time.Now().Format(core.FRIENDLY_TIME_F), "", "")
 }
 
 func (r *Repo) ImportPackage(pkg core.Package, packagePath string) error {
