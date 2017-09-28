@@ -64,6 +64,15 @@ func (*javaSuite) TestGetBootCmd(c *C) {
 				},
 			},
 		},
+		"mypackage": &CmdConfig{
+			RuntimeType:      Native,
+			ConfigSetDefault: "run",
+			ConfigSets: map[string]Runtime{
+				"run": nativeRuntime{
+					BootCmd: "/mypackage.so",
+				},
+			},
+		},
 	}
 
 	m := []struct {
@@ -177,7 +186,63 @@ func (*javaSuite) TestGetBootCmd(c *C) {
 			},
 		},
 		{
-			"different base package",
+			"jar as main",
+			`
+			runtime: java
+			config_set:
+			  default:
+			    main: app.jar
+			`,
+			"/java.so", []string{
+				"--env=XMS?=512m",
+				"--env=XMX?=512m",
+				"--env=CLASSPATH?=/",
+				"--env=JVM_ARGS?=-jar",
+				"--env=MAIN?=app.jar",
+				"--env=ARGS?=",
+			},
+		},
+		{
+			"jar as main and -jar already provided",
+			`
+			runtime: java
+			config_set:
+			  default:
+			    main: app.jar
+			    jvm_args:
+			      - "-jar"
+			`,
+			"/java.so", []string{
+				"--env=XMS?=512m",
+				"--env=XMX?=512m",
+				"--env=CLASSPATH?=/",
+				"--env=JVM_ARGS?=-jar",
+				"--env=MAIN?=app.jar",
+				"--env=ARGS?=",
+			},
+		},
+		{
+			"jar as main and -jar already provided among other args",
+			`
+			runtime: java
+			config_set:
+			  default:
+			    main: app.jar
+			    jvm_args:
+			      - "-jar"
+			      - "-xyz"
+			`,
+			"/java.so", []string{
+				"--env=XMS?=512m",
+				"--env=XMX?=512m",
+				"--env=CLASSPATH?=/",
+				"--env=JVM_ARGS?=-jar -xyz",
+				"--env=MAIN?=app.jar",
+				"--env=ARGS?=",
+			},
+		},
+		{
+			"different openjdk package",
 			`
 			runtime: java
 			config_set:
@@ -195,6 +260,16 @@ func (*javaSuite) TestGetBootCmd(c *C) {
 				"--env=MAIN?=demo.Main",
 				"--env=ARGS?=",
 			},
+		},
+		{
+			"different base package",
+			`
+			runtime: java
+			config_set:
+			  default:
+			    base: "mypackage:run"
+			`,
+			"/mypackage.so", []string{},
 		},
 	}
 	for i, args := range m {
@@ -231,16 +306,6 @@ func (*javaSuite) TestValidate(c *C) {
 			"'main' must be provided",
 		},
 		{
-			"missing classpath",
-			`
-			runtime: java
-			config_set:
-			  default:
-			    main: demo.Main
-			`,
-			"'classpath' must be provided",
-		},
-		{
 			"inheritance overrides validation",
 			`
 			runtime: java
@@ -249,6 +314,85 @@ func (*javaSuite) TestValidate(c *C) {
 			    base: "some.package:its_config_set"
 			`,
 			"",
+		},
+		{
+			"incompatible with 'base' - xms",
+			`
+			runtime: java
+			config_set:
+			  default:
+			    base: "foo:bar"
+			    xms: foo.bar
+			`,
+			"incompatible arguments specified \\[xms,xmx,classpath,jvm_args,main,args\\] for custom 'base'",
+		},
+		{
+			"incompatible with 'base' - xmx",
+			`
+			runtime: java
+			config_set:
+			  default:
+			    base: "foo:bar"
+			    xmx: foo.bar
+			`,
+			"incompatible arguments specified \\[xms,xmx,classpath,jvm_args,main,args\\] for custom 'base'",
+		},
+		{
+			"incompatible with 'base' - classpath",
+			`
+			runtime: java
+			config_set:
+			  default:
+			    base: "foo:bar"
+			    classpath:
+			      - foo.bar
+			`,
+			"incompatible arguments specified \\[xms,xmx,classpath,jvm_args,main,args\\] for custom 'base'",
+		},
+		{
+			"incompatible with 'base' - jvm_args",
+			`
+			runtime: java
+			config_set:
+			  default:
+			    base: "foo:bar"
+			    jvm_args:
+			      - foo.bar
+			`,
+			"incompatible arguments specified \\[xms,xmx,classpath,jvm_args,main,args\\] for custom 'base'",
+		},
+		{
+			"incompatible with 'base' - main",
+			`
+			runtime: java
+			config_set:
+			  default:
+			    base: "foo:bar"
+			    main: foo.bar
+			`,
+			"incompatible arguments specified \\[xms,xmx,classpath,jvm_args,main,args\\] for custom 'base'",
+		},
+		{
+			"incompatible with 'base' - args",
+			`
+			runtime: java
+			config_set:
+			  default:
+			    base: "foo:bar"
+			    args:
+			      - foo.bar
+			`,
+			"incompatible arguments specified \\[xms,xmx,classpath,jvm_args,main,args\\] for custom 'base'",
+		},
+		{
+			"compatible package behaves same as defult one",
+			`
+			runtime: java
+			config_set:
+			  default:
+			    base: "openjdk7:java"
+			`,
+			"'main' must be provided",
 		},
 	}
 	for i, args := range m {

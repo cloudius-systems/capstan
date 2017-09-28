@@ -160,3 +160,12 @@ func ExtendMap(m map[string]string, additional map[string]string) {
 		}
 	}
 }
+
+func StringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
