@@ -19,7 +19,7 @@ type pythonSuite struct {
 var _ = Suite(&pythonSuite{})
 
 func (*pythonSuite) TestGetBootCmd(c *C) {
-	// Simulate node-4.4.5's meta/run.yaml being parsed.
+	// Simulate python-2.7's meta/run.yaml being parsed.
 	cmdConfs := map[string]*CmdConfig{
 		"python-2.7": &CmdConfig{
 			RuntimeType:      Native,
@@ -106,6 +106,134 @@ func (*pythonSuite) TestGetBootCmd(c *C) {
 		// Expectations.
 		c.Assert(err, IsNil)
 		c.Check(boot, BootCmdEquals, args.expectedBoot, args.expectedEnv)
+	}
+}
+
+func (*pythonSuite) TestValidate(c *C) {
+	m := []struct {
+		comment     string
+		runYamlText string
+		err         string
+	}{
+		{
+			"incompatible with 'base' - shell",
+			`
+			runtime: python
+			config_set:
+			  default:
+			    base: "foo:bar"
+			    shell: true
+			`,
+			"incompatible arguments specified \\[shell,python_args,main,args\\] for custom 'base'",
+		},
+		{
+			"incompatible with 'base' - python_args",
+			`
+			runtime: python
+			config_set:
+			  default:
+			    base: "foo:bar"
+			    python_args:
+			      - foo.bar
+			`,
+			"incompatible arguments specified \\[shell,python_args,main,args\\] for custom 'base'",
+		},
+		{
+			"incompatible with 'base' - main",
+			`
+			runtime: python
+			config_set:
+			  default:
+			    base: "foo:bar"
+			    main: foo.bar
+			`,
+			"incompatible arguments specified \\[shell,python_args,main,args\\] for custom 'base'",
+		},
+		{
+			"incompatible with 'base' - args",
+			`
+			runtime: python
+			config_set:
+			  default:
+			    base: "foo:bar"
+			    args:
+			      - foo.bar
+			`,
+			"incompatible arguments specified \\[shell,python_args,main,args\\] for custom 'base'",
+		},
+		{
+			"incompatible with 'shell' - main",
+			`
+			runtime: python
+			config_set:
+			  default:
+			    shell: true
+			    main: /script.js
+			`,
+			"incompatible arguments specified \\[main,args\\] for shell=true",
+		},
+		{
+			"incompatible with 'shell' - args",
+			`
+			runtime: python
+			config_set:
+			  default:
+			    shell: true
+			    args:
+			      - foo.bar
+			`,
+			"incompatible arguments specified \\[main,args\\] for shell=true",
+		},
+		{
+			"incompatible with 'shell' - env.MAIN",
+			`
+			runtime: python
+			config_set:
+			  default:
+			    shell: true
+			    env:
+			      MAIN: foo
+			`,
+			"incompatible 'env' keys specified \\[MAIN,ARGS\\] for shell=true",
+		},
+		{
+			"incompatible with 'shell' - env.ARGS",
+			`
+			runtime: python
+			config_set:
+			  default:
+			    shell: true
+			    env:
+			      ARGS: foo.bar
+			`,
+			"incompatible 'env' keys specified \\[MAIN,ARGS\\] for shell=true",
+		},
+		{
+			"missing main",
+			`
+			runtime: python
+			config_set:
+			  default:
+			`,
+			"'main' must be provided",
+		},
+	}
+	for i, args := range m {
+		c.Logf("CASE #%d: %s", i, args.comment)
+
+		// Prepare
+		cmdConfig, err := ParsePackageRunManifestData([]byte(FixIndent(args.runYamlText)))
+		testRuntime, _ := cmdConfig.selectConfigSetByName("default")
+
+		// This is what we're testing here.
+		err = testRuntime.Validate()
+
+		// Expectations.
+		if args.err == "" {
+			c.Check(err, IsNil)
+		} else {
+			c.Check(err, ErrorMatches, args.err)
+		}
 	}
 }
 
