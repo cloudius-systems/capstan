@@ -10,7 +10,7 @@ package gce
 import (
 	"fmt"
 	"github.com/mikelangelo-project/capstan/util"
-	"gopkg.in/yaml.v1"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"os/exec"
