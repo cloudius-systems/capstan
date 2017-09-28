@@ -29,6 +29,7 @@ type FileInfo struct {
 	Description string
 	Version     string
 	Created     string
+	Platform    string
 }
 
 type Contents struct {
@@ -54,7 +55,11 @@ func FileInfoHeader() string {
 func (f *FileInfo) String() string {
 	// Trim "/" prefix if there is one (happens when namespace is empty)
 	name := strings.TrimLeft(f.Namespace+"/"+f.Name, "/")
-	res := fmt.Sprintf("%-50s %-50s %-15s %-20s", name, f.Description, f.Version, f.Created)
+	platform := f.Platform
+	if platform == "" {
+		platform = "N/A"
+	}
+	res := fmt.Sprintf("%-50s %-50s %-15s %-20s %-15s", name, f.Description, f.Version, f.Created, platform)
 	return strings.TrimSpace(res)
 }
 
