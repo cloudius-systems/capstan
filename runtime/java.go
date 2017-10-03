@@ -10,7 +10,16 @@ package runtime
 import (
 	"fmt"
 	"strings"
+
+	"github.com/mikelangelo-project/capstan/util"
 )
+
+// javaPackages specifies what packages are fully compatible with this runtime.
+// For the time being, these are:
+//   openjdk8-zulu-compact1
+//   openjdk8-zulu-compact3-with-java-beans
+//   openjdk7
+var javaPackages = []string{"^openjdk.*"}
 
 type javaRuntime struct {
 	CommonRuntime `yaml:"-,inline"`
@@ -36,13 +45,15 @@ func (conf javaRuntime) GetDependencies() []string {
 	return []string{"openjdk8-zulu-compact1"}
 }
 func (conf javaRuntime) Validate() error {
-	if conf.Base == "" {
+	// Only validate java-specific environment variables when base is openjdk-like.
+	if isCompatibleBase(conf.Base, javaPackages) {
 		if conf.Main == "" {
 			return fmt.Errorf("'main' must be provided")
 		}
-
-		if conf.Classpath == nil {
-			return fmt.Errorf("'classpath' must be provided")
+	} else {
+		if conf.Xms != "" || conf.Xmx != "" || len(conf.Classpath) > 0 ||
+			len(conf.JvmArgs) > 0 || conf.Main != "" || len(conf.Args) > 0 {
+			return fmt.Errorf("incompatible arguments specified [xms,xmx,classpath,jvm_args,main,args] for custom 'base'")
 		}
 	}
 
@@ -52,14 +63,25 @@ func (conf javaRuntime) GetBootCmd(cmdConfs map[string]*CmdConfig, env map[strin
 	if conf.Base == "" { // Allow user to use e.g. "openjdk7:java" package instead default one.
 		conf.Base = "openjdk8-zulu-compact1:java"
 	}
-	conf.setDefaultEnv(map[string]string{
-		"XMS":       conf.Xms,
-		"XMX":       conf.Xmx,
-		"CLASSPATH": strings.Join(conf.Classpath, ":"),
-		"JVM_ARGS":  conf.concatJvmArgs(),
-		"MAIN":      conf.Main,
-		"ARGS":      strings.Join(conf.Args, " "),
-	})
+
+	// Only set java-specific environment variables when base is openjdk-like.
+	if isCompatibleBase(conf.Base, javaPackages) {
+		if len(conf.Classpath) == 0 {
+			conf.Classpath = append(conf.Classpath, "/")
+		}
+		if strings.HasSuffix(conf.Main, ".jar") && !util.StringInSlice("-jar", conf.JvmArgs) {
+			conf.JvmArgs = append(conf.JvmArgs, "-jar")
+		}
+		conf.setDefaultEnv(map[string]string{
+			"XMS":       conf.Xms,
+			"XMX":       conf.Xmx,
+			"CLASSPATH": strings.Join(conf.Classpath, ":"),
+			"JVM_ARGS":  conf.concatJvmArgs(),
+			"MAIN":      conf.Main,
+			"ARGS":      strings.Join(conf.Args, " "),
+		})
+	}
+
 	return conf.CommonRuntime.BuildBootCmd("", cmdConfs, env)
 }
 func (conf javaRuntime) GetYamlTemplate() string {
@@ -69,11 +91,12 @@ func (conf javaRuntime) GetYamlTemplate() string {
 # Example value: main.Hello
 main: <name>
 
-# REQUIRED
+# OPTIONAL
 # A list of paths where classes and other resources can be found.
+# By default, the unikernel root "/" is added to the classpath.
 # Example value: classpath:
 #                   - /
-#                   - /package1
+#                   - /src
 classpath:
    - <list>
 

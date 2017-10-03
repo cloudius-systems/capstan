@@ -9,6 +9,7 @@ package runtime
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/mikelangelo-project/capstan/nat"
@@ -157,9 +158,7 @@ func (r CommonRuntime) BuildBootCmd(bootCmd string, cmdConfs map[string]*CmdConf
 
 // inheritBootCmd builds boot command based on the package referenced by "base".
 func (r CommonRuntime) inheritBootCmd(cmdConfs map[string]*CmdConfig, env map[string]string) (string, error) {
-	parts := strings.SplitN(r.Base, ":", 2)
-	pkgName := parts[0]
-	configSet := parts[1]
+	pkgName, configSet := parseBase(r.Base)
 
 	if _, exists := cmdConfs[pkgName]; !exists || cmdConfs[pkgName] == nil {
 		return "", fmt.Errorf("Failed to inherit from '%s': package not included or has no meta/run.yaml", pkgName)
@@ -219,4 +218,34 @@ func BootCmdForScript(bootName string) string {
 	}
 
 	return fmt.Sprintf("runscript /run/%s", bootName)
+}
+
+// parseBase parses base into pkgName and configSetName.
+// We assume no error can occur, so validation needs to be performed.
+func parseBase(base string) (string, string) {
+	parts := strings.SplitN(base, ":", 2)
+	return parts[0], parts[1]
+}
+
+// isCompatibleBase tells whether base provided is compatible.
+// The purpose of "compatiblity check" is that we differ between two
+// types of bases: those that behave exactly like the runtime's
+// default base. E.g. for Java runtime, compatible bases are
+// 'openjdk7', 'openjdk8-zulu-compact1', ... while incompatible
+// bases would be e.g. 'osv.cli' or 'apache.spark-2.1.1'. Point is
+// that we set runtime-specific environment variables (e.g. JVM_ARGS)
+// only for compatible bases and not for the incompatible ones.
+func isCompatibleBase(base string, patterns []string) bool {
+	if base == "" {
+		return true
+	}
+
+	pkgName, _ := parseBase(base)
+
+	for _, pattern := range patterns {
+		if regexp.MustCompile(pattern).MatchString(pkgName) {
+			return true
+		}
+	}
+	return false
 }

@@ -143,6 +143,12 @@ Lets sum up. To prepare appropriate run.yaml file, we must first select one of t
 If we are about to be running NodeJS application, then we opt-in to use runtime named *node*. We get
 the details on how to prepare run.yaml for *node* by using Capstan command.
 
+### Configuration files per runtime
+Below please find example meta/run.yaml configuration file for each supported runtime:
+
+* [Java](./RuntimeJava.md)
+* [Node.js](./RuntimeNode.md)
+
 
 ## Automatic generation of configuration files
 You can create configuration files manually or generate them using Capstan. The latter option does
