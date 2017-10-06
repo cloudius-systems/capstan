@@ -89,6 +89,11 @@ func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string
 		return nil, err
 	}
 
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+
 	// Finally, let's start the command: launch the VM
 	if err := cmd.Start(); err != nil {
 		return nil, err
@@ -96,6 +101,8 @@ func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string
 
 	// Make sure the process is always properly killed, even in case of unhandled exception
 	defer cmd.Process.Kill()
+
+	go io.Copy(os.Stderr, stderr)
 
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
