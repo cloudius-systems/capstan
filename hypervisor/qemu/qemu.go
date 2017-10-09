@@ -267,7 +267,11 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	args = append(args, "-m", strconv.FormatInt(c.Memory, 10))
 	args = append(args, "-smp", strconv.Itoa(c.Cpus))
 	args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")
-	args = append(args, "-drive", "file="+c.Image+",if=none,id=hd0,aio=native,cache="+c.vmDriveCache())
+	aioType := "native"
+	if runtime.GOOS == "darwin" {
+		aioType = "threads"
+	}
+	args = append(args, "-drive", "file="+c.Image+",if=none,id=hd0,aio="+aioType+",cache="+c.vmDriveCache())
 	if version.Major >= 1 && version.Minor >= 3 {
 		args = append(args, "-device", "virtio-rng-pci")
 	}
@@ -310,11 +314,11 @@ func (c *VMConfig) vmNetworking() ([]string, error) {
 		args = append(args, "-netdev", fmt.Sprintf("bridge,id=hn0,br=%s,helper=%s", c.Bridge, bridgeHelper), "-device", fmt.Sprintf("virtio-net-pci,netdev=hn0,id=nic1,mac=%s", mac.String()))
 		return args, nil
 	case "nat":
-		args = append(args, "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0")
+		netdevValue := "user,id=un0,net=192.168.122.0/24,host=192.168.122.1"
 		for _, portForward := range c.NatRules {
-			redirect := fmt.Sprintf("tcp:%s::%s", portForward.HostPort, portForward.GuestPort)
-			args = append(args, "-redir", redirect)
+			netdevValue = netdevValue + fmt.Sprintf(",hostfwd=tcp::%s-:%s", portForward.HostPort, portForward.GuestPort)
 		}
+		args = append(args, "-netdev", netdevValue, "-device", "virtio-net-pci,netdev=un0")
 		return args, nil
 	case "tap":
 		mac, err := c.vmMAC()
