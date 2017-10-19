@@ -464,6 +464,38 @@ func main() {
 					},
 				},
 				{
+					Name:      "compose-remote",
+					Usage:     "composes the package and all its dependencies and uploads resulting files into remote OSv instance",
+					ArgsUsage: "remote-instance",
+					Flags: []cli.Flag{
+						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+					},
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							return cli.NewExitError("Usage: capstan package compose-remote [remote-instance]", EX_USAGE)
+						}
+
+						// Use the provided repository.
+						repo := util.NewRepo(c.GlobalString("u"))
+
+						// Get the remote host instance or IP address where files of the composed package will be uploaded to
+						remoteHostInstance := c.Args().First()
+
+						verbose := c.Bool("verbose")
+						pullMissing := c.Bool("pull-missing")
+
+						// Always use the current directory for the package to compose.
+						packageDir, _ := os.Getwd()
+
+						if err := cmd.ComposePackageAndUploadToRemoteInstance(repo, verbose, pullMissing, packageDir, remoteHostInstance); err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
+						}
+
+						return nil
+					},
+				},
+				{
 					Name:  "collect",
 					Usage: "collects contents of this package and all required packages",
 					Flags: []cli.Flag{
