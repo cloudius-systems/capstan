@@ -110,7 +110,7 @@ func vmCreate(c *VMConfig) error {
 	if err != nil {
 		return err
 	}
-	err = VBoxManage("storagectl", c.Name, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI")
+	err = VBoxManage("storagectl", c.Name, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI", "--hostiocache", "on")
 	if err != nil {
 		return err
 	}
