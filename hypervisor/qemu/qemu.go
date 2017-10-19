@@ -11,6 +11,7 @@ package qemu
 import (
 	"bufio"
 	"fmt"
+	"github.com/mikelangelo-project/capstan/hypervisor"
 	"github.com/mikelangelo-project/capstan/nat"
 	"github.com/mikelangelo-project/capstan/util"
 	"gopkg.in/yaml.v2"
@@ -25,22 +26,23 @@ import (
 )
 
 type VMConfig struct {
-	Name        string
-	Image       string
+	Name        string // general
 	Verbose     bool
-	Memory      int64
-	Cpus        int
-	Networking  string
-	Bridge      string
-	NatRules    []nat.Rule
-	BackingFile bool
-	InstanceDir string
-	Monitor     string
-	ConfigFile  string
-	MAC         string
 	Cmd         string
 	DisableKvm  bool
 	Persist     bool
+	InstanceDir string
+	Monitor     string
+	ConfigFile  string
+	Image       string // storage
+	BackingFile bool
+	Volumes     []string
+	Memory      int64 // resources
+	Cpus        int
+	Networking  string // networking
+	Bridge      string
+	NatRules    []nat.Rule
+	MAC         string
 }
 
 type Version struct {
@@ -277,6 +279,27 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	}
 	args = append(args, "-chardev", "stdio,mux=on,id=stdio,signal=off")
 	args = append(args, "-device", "isa-serial,chardev=stdio")
+
+	if volumes, err := hypervisor.ParseVolumes(c.Volumes); err == nil {
+		for idx, v := range volumes {
+			bootIndex := idx + 1
+			driveId := fmt.Sprintf("hd%d", bootIndex)
+			deviceId := fmt.Sprintf("blk%d", bootIndex)
+			args = append(
+				args,
+				"-drive",
+				fmt.Sprintf("file=%s,if=none,id=%s,aio=%s,cache=%s,format=%s", v.Path, driveId, v.AioType, v.Cache, v.Format),
+			)
+			args = append(
+				args,
+				"-device",
+				fmt.Sprintf("virtio-blk-pci,id=%s,bootindex=%d,drive=%s", deviceId, bootIndex, driveId),
+			)
+		}
+	} else {
+		return nil, err
+	}
+
 	net, err := c.vmNetworking()
 	if err != nil {
 		return nil, err

@@ -32,19 +32,20 @@ var SupportedRuntimes []RuntimeType = []RuntimeType{
 }
 
 type RunConfig struct {
-	InstanceName string
-	ImageName    string
-	Hypervisor   string
+	InstanceName string // general
 	Verbose      bool
-	Memory       string
-	Cpus         int
-	Networking   string
-	Bridge       string
-	NatRules     []nat.Rule
 	GCEUploadDir string
-	MAC          string
 	Cmd          string
 	Persist      bool
+	Hypervisor   string
+	ImageName    string // storage
+	Volumes      []string
+	Memory       string // resources
+	Cpus         int
+	Networking   string // networking
+	Bridge       string
+	NatRules     []nat.Rule
+	MAC          string
 }
 
 // Runtime interface must be extended for every new runtime.

@@ -232,6 +232,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 			Cmd:         config.Cmd,
 			DisableKvm:  repo.DisableKvm,
 			Persist:     config.Persist,
+			Volumes:     config.Volumes,
 		}
 
 		cmd, err = qemu.LaunchVM(config)
@@ -244,6 +245,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 		if bridge == "" {
 			bridge = "vboxnet0"
 		}
+		volumesNotSupported(config.Volumes)
 		config := &vbox.VMConfig{
 			Name:       id,
 			Dir:        filepath.Join(util.ConfigDir(), "instances/vbox"),
@@ -262,6 +264,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
 		dir := filepath.Join(util.ConfigDir(), "instances/gce", id)
+		volumesNotSupported(config.Volumes)
 		c := &gce.VMConfig{
 			Name:        id,
 			Image:       id,
@@ -284,6 +287,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
 		dir := filepath.Join(util.ConfigDir(), "instances/vmw", id)
+		volumesNotSupported(config.Volumes)
 		config := &vmw.VMConfig{
 			Name:         id,
 			Dir:          dir,
@@ -372,4 +376,11 @@ func deleteInstance(name string) error {
 		err = gce.DeleteVM(name)
 	}
 	return err
+}
+
+// volumesNotSupported prints warning if --volume is passed.
+func volumesNotSupported(volumes []string) {
+	if len(volumes) > 0 {
+		fmt.Println("WARNING: --volume is not yet supported for this hypervisor")
+	}
 }
