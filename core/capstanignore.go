@@ -23,7 +23,7 @@ type Capstanignore interface {
 }
 
 var CAPSTANIGNORE_ALWAYS []string = []string{
-	"/meta/*", "/mpm-pkg", "/.git", "/.capstanignore", "/.gitignore",
+	"/meta/*", "/mpm-pkg", "/.git", "/.capstanignore", "/.gitignore", "/volumes",
 }
 
 // CapstanignoreInit creates a new Capstanignore struct that is

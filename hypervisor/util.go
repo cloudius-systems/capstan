@@ -2,15 +2,17 @@ package hypervisor
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"path/filepath"
 	"strings"
 )
 
 type Volume struct {
-	Path    string
-	Format  string // raw|qcow2|...
-	AioType string // native|threads
-	Cache   string // none|unsafe|writethrough...
+	Path    string `yaml:"-"`
+	Format  string `yaml:"format,omitempty"` // raw|qcow2|...
+	AioType string `yaml:"aio,omitempty"`    // native|threads
+	Cache   string `yaml:"cache,omitempty"`  // none|unsafe|writethrough...
 }
 
 // ParseVolumes parses --volume strings that are of following format:
@@ -69,4 +71,13 @@ func parseVolume(volumeStr string) (*Volume, error) {
 
 	}
 	return v, nil
+}
+
+func (v *Volume) PersistMetadata() error {
+	data, err := yaml.Marshal(v)
+	if err != nil {
+		return err
+	}
+	path := fmt.Sprintf("%s.yaml", v.Path)
+	return ioutil.WriteFile(path, []byte(data), 0644)
 }
