@@ -367,3 +367,87 @@ func CheckBootCmd(obtained, bootCmd string, env []string) error {
 
 	return nil
 }
+
+// The ContainsArray checker verifies that the obtained array contains the expected subarray.
+//
+// For example:
+//
+//     c.Assert([]string{"a", "b", "c"}, ContainsArray, []string{"a", "b"})      # TRUE
+//     c.Assert([]string{"a", "b", "c"}, ContainsArray, []string{"b", "c"})      # TRUE
+//     c.Assert([]string{"a", "b", "c"}, ContainsArray, []string{"b"})           # TRUE
+//     c.Assert([]string{"a", "b", "c"}, ContainsArray, []string{"c", "b", "a"}) # FALSE
+//     c.Assert([]string{"a", "b", "c"}, ContainsArray, []string{"a", "c"})      # FALSE
+//     c.Assert([]string{"a", "b", "c"}, ContainsArray, []string{"x"})           # FALSE
+//     c.Assert([]string{"a", "b", "c"}, ContainsArray, []string{})              # FALSE
+//
+var ContainsArray Checker = &containsArrayChecker{
+	&CheckerInfo{Name: "ContainsArray", Params: []string{"obtained", "subarray"}},
+}
+
+type containsArrayChecker struct {
+	*CheckerInfo
+}
+
+func (checker *containsArrayChecker) Check(params []interface{}, names []string) (result bool, error string) {
+	obtained, err := interface2array(params[0])
+	if err != nil {
+		return false, "Obtained value must be slice."
+	}
+	subarray, err := interface2array(params[1])
+	if err != nil {
+		return false, "Expected value must be slice."
+	}
+
+	if err := containsArray(obtained, subarray); err == nil {
+		return true, ""
+	} else {
+		return false, err.Error()
+	}
+}
+
+// containsArray returns nil if obtained array contains wanted array.
+func containsArray(obtained, wanted []interface{}) error {
+	if len(obtained) < len(wanted) {
+		return fmt.Errorf("Obtained array is shorter than wanted")
+	}
+	if len(wanted) == 0 {
+		return fmt.Errorf("Expected array must not be empty")
+	}
+
+	for idx, _ := range obtained {
+		if len(obtained)-idx < len(wanted) {
+			return fmt.Errorf("Obtained array does not contain expected subarray")
+		}
+
+		match := true
+		for wIdx, wEl := range wanted {
+			if obtained[idx+wIdx] != wEl {
+				match = false
+				break
+			}
+		}
+		if match {
+			return nil
+		}
+	}
+	return fmt.Errorf("Obtained array does not contain expected subarray")
+}
+
+// interface2array converts interface type into array, if possible.
+func interface2array(ifc interface{}) ([]interface{}, error) {
+	if arr, ok := ifc.([]string); ok {
+		ifcarr := make([]interface{}, len(arr))
+		for i, d := range arr {
+			ifcarr[i] = d
+		}
+		return ifcarr, nil
+	} else if arr, ok := ifc.([]int); ok {
+		ifcarr := make([]interface{}, len(arr))
+		for i, d := range arr {
+			ifcarr[i] = d
+		}
+		return ifcarr, nil
+	} else {
+		return nil, fmt.Errorf("Failed to parse interface to array")
+	}
+}

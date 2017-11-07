@@ -152,6 +152,8 @@ func main() {
 				cli.StringFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with"},
 				cli.BoolFlag{Name: "persist", Usage: "persist instance parameters (only relevant for qemu instances)"},
 				cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
+				cli.StringSliceFlag{Name: "volume", Value: new(cli.StringSlice), Usage: `{path}[:{key=val}], e.g. ./volume.img:format=raw (repeatable)
+				Default options are :format=raw:aio=native:cache=none`},
 			},
 			Action: func(c *cli.Context) error {
 				// Check for orphaned instances (those with osv.monitor and disk.qcow2, but
@@ -184,6 +186,7 @@ func main() {
 					MAC:          c.String("mac"),
 					Cmd:          bootCmd,
 					Persist:      c.Bool("persist"),
+					Volumes:      c.StringSlice("volume"),
 				}
 
 				if !isValidHypervisor(config.Hypervisor) {
