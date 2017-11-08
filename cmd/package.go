@@ -227,6 +227,27 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage, verbose, pu
 	return nil
 }
 
+func ComposePackageAndUploadToRemoteInstance(repo *util.Repo, verbose, pullMissing bool, packageDir, remoteHostInstance string) error {
+
+	// Package content should be collected in a subdirectory called mpm-pkg.
+	targetPath := filepath.Join(packageDir, "mpm-pkg")
+	// Remove collected directory afterwards.
+	defer os.RemoveAll(targetPath)
+
+	// First, collect the contents of the package.
+	if err := CollectPackage(repo, packageDir, pullMissing,"", verbose); err != nil {
+		return err
+	}
+
+	// If all is well, we have to start preparing the files for upload.
+	paths, err := collectDirectoryContents(targetPath)
+	if err != nil {
+		return err
+	}
+
+	return UploadPackageContentsToRemoteGuest(paths, remoteHostInstance, verbose)
+}
+
 // CollectPackage will try to resolve all of the dependencies of the given package
 // and collect the content in the $CWD/mpm-pkg directory.
 func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, customBoot string, verbose bool) error {

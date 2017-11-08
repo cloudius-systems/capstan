@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"net"
 )
 
 func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath string, appName string) error {
@@ -132,6 +133,32 @@ func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string
 	}
 	defer conn.Close()
 
+	newHashes, err := uploadFiles(conn, uploadPaths, imageCache, verbose)
+	if err != nil {
+		return nil, err
+	} else {
+		return newHashes, cmd.Wait()
+	}
+}
+
+func UploadPackageContentsToRemoteGuest(uploadPaths map[string]string, remoteHostNameOrIpAddress string, verbose bool) error {
+
+	fmt.Printf("Uploading files to %s...\n", remoteHostNameOrIpAddress)
+
+	conn, err := util.ConnectAndWait("tcp", remoteHostNameOrIpAddress + ":10000")
+	if err != nil {
+		if strings.Contains(err.Error(), "getsockopt: connection refused") {
+			fmt.Println("Could not connect to " + remoteHostNameOrIpAddress)
+		}
+		return err
+	}
+	defer conn.Close()
+
+	_, err = uploadFiles(conn, uploadPaths, nil, verbose)
+	return err
+}
+
+func uploadFiles(conn net.Conn, uploadPaths map[string]string, imageCache core.HashCache, verbose bool) (core.HashCache, error) {
 	// Initialise a progress bar for uploading files. Only start it in case
 	// silent mode is activated.
 	var bar *pb.ProgressBar
@@ -158,7 +185,7 @@ func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string
 		if uploadFile {
 			// Upload the file from host to guest. This will access cpiod
 			// running in OSv.
-			err = CopyFile(conn, src, dest)
+			err := CopyFile(conn, src, dest)
 			if err != nil {
 				return nil, err
 			}
@@ -185,7 +212,7 @@ func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string
 	// Finalise the transfer.
 	cpio.WritePadded(conn, cpio.ToWireFormat("TRAILER!!!", 0, 0))
 
-	return newHashes, cmd.Wait()
+	return newHashes, nil
 }
 
 func CollectPathContents(path string) (map[string]string, error) {
