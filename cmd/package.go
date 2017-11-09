@@ -173,7 +173,7 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage, verbose, pu
 	}
 
 	// First, collect the contents of the package.
-	if err := CollectPackage(repo, packageDir, pullMissing, bootOpts.Boot, verbose); err != nil {
+	if err := CollectPackage(repo, packageDir, pullMissing, verbose); err != nil {
 		return err
 	}
 
@@ -235,7 +235,7 @@ func ComposePackageAndUploadToRemoteInstance(repo *util.Repo, verbose, pullMissi
 	defer os.RemoveAll(targetPath)
 
 	// First, collect the contents of the package.
-	if err := CollectPackage(repo, packageDir, pullMissing,"", verbose); err != nil {
+	if err := CollectPackage(repo, packageDir, pullMissing, verbose); err != nil {
 		return err
 	}
 
@@ -250,7 +250,7 @@ func ComposePackageAndUploadToRemoteInstance(repo *util.Repo, verbose, pullMissi
 
 // CollectPackage will try to resolve all of the dependencies of the given package
 // and collect the content in the $CWD/mpm-pkg directory.
-func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, customBoot string, verbose bool) error {
+func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, verbose bool) error {
 	// Get the manifest file of the given package.
 	pkg, err := core.ParsePackageManifest(filepath.Join(packageDir, "meta", "package.yaml"))
 	if err != nil {
@@ -642,7 +642,7 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 
 type BootOptions struct {
 	Cmd        string
-	Boot       string
+	Boot       []string
 	EnvList    []string
 	PackageDir string
 }
@@ -657,14 +657,14 @@ func (b *BootOptions) GetCmd() (string, error) {
 	if b.Cmd != "" { // Direct commandLine has highest priority (--run <commandLine>).
 		fmt.Println("Command line will be set based on --run parameter")
 		command = b.Cmd
-	} else if b.Boot != "" { // Configuration name has second-highest priority (--boot <customBoot>).
-		fmt.Println("Command line will be set based on --boot parameter")
+	} else if len(b.Boot) > 0 { // Configuration name has second-highest priority (--boot <customBoot>).
+		fmt.Println("Command line will be set based on --boot parameters")
 		command = runtime.BootCmdForScript(b.Boot)
 	} else if b.PackageDir != "" { // Default configuration in yaml has third-highest priority (config_set_default: <>).
 		if data, err := ioutil.ReadFile(filepath.Join(b.PackageDir, "meta", "run.yaml")); err == nil {
 			if cmdConf, err := runtime.ParsePackageRunManifestData(data); err == nil && cmdConf.ConfigSetDefault != "" {
 				fmt.Println("Command line will be set based on config_set_default attribute of meta/run.yaml")
-				command = runtime.BootCmdForScript(cmdConf.ConfigSetDefault)
+				command = runtime.BootCmdForScript(strings.Split(cmdConf.ConfigSetDefault, ","))
 			}
 		}
 	} else { // Fallback is empty bootcmd.

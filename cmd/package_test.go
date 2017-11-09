@@ -320,7 +320,7 @@ func (s *suite) TestRecursiveRunYamls(c *C) {
 	s.requireFakeDemoPkg(c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, false, "", false)
+	err := CollectPackage(s.repo, s.packageDir, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -344,7 +344,7 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYaml(c *C) {
 	`, c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, false, "", false)
+	err := CollectPackage(s.repo, s.packageDir, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -369,7 +369,7 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYamlOverwrite(c *C) {
 	`, c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, false, "", false)
+	err := CollectPackage(s.repo, s.packageDir, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -400,7 +400,7 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYamlEnv(c *C) {
 	`, c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, false, "", false)
+	err := CollectPackage(s.repo, s.packageDir, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -586,7 +586,7 @@ func (s *suite) TestRuntimeInheritance(c *C) {
 		s.setRunYaml(args.runYamlText, c)
 
 		// This is what we're testing here.
-		err := CollectPackage(s.repo, s.packageDir, false, "", false)
+		err := CollectPackage(s.repo, s.packageDir, false, false)
 
 		// Expectations.
 		c.Assert(err, IsNil)
@@ -663,7 +663,7 @@ func (s *suite) TestRuntimeInheritInvalid(c *C) {
 		s.setRunYaml(args.runYamlText, c)
 
 		// This is what we're testing here.
-		err := CollectPackage(s.repo, s.packageDir, false, "", false)
+		err := CollectPackage(s.repo, s.packageDir, false, false)
 
 		// Expectations.
 		c.Assert(err, NotNil)
@@ -846,11 +846,111 @@ func (s *suite) TestRuntimeInheritanceTwoLevels(c *C) {
 		s.setRunYaml(args.runYamlText, c)
 
 		// This is what we're testing here.
-		err := CollectPackage(s.repo, s.packageDir, false, "", false)
+		err := CollectPackage(s.repo, s.packageDir, false, false)
 
 		// Expectations.
 		c.Assert(err, IsNil)
 		c.Check(filepath.Join(s.packageDir, "mpm-pkg", "run"), DirEquals, args.expected)
+	}
+}
+
+func (s *suite) TestGetCmd(c *C) {
+	m := []struct {
+		comment        string
+		options        BootOptions
+		confSetDefault string
+		expectedCmd    string
+		err            string
+	}{
+		{
+			"empty command line",
+			BootOptions{},
+			"",
+			"",
+			"",
+		},
+		{
+			"simulate --execute",
+			BootOptions{Cmd: "direct cmd"},
+			"",
+			"direct cmd",
+			"",
+		},
+		{
+			"simulate --boot",
+			BootOptions{Boot: []string{"boot1"}},
+			"",
+			"runscript /run/boot1;",
+			"",
+		},
+		{
+			"simulate multiple --boot",
+			BootOptions{Boot: []string{"boot1", "boot2", "boot3"}},
+			"",
+			"runscript /run/boot1;runscript /run/boot2;runscript /run/boot3;",
+			"",
+		},
+		{
+			"simulate config_set_default",
+			BootOptions{PackageDir: s.packageDir},
+			"default1",
+			"runscript /run/default1;",
+			"",
+		},
+		{
+			"simulate multiple config_set_default",
+			BootOptions{PackageDir: s.packageDir},
+			"default1,default2",
+			"runscript /run/default1;runscript /run/default2;",
+			"",
+		},
+		{
+			"--execute is most important",
+			BootOptions{
+				Cmd:        "direct cmd",
+				Boot:       []string{"boot1"},
+				PackageDir: s.packageDir,
+			},
+			"",
+			"direct cmd",
+			"",
+		},
+		{
+			"--boot is second most important",
+			BootOptions{
+				Boot:       []string{"boot1"},
+				PackageDir: s.packageDir,
+			},
+			"",
+			"runscript /run/boot1;",
+			"",
+		},
+	}
+	for i, args := range m {
+		c.Logf("CASE #%d: %s", i, args.comment)
+
+		// Prepare.
+		if args.confSetDefault != "" {
+			s.setRunYaml(fmt.Sprintf(
+				`
+					runtime: native
+					config_set:
+					  default:
+					    bootcmd: some-invalid-so.so
+					config_set_default: %s
+				`, args.confSetDefault), c)
+		}
+
+		// This is what we're testing here.
+		cmd, err := args.options.GetCmd()
+
+		// Expectations.
+		if args.err == "" {
+			c.Assert(err, IsNil)
+		} else {
+			c.Assert(err, ErrorMatches, args.err)
+		}
+		c.Check(cmd, Equals, args.expectedCmd)
 	}
 }
 
