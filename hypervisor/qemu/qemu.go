@@ -34,6 +34,7 @@ type VMConfig struct {
 	InstanceDir string
 	Monitor     string
 	ConfigFile  string
+	AioType     string
 	Image       string // storage
 	BackingFile bool
 	Volumes     []string
@@ -263,17 +264,25 @@ func (c *VMConfig) vmDriveCache() string {
 	return "unsafe"
 }
 
+func (c *VMConfig) ValidateVmArguments(version *Version) error {
+	if c.AioType != "native" && c.AioType != "threads" {
+		return fmt.Errorf("aio type must be [native|threads], got: %s", c.AioType)
+	}
+
+	return nil
+}
+
 func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
+	if err := c.ValidateVmArguments(version); err != nil {
+		return []string{}, fmt.Errorf("argument validation failed: %s", err.Error())
+	}
+
 	args := make([]string, 0)
 	args = append(args, "-nographic")
 	args = append(args, "-m", strconv.FormatInt(c.Memory, 10))
 	args = append(args, "-smp", strconv.Itoa(c.Cpus))
 	args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")
-	aioType := "native"
-	if runtime.GOOS == "darwin" {
-		aioType = "threads"
-	}
-	args = append(args, "-drive", "file="+c.Image+",if=none,id=hd0,aio="+aioType+",cache="+c.vmDriveCache())
+	args = append(args, "-drive", "file="+c.Image+",if=none,id=hd0,aio="+c.AioType+",cache="+c.vmDriveCache())
 	if version.Major >= 1 && version.Minor >= 3 {
 		args = append(args, "-device", "virtio-rng-pci")
 	}

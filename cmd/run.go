@@ -233,6 +233,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 			DisableKvm:  repo.DisableKvm,
 			Persist:     config.Persist,
 			Volumes:     config.Volumes,
+			AioType:     repo.QemuAioType,
 		}
 
 		cmd, err = qemu.LaunchVM(config)

@@ -42,7 +42,7 @@ func (*suite) TestVersionParsing(c *C) {
 	}
 }
 
-func (*suite) TestVmArguments(c *C) {
+func (s *suite) TestVmArguments(c *C) {
 	m := []struct {
 		comment  string
 		config   VMConfig
@@ -56,7 +56,7 @@ func (*suite) TestVmArguments(c *C) {
 				"-m", "0",
 				"-smp", "0",
 				"-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0",
-				"-drive", "file=,if=none,id=hd0,aio=native,cache=unsafe",
+				"-drive", "file=,if=none,id=hd0,aio=threads,cache=unsafe",
 				"-device", "virtio-rng-pci",
 				"-chardev", "stdio,mux=on,id=stdio,signal=off",
 				"-device", "isa-serial,chardev=stdio",
@@ -66,6 +66,7 @@ func (*suite) TestVmArguments(c *C) {
 				"-mon", "chardev=charmonitor,id=monitor,mode=control",
 			},
 		},
+		// Volumes.
 		{
 			"single volume",
 			VMConfig{
@@ -110,22 +111,42 @@ func (*suite) TestVmArguments(c *C) {
 				"-device", "virtio-blk-pci,id=blk2,bootindex=2,drive=hd2",
 			},
 		},
+		// AioType.
+		{
+			"aio type native",
+			VMConfig{
+				AioType: "native",
+			},
+			[]string{
+				"-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0",
+				"-drive", "file=,if=none,id=hd0,aio=native,cache=unsafe",
+			},
+		},
 	}
 	for i, args := range m {
 		c.Logf("CASE #%d: %s", i, args.comment)
 
 		// Prepare.
 		qemuVersion := &Version{Major: 2, Minor: 5, Patch: 0}
-		if args.config.Networking == "" {
-			args.config.Networking = "nat"
-		}
-		args.config.DisableKvm = true
+		config := s.setDefaultAttributes(args.config, c)
 
 		// This is what we're testing here.
-		qemuArgs, err := args.config.vmArguments(qemuVersion)
+		qemuArgs, err := config.vmArguments(qemuVersion)
 
 		// Expectations.
 		c.Assert(err, IsNil)
 		c.Check(qemuArgs, ContainsArray, args.expected)
 	}
+}
+
+func (*suite) setDefaultAttributes(conf VMConfig, c *C) VMConfig {
+	conf.DisableKvm = true
+	if conf.Networking == "" {
+		conf.Networking = "nat"
+	}
+	if conf.AioType == "" {
+		conf.AioType = "threads"
+	}
+
+	return conf
 }

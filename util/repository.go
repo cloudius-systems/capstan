@@ -32,14 +32,16 @@ const (
 )
 
 type Repo struct {
-	URL        string
-	Path       string
-	DisableKvm bool
+	URL         string
+	Path        string
+	DisableKvm  bool
+	QemuAioType string
 }
 
 type CapstanSettings struct {
-	RepoUrl    string `yaml:"repo_url"`
-	DisableKvm bool   `yaml:"disable_kvm"`
+	RepoUrl     string `yaml:"repo_url"`
+	DisableKvm  bool   `yaml:"disable_kvm"`
+	QemuAioType string `yaml:"qemu_aio_type"`
 }
 
 func NewRepo(url string) *Repo {
@@ -50,8 +52,9 @@ func NewRepo(url string) *Repo {
 
 	// Read configuration file
 	config := CapstanSettings{
-		RepoUrl:    "",
-		DisableKvm: false,
+		RepoUrl:     "",
+		DisableKvm:  false,
+		QemuAioType: "threads",
 	}
 	data, err := ioutil.ReadFile(filepath.Join(root, "config.yaml"))
 	if err == nil {
@@ -77,15 +80,19 @@ func NewRepo(url string) *Repo {
 		return DefaultRepositoryUrl
 	}(url)
 
-	// Attempt to load DisableKvm flag from environment.
+	// Attempt to load flags from environment.
 	if envDisableKvm, err := strconv.ParseBool(os.Getenv("CAPSTAN_DISABLE_KVM")); err == nil {
 		config.DisableKvm = envDisableKvm
 	}
+	if envQemuAioType := os.Getenv("CAPSTAN_QEMU_AIO_TYPE"); envQemuAioType != "" {
+		config.QemuAioType = envQemuAioType
+	}
 
 	return &Repo{
-		URL:        url,
-		Path:       root,
-		DisableKvm: config.DisableKvm,
+		URL:         url,
+		Path:        root,
+		DisableKvm:  config.DisableKvm,
+		QemuAioType: config.QemuAioType,
 	}
 }
 
@@ -101,6 +108,7 @@ func (r *Repo) PrintRepo() {
 	fmt.Printf("CAPSTAN_ROOT: %s\n", r.Path)
 	fmt.Printf("CAPSTAN_REPO_URL: %s\n", r.URL)
 	fmt.Printf("CAPSTAN_DISABLE_KVM: %v\n", r.DisableKvm)
+	fmt.Printf("CAPSTAN_QEMU_AIO_TYPE: %v\n", r.QemuAioType)
 }
 
 func (r *Repo) ImportImage(imageName string, file string, version string, created string, description string, build string) error {
