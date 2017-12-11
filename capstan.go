@@ -504,6 +504,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
 						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						cli.BoolFlag{Name: "remote", Usage: "set when previewing the compose-remote"},
 					},
 					Action: func(c *cli.Context) error {
 						repo := util.NewRepo(c.GlobalString("u"))
@@ -511,7 +512,7 @@ func main() {
 
 						pullMissing := c.Bool("pull-missing")
 
-						if err := cmd.CollectPackage(repo, packageDir, pullMissing, c.Bool("verbose")); err != nil {
+						if err := cmd.CollectPackage(repo, packageDir, pullMissing, c.Bool("remote"), c.Bool("verbose")); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 

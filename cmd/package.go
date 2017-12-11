@@ -173,7 +173,7 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage, verbose, pu
 	}
 
 	// First, collect the contents of the package.
-	if err := CollectPackage(repo, packageDir, pullMissing, verbose); err != nil {
+	if err := CollectPackage(repo, packageDir, pullMissing, false, verbose); err != nil {
 		return err
 	}
 
@@ -235,7 +235,7 @@ func ComposePackageAndUploadToRemoteInstance(repo *util.Repo, verbose, pullMissi
 	defer os.RemoveAll(targetPath)
 
 	// First, collect the contents of the package.
-	if err := CollectPackage(repo, packageDir, pullMissing, verbose); err != nil {
+	if err := CollectPackage(repo, packageDir, pullMissing, true, verbose); err != nil {
 		return err
 	}
 
@@ -250,7 +250,7 @@ func ComposePackageAndUploadToRemoteInstance(repo *util.Repo, verbose, pullMissi
 
 // CollectPackage will try to resolve all of the dependencies of the given package
 // and collect the content in the $CWD/mpm-pkg directory.
-func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, verbose bool) error {
+func CollectPackage(repo *util.Repo, packageDir string, pullMissing, remote, verbose bool) error {
 	// Get the manifest file of the given package.
 	pkg, err := core.ParsePackageManifest(filepath.Join(packageDir, "meta", "package.yaml"))
 	if err != nil {
@@ -271,8 +271,15 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing bool, verbos
 
 	// The bootstrap package is implicitly required by every application package,
 	// so we add it to the list of required packages. Even if user has added
-	// the bootstrap manually, this will not result in overhead.
-	pkg.Require = append(pkg.Require, "osv.bootstrap")
+	// the bootstrap manually, this will not result in overhead. There is only
+	// one exception to this: when ComposeRemote is invoked, the bootstrap package
+	// mustn't be required since it clashes with executables that are already in the
+	// remote unikernel.
+	if remote {
+		pkg.Require = append([]string{"osv.compose-remote"}, pkg.Require...)
+	} else {
+		pkg.Require = append([]string{"osv.bootstrap"}, pkg.Require...)
+	}
 
 	// Look for all dependencies and make sure they are all available in the repository.
 	requiredPackages, err := repo.GetPackageDependencies(pkg, pullMissing)

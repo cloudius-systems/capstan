@@ -320,7 +320,7 @@ func (s *suite) TestRecursiveRunYamls(c *C) {
 	s.requireFakeDemoPkg(c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, false, false)
+	err := CollectPackage(s.repo, s.packageDir, false, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -344,7 +344,7 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYaml(c *C) {
 	`, c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, false, false)
+	err := CollectPackage(s.repo, s.packageDir, false, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -369,7 +369,7 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYamlOverwrite(c *C) {
 	`, c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, false, false)
+	err := CollectPackage(s.repo, s.packageDir, false, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -400,7 +400,7 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYamlEnv(c *C) {
 	`, c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, false, false)
+	err := CollectPackage(s.repo, s.packageDir, false, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -586,7 +586,7 @@ func (s *suite) TestRuntimeInheritance(c *C) {
 		s.setRunYaml(args.runYamlText, c)
 
 		// This is what we're testing here.
-		err := CollectPackage(s.repo, s.packageDir, false, false)
+		err := CollectPackage(s.repo, s.packageDir, false, false, false)
 
 		// Expectations.
 		c.Assert(err, IsNil)
@@ -663,7 +663,7 @@ func (s *suite) TestRuntimeInheritInvalid(c *C) {
 		s.setRunYaml(args.runYamlText, c)
 
 		// This is what we're testing here.
-		err := CollectPackage(s.repo, s.packageDir, false, false)
+		err := CollectPackage(s.repo, s.packageDir, false, false, false)
 
 		// Expectations.
 		c.Assert(err, NotNil)
@@ -846,7 +846,7 @@ func (s *suite) TestRuntimeInheritanceTwoLevels(c *C) {
 		s.setRunYaml(args.runYamlText, c)
 
 		// This is what we're testing here.
-		err := CollectPackage(s.repo, s.packageDir, false, false)
+		err := CollectPackage(s.repo, s.packageDir, false, false, false)
 
 		// Expectations.
 		c.Assert(err, IsNil)
@@ -954,6 +954,46 @@ func (s *suite) TestGetCmd(c *C) {
 	}
 }
 
+func (s *suite) TestImplicitlyRequiredPackages(c *C) {
+	// Prepare.
+	s.importFakeOSvBootstrapPkg(c)
+	s.importFakeOSvComposeRemotePkg(c)
+
+	m := []struct {
+		comment  string
+		remote   bool
+		expected map[string]interface{}
+	}{
+		{
+			"collect for local composing",
+			false,
+			map[string]interface{}{
+				"data-file.txt":               DefaultText,
+				"osv-bootstrap-data-file.txt": DefaultText, // present in osv.bootstrap
+			},
+		},
+		{
+			"collect for remote composing",
+			true,
+			map[string]interface{}{
+				"data-file.txt":                    DefaultText,
+				"osv-compose-remote-data-file.txt": DefaultText, // present in osv.compose-remote
+			},
+		},
+	}
+	for i, args := range m {
+		c.Logf("CASE #%d: %s", i, args.comment)
+		// Prepare
+
+		// This is what we're testing here.
+		err := CollectPackage(s.repo, s.packageDir, false, args.remote, false)
+
+		// Expectations.
+		c.Assert(err, IsNil)
+		c.Check(filepath.Join(s.packageDir, "mpm-pkg", "data"), DirEquals, args.expected)
+	}
+}
+
 //
 // Utility
 //
@@ -969,6 +1009,23 @@ func (s *suite) importFakeOSvBootstrapPkg(c *C) {
 		"/meta/README.md":                   DefaultText,
 		"/osv-bootstrap-file.txt":           DefaultText,
 		"/data/osv-bootstrap-data-file.txt": DefaultText,
+	}
+	tmpDir := c.MkDir()
+	PrepareFiles(tmpDir, files)
+	ImportPackage(s.repo, tmpDir)
+}
+
+func (s *suite) importFakeOSvComposeRemotePkg(c *C) {
+	packageYamlText := FixIndent(`
+		name: osv.compose-remote
+		title: PackageTitle
+		author: package-author
+	`)
+	files := map[string]string{
+		"/meta/package.yaml":                     packageYamlText,
+		"/meta/README.md":                        DefaultText,
+		"/osv-compose-remote-file.txt":           DefaultText,
+		"/data/osv-compose-remote-data-file.txt": DefaultText,
 	}
 	tmpDir := c.MkDir()
 	PrepareFiles(tmpDir, files)
