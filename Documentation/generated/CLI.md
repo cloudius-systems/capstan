@@ -22,12 +22,13 @@ USAGE:
    capstan package init [command options] [path]
 
 OPTIONS:
-   --name value, -n value     package name
-   --title value, -t value    package title
-   --author value, -a value   package author
-   --version value, -v value  package version
-   --require value            specify package dependency
-   --runtime value            runtime to stub package for. Use 'capstan runtime list' to list all
+   --name value, -n value      package name
+   --title value, -t value     package title
+   --author value, -a value    package author
+   --version value, -v value   package version
+   --require value             specify package dependency
+   --runtime value             runtime to stub package for. Use 'capstan runtime list' to list all
+   -p value, --platform value  platform where package was built on
    
 
 ```
@@ -41,8 +42,9 @@ USAGE:
    capstan package collect [command options] [arguments...]
 
 OPTIONS:
-   --pull-missing, -p           attempt to pull packages missing from a local repository
-   --runconfig value, -r value  specify config_set name (specified in meta/run.yaml)
+   --pull-missing, -p  attempt to pull packages missing from a local repository
+   --boot value        specify config_set name to boot unikernel with
+   --verbose, -v       verbose mode
    
 
 ```
@@ -56,12 +58,13 @@ USAGE:
    capstan package compose [command options] image-name
 
 OPTIONS:
-   --size value, -s value       total size of the target image (use M or G suffix) (default: "10G")
-   --update                     updates the existing target VM by uploading only modified files
-   --verbose, -v                verbose mode
-   --run value                  the command line to be executed in the VM
-   --pull-missing, -p           attempt to pull packages missing from a local repository
-   --runconfig value, -r value  specify config_set name (specified in meta/run.yaml)
+   --size value, -s value  total size of the target image (use M or G suffix) (default: "10G")
+   --update                updates the existing target VM by uploading only modified files
+   --verbose, -v           verbose mode
+   --run value             the command line to be executed in the VM
+   --pull-missing, -p      attempt to pull packages missing from a local repository
+   --boot value            specify default config_set name to boot unikernel with
+   --env value             specify value of environment variable e.g. PORT=8000 (repeatable)
    
 
 ```
@@ -155,18 +158,22 @@ USAGE:
    capstan run [command options] instance-name
 
 OPTIONS:
-   -i value                     image_name
-   -p value                     hypervisor: qemu|vbox|vmw|gce (default: "qemu")
-   -m value                     memory size (default: "1G")
-   -c value                     number of CPUs (default: 2)
-   -n value                     networking: nat|bridge|tap (default: "nat")
-   -v                           verbose mode
-   -b value                     networking device (bridge or tap): e.g., virbr0, vboxnet0, tap0
-   -f value                     port forwarding rules
-   --gce-upload-dir value       Directory to upload local image to: e.g., gs://osvimg
-   --mac value                  MAC address. If not specified, the MAC address will be generated automatically.
-   --execute value, -e value    set the command line to execute
-   --runconfig value, -r value  specify config_set name (specified in meta/run.yaml)
+   -i value                   image_name
+   -p value                   hypervisor: qemu|vbox|vmw|gce (default: "qemu")
+   -m value                   memory size (default: "1G")
+   -c value                   number of CPUs (default: 2)
+   -n value                   networking: nat|bridge|tap|vhost (default: "nat")
+   -v                         verbose mode
+   -b value                   networking device (bridge or tap): e.g., virbr0, vboxnet0, tap0
+   -f value                   port forwarding rules
+   --gce-upload-dir value     Directory to upload local image to: e.g., gs://osvimg
+   --mac value                MAC address. If not specified, the MAC address will be generated automatically.
+   --execute value, -e value  set the command line to execute
+   --boot value               specify config_set name to boot unikernel with
+   --persist                  persist instance parameters (only relevant for qemu instances)
+   --env value                specify value of environment variable e.g. PORT=8000 (repeatable)
+   --volume value             {path}[:{key=val}], e.g. ./volume.img:format=raw (repeatable)
+                                    Default options are :format=raw:aio=native:cache=none
    
 
 ```
@@ -186,21 +193,22 @@ DESCRIPTION:
    Compose package, build .qcow2 image and upload it to OpenStack under nickname <image-name>.
 
 OPTIONS:
-   --size value, -s value       minimal size of the target user partition (use M or G suffix).
-                                NOTE: will be enlarged to match flavor size. (default: "10G")
-   --flavor value, -f value     OpenStack flavor name that created OSv image should fit to
-   --run value                  the command line to be executed in the VM
-   --keep-image                 don't delete local composed image in .capstan/repository/stack
-   --verbose, -v                verbose mode
-   --pull-missing, -p           attempt to pull packages missing from a local repository
-   --runconfig value, -r value  specify config_set name (specified in meta/run.yaml)
-   --OS_AUTH_URL value          OpenStack auth url (e.g. http://10.0.2.15:5000/v2.0)
-   --OS_TENANT_ID value         OpenStack tenant id (e.g. 3dfe7bf545ff4885a3912a92a4a5f8e0)
-   --OS_TENANT_NAME value       OpenStack tenant name (e.g. admin)
-   --OS_PROJECT_NAME value      OpenStack project name (e.g. admin)
-   --OS_USERNAME value          OpenStack username (e.g. admin)
-   --OS_PASSWORD value          OpenStack password (*TODO*: leave blank to be prompted)
-   --OS_REGION_NAME value       OpenStack username (e.g. RegionOne)
+   --size value, -s value    minimal size of the target user partition (use M or G suffix).
+                             NOTE: will be enlarged to match flavor size. (default: "10G")
+   --flavor value, -f value  OpenStack flavor name that created OSv image should fit to
+   --run value               the command line to be executed in the VM
+   --keep-image              don't delete local composed image in .capstan/repository/stack
+   --verbose, -v             verbose mode
+   --pull-missing, -p        attempt to pull packages missing from a local repository
+   --boot value              specify config_set name to boot unikernel with
+   --env value               specify value of environment variable e.g. PORT=8000 (repeatable)
+   --OS_AUTH_URL value       OpenStack auth url (e.g. http://10.0.2.15:5000/v2.0)
+   --OS_TENANT_ID value      OpenStack tenant id (e.g. 3dfe7bf545ff4885a3912a92a4a5f8e0)
+   --OS_TENANT_NAME value    OpenStack tenant name (e.g. admin)
+   --OS_PROJECT_NAME value   OpenStack project name (e.g. admin)
+   --OS_USERNAME value       OpenStack username (e.g. admin)
+   --OS_PASSWORD value       OpenStack password (*TODO*: leave blank to be prompted)
+   --OS_REGION_NAME value    OpenStack username (e.g. RegionOne)
    
 
 ```
@@ -249,8 +257,26 @@ USAGE:
 
 ```
 
+## Contextualizing unikernel remotely
+Commands used to contextualize remote unikernel (i.e. on OpenStack Glance).
+
+### capstan package compose-remote
+```
+NAME:
+   capstan package compose-remote - composes the package and all its dependencies and uploads resulting files into remote OSv instance
+
+USAGE:
+   capstan package compose-remote [command options] remote-instance
+
+OPTIONS:
+   --verbose, -v       verbose mode
+   --pull-missing, -p  attempt to pull packages missing from a local repository
+   
+
+```
+
 ---
-<sup>  Documentation compiled on: 2017/01/06 09:18
+<sup>  Documentation compiled on: 2017/12/18 07:08
   <br>
-  capstan version 
+  capstan version 'v0.2.1-66-g4248dd0'
 </sup>

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #
 # This script is meant to be run manually when you introduce a change in capstan API.
 # It stores capstan --help texts into markdown file so that user is able to read them without
@@ -66,6 +67,10 @@ GROUPS = [
     Group('Configuring Capstan tool',
           'Commands used to configure Capstan.', [
               Command('capstan config print'),
+          ]),
+    Group('Contextualizing unikernel remotely',
+          'Commands used to contextualize remote unikernel (i.e. on OpenStack Glance).', [
+              Command('capstan package compose-remote'),
           ]),
 ]
 

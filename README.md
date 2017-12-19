@@ -7,7 +7,7 @@ the first stable release at the moment.*
 
 Capstan is a command-line tool for rapidly running your application on [OSv unikernel](http://osv.io).
 It focuses on improving user experience during building the unikernel and attempts to support
-not only a variety of runtimes (C, C++, Java, NodeJS etc.), but also a variety of ready-to-run
+not only a variety of runtimes (C, C++, Java, Node.js etc.), but also a variety of ready-to-run
 applications (Hadoop HDFS, MySQL, SimpleFOAM etc.).
 
 ## Philosophy
@@ -45,7 +45,6 @@ all still apply. Most notably, you can only run single process inside unikernel 
 
 ## Getting started
 Capstan can be installed using precompiled binary or compiled from source.
-<br>
 [Step-by-step Capstan Installation Guide](Documentation/Installation.md)
 
 Using Capstan is rather simple: open up your project directory and create
@@ -76,8 +75,13 @@ Congratulations, your unikernel is up-and-running! Press CTRL + C to stop it.
 * [Step-by-step Capstan Installation Guide](Documentation/Installation.md)
 * [Running My First Application Inside Unikernel](Documentation/WalkthroughNodeJS.md)
 * [Configuration Files](Documentation/ConfigurationFiles.md)
+    * [Native](Documentation/RuntimeNative.md)
+    * [Java](Documentation/RuntimeJava.md)
+    * [Node.js](Documentation/RuntimeNode.md)
+    * [Python](Documentation/RuntimePython.md)
+* [.capstanignore](Documentation/Capstanignore.md)
+* [Attaching volumes](Documentation/Volumes.md)
 * [CLI Reference](Documentation/generated/CLI.md)
-* [Under the Hood](Documentation/UnderTheHood.md)
 
 ## License
 Capstan is distributed under the 3-clause BSD license.
