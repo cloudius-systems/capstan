@@ -77,6 +77,7 @@ func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string
 		BackingFile: false,
 		Cmd:         osvCmdline,
 		DisableKvm:  r.DisableKvm,
+		AioType:     r.QemuAioType,
 	}
 
 	// TODO Have to come up with a better error handling if necessary. Be more verbose on errors.
