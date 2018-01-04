@@ -6,24 +6,27 @@ you then provide path to this file together with some metadata.
 NOTE: volumes are only supported for QEMU hipervisor at the moment.
 
 ## Creating a new volume
-You can create a new volume using qemu-img tool:
+You can create a new volume with Capstan:
 
 ```bash
-$ qemu-img create -f qcow2 ./volume.img 1G
+$ capstan volume create volume1
 ```
+
+The command above will create a volume of size 1GB in RAW format by default. Consult `capstan volume create --help`
+to learn how other size or other formats can be used. The volume will be created as `./volumes/volume1`.
 
 ## Attaching volumes
 Tell Capstan where your volume is and it will attach it to the instance on run:
 
 ```bash
-$ capstan run demo --volume ./volume.img
+$ capstan run demo --volume ./volumes/volume1
 ```
 
 The volume will get attached as `/dev/vblk1` into the unikernel. The `--volume` argument can be repeated
 to attach multiple volumes:
 
 ```bash
-$ capstan run demo --volume ./volume1.img --volume ./volume2.img --volume ./volume3.img
+$ capstan run demo --volume ./volume1 --volume ./volume2 --volume ./volume3
 ```
 
 Volumes will get attached as `/dev/vblk1`, `/dev/vblk2`, `/dev/vblk3` in the same order as provided (left-to-right).
@@ -32,12 +35,12 @@ Volumes will get attached as `/dev/vblk1`, `/dev/vblk2`, `/dev/vblk3` in the sam
 You can provide volume metadata for Capstan to be able to attach it as desired:
 
 ```bash
-$ capstan run demo --volume ./volume.img:format=qcow2:aio=threads
+$ capstan run demo --volume ./volume1:format=qcow2:aio=threads
 ```
 
 | KEY | DEFAULT VALUE | VALUES |
 |-------|---------------------|------------|
-| format | raw | raw, qcow2,vdi,vmdk|
+| format | raw | raw,qcow2,vdi,vmdk|
 | aio | native | native/threads|
 | cache | none | none/writeback/writethrough/directsync/unsafe|
 

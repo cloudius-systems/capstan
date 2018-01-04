@@ -14,6 +14,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -450,4 +451,51 @@ func interface2array(ifc interface{}) ([]interface{}, error) {
 	} else {
 		return nil, fmt.Errorf("Failed to parse interface to array")
 	}
+}
+
+// The CmdOutputMatches checker invokes bash command and checks if stdout matches.
+//
+// For example:
+//
+//     c.Check([]string{"echo", "Hello!"}, CmdOutputMatches, "Hello!")
+//
+var CmdOutputMatches Checker = &cmdOutputMatchesChecker{
+	&CheckerInfo{Name: "CmdOutputMatches", Params: []string{"cmd", "expected"}},
+}
+
+type cmdOutputMatchesChecker struct {
+	*CheckerInfo
+}
+
+func (checker *cmdOutputMatchesChecker) Check(params []interface{}, names []string) (result bool, error string) {
+	cmdArgs, ok := params[0].([]string)
+	if !ok {
+		return false, "Cmd must be a []string."
+	}
+	expected, ok := params[1].(string)
+	if !ok {
+		return false, "Expected must be a string."
+	}
+	regex, err := regexp.Compile(expected)
+	if err != nil {
+		return false, err.Error()
+	}
+
+	// Execute command.
+	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
+	obtainedBytes, err := cmd.Output()
+	if err != nil {
+		return false, err.Error()
+	}
+	obtained := string(obtainedBytes)
+
+	// Compare.
+	if !regex.MatchString(obtained) {
+		// When match is false, we show user the stdout, not the cmd itself.
+		params[0] = obtained
+
+		return false, "Obtained is different than expected"
+	}
+
+	return true, ""
 }

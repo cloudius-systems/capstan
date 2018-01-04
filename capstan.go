@@ -722,6 +722,66 @@ func main() {
 				},
 			},
 		},
+		{
+			Name:  "volume",
+			Usage: "volume manipulation tools",
+			Subcommands: []cli.Command{
+				{
+					Name:      "create",
+					Usage:     "create empty volume and store it into ./volumes directory",
+					ArgsUsage: "[volume-name]",
+					Flags: []cli.Flag{
+						cli.StringFlag{Name: "size, s", Value: "1G", Usage: "total size of the target image (use M or G suffix)"},
+						cli.StringFlag{Name: "format, f", Usage: "volume format, e.g. [raw|qcow2|vdi|vmdk|...]"},
+					},
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							return cli.NewExitError("usage: capstan volume create [volume-name]", EX_USAGE)
+						}
+
+						size, err := util.ParseMemSize(c.String("size"))
+						if err != nil {
+							return cli.NewExitError(fmt.Sprintf("Incorrect image size format: %s", err), EX_DATAERR)
+						}
+
+						volume := cmd.Volume{
+							Volume: hypervisor.Volume{
+								Format: c.String("format"),
+							},
+							SizeMB: size,
+							Name:   c.Args().First(),
+						}
+						packagePath, _ := os.Getwd()
+						if err := cmd.CreateVolume(packagePath, volume); err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
+						}
+
+						return nil
+					},
+				},
+				{
+					Name:      "delete",
+					Usage:     "delete volume by name",
+					ArgsUsage: "[volume-name]",
+					Flags: []cli.Flag{
+						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+					},
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							return cli.NewExitError("usage: capstan volume delete [volume-name]", EX_USAGE)
+						}
+						name := c.Args().First()
+
+						packagePath, _ := os.Getwd()
+						if err := cmd.DeleteVolume(packagePath, name, c.Bool("verbose")); err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
+						}
+
+						return nil
+					},
+				},
+			},
+		},
 	}
 	app.Run(os.Args)
 }

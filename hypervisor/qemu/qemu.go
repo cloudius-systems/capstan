@@ -419,3 +419,14 @@ func checkKVM() bool {
 
 	return true
 }
+
+func CreateVolume(path, format string, sizeMB int64) error {
+	if _, err := os.Stat(path); err == nil {
+		return fmt.Errorf("Volume already exists")
+	}
+	cmd := exec.Command("qemu-img", "create", "-f", format, path, fmt.Sprintf("%dM", sizeMB))
+	if stdout, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("%s\n%s", stdout, err)
+	}
+	return nil
+}
