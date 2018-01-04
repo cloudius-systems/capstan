@@ -106,6 +106,7 @@ pairs e.g.
 ```yaml
 repo_url: https://mikelangelo-capstan.s3.amazonaws.com/
 disable_kvm: false
+qemu_aio_type: threads
 ```
 List of supported keys:
 
@@ -113,6 +114,8 @@ List of supported keys:
 packages from.
 * `disable_kvm` by default KVM acceleration is turned on to speed up unikernel creation, but in
 certain circumstances this results in error. Set this to `true` if you have problems using KVM.
+* `qemu_aio_type` by default QEMU aio type is set to "threads" for compatibility reasons. A faster
+option aio is "native", but it's not supported on all platforms.
 
 Please note that if command line argument is used to override the same value (e.g. -u for repository
 URL), then the value from configuration file is ignored.
@@ -129,6 +132,8 @@ List of supported environment variables:
 
 * `CAPSTAN_REPO_URL` overrides the default remote repository URL that is used to fetch precompiled
 packages from.
+* `DISABLE_KVM` [true|false]
+* `QEMU_AIO_TYPE` [threads|native]
 
 Please note that environment variables have the lowest priority - if same variable is set using either
 command-line argument or configuration file, then environment variable is ignored.
