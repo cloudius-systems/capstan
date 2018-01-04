@@ -45,10 +45,7 @@ type CapstanSettings struct {
 }
 
 func NewRepo(url string) *Repo {
-	root := os.Getenv("CAPSTAN_ROOT")
-	if root == "" {
-		root = filepath.Join(HomePath(), "/.capstan/")
-	}
+	root := ConfigDir()
 
 	// Read configuration file
 	config := CapstanSettings{
