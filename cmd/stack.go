@@ -65,7 +65,7 @@ func OpenStackPush(c *cli.Context) error {
 
 	bootOpts := BootOptions{
 		Cmd:        c.String("run"),
-		Boot:       c.String("boot"),
+		Boot:       c.StringSlice("boot"),
 		EnvList:    c.StringSlice("env"),
 		PackageDir: packageDir,
 	}

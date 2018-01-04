@@ -149,7 +149,7 @@ func main() {
 				cli.StringFlag{Name: "gce-upload-dir", Value: "", Usage: "Directory to upload local image to: e.g., gs://osvimg"},
 				cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
 				cli.StringFlag{Name: "execute,e", Usage: "set the command line to execute"},
-				cli.StringFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with"},
+				cli.StringSliceFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with (repeatable, will be run left to right)"},
 				cli.BoolFlag{Name: "persist", Usage: "persist instance parameters (only relevant for qemu instances)"},
 				cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
 				cli.StringSliceFlag{Name: "volume", Value: new(cli.StringSlice), Usage: `{path}[:{key=val}], e.g. ./volume.img:format=raw (repeatable)
@@ -164,7 +164,7 @@ func main() {
 
 				bootOpts := cmd.BootOptions{
 					Cmd:     c.String("execute"),
-					Boot:    c.String("boot"),
+					Boot:    c.StringSlice("boot"),
 					EnvList: c.StringSlice("env"),
 				}
 				bootCmd, err := bootOpts.GetCmd()
@@ -424,7 +424,7 @@ func main() {
 						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 						cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
-						cli.StringFlag{Name: "boot", Usage: "specify default config_set name to boot unikernel with"},
+						cli.StringSliceFlag{Name: "boot", Usage: "specify default config_set name to boot unikernel with (repeatable, will be run left to right)"},
 						cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
 					},
 					Action: func(c *cli.Context) error {
@@ -453,7 +453,7 @@ func main() {
 
 						bootOpts := cmd.BootOptions{
 							Cmd:        c.String("run"),
-							Boot:       c.String("boot"),
+							Boot:       c.StringSlice("boot"),
 							EnvList:    c.StringSlice("env"),
 							PackageDir: packageDir,
 						}
@@ -503,7 +503,6 @@ func main() {
 					Usage: "collects contents of this package and all required packages",
 					Flags: []cli.Flag{
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
-						cli.StringFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with"},
 						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 					},
 					Action: func(c *cli.Context) error {
@@ -512,7 +511,7 @@ func main() {
 
 						pullMissing := c.Bool("pull-missing")
 
-						if err := cmd.CollectPackage(repo, packageDir, pullMissing, c.String("boot"), c.Bool("verbose")); err != nil {
+						if err := cmd.CollectPackage(repo, packageDir, pullMissing, c.Bool("verbose")); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
@@ -626,7 +625,7 @@ func main() {
 							cli.BoolFlag{Name: "keep-image", Usage: "don't delete local composed image in .capstan/repository/stack"},
 							cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 							cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
-							cli.StringFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with"},
+							cli.StringSliceFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with (repeatable, will be run left to right)"},
 							cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
 						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
 					ArgsUsage:   "image-name",

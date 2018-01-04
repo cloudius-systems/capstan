@@ -213,12 +213,16 @@ func PrependEnvsPrefix(cmd string, env map[string]string, soft bool) (string, er
 
 // BootCmdForScript returns boot command that is to be used
 // to run config set with name bootName.
-func BootCmdForScript(bootName string) string {
-	if bootName == "" {
+func BootCmdForScript(bootNames []string) string {
+	if len(bootNames) == 0 {
 		return ""
 	}
+	bootCmd := ""
+	for _, bootName := range bootNames {
+		bootCmd += fmt.Sprintf("runscript /run/%s;", strings.TrimSpace(bootName))
+	}
 
-	return fmt.Sprintf("runscript /run/%s", bootName)
+	return bootCmd
 }
 
 // parseBase parses base into pkgName and configSetName.

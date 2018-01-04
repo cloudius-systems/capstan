@@ -171,7 +171,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 			if err != nil {
 				return err
 			}
-			bootOpts := BootOptions{Boot: config.Cmd}
+			bootOpts := BootOptions{Cmd: config.Cmd}
 			err = ComposePackage(repo, sz, true, false, true, wd, pkg.Name, &bootOpts)
 			if err != nil {
 				return err
