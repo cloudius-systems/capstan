@@ -74,13 +74,13 @@ func RuntimeInit(runtimeName string, plain bool, force bool) error {
 	return nil
 }
 
-func RuntimeList() error {
-	fmt.Printf("%-20s%-50s%-20s\n", "RUNTIME", "DESCRIPTION", "DEPENDENCIES")
+func RuntimeList() string {
+	res := fmt.Sprintf("%-20s%-50s%-20s\n", "RUNTIME", "DESCRIPTION", "DEPENDENCIES")
 	for _, runtimeType := range runtime.SupportedRuntimes {
 		rt, _ := runtime.PickRuntime(runtimeType)
-		fmt.Printf("%-20s%-50s%-20s\n", string(runtimeType), rt.GetRuntimeDescription(), rt.GetDependencies())
+		res += fmt.Sprintf("%-20s%-50s%-20s\n", string(runtimeType), rt.GetRuntimeDescription(), rt.GetDependencies())
 	}
-	return nil
+	return res
 }
 
 func removeComments(s string) string {
