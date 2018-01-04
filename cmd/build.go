@@ -97,6 +97,7 @@ func UploadRPM(r *util.Repo, hypervisor string, image string, template *core.Tem
 		Networking:  "nat",
 		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
+		AioType:     r.QemuAioType,
 	}
 	vm, err := qemu.LaunchVM(vmconfig)
 	if err != nil {
@@ -199,6 +200,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
 		DisableKvm:  r.DisableKvm,
+		AioType:     r.QemuAioType,
 	}
 	cmd, err := qemu.VMCommand(vmconfig)
 	if err != nil {
