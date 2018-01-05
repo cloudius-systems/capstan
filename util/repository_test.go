@@ -215,6 +215,111 @@ func (s *suite) TestImageList(c *C) {
 	}
 }
 
+func (s *suite) TestLocalPackages(c *C) {
+	m := []struct {
+		comment          string
+		search           string
+		packages         []string
+		clutterFiles     map[string]string
+		expectedPackages []string
+	}{
+		{
+			"no packages",
+			"",
+			[]string{},
+			map[string]string{},
+			[]string{},
+		},
+		{
+			"single package",
+			"",
+			[]string{"package1"},
+			map[string]string{},
+			[]string{"package1"},
+		},
+		{
+			"single package - ignore clutter",
+			"",
+			[]string{"package1"},
+			map[string]string{
+				"clutter.txt": DefaultText,
+			},
+			[]string{"package1"},
+		},
+		{
+			"two packages",
+			"",
+			[]string{"package1", "package2"},
+			map[string]string{},
+			[]string{"package1", "package2"},
+		},
+		{
+			"search",
+			"package1",
+			[]string{"package1", "package2"},
+			map[string]string{},
+			[]string{"package1"},
+		},
+	}
+	for i, args := range m {
+		c.Logf("CASE #%d: %s", i, args.comment)
+
+		// Prepare.
+		ClearDirectory(s.repo.Path)
+		for _, pkgName := range args.packages {
+			s.importPkg(map[string]string{
+				"meta/package.yaml": FixIndent(fmt.Sprintf(`
+					name: %s
+					title: title
+					author: author
+			`, pkgName)),
+			}, c)
+		}
+		PrepareFiles(s.repo.PackagesPath(), args.clutterFiles)
+
+		// This is what we're testing here.
+		packages, err := s.repo.LocalPackages(args.search)
+
+		// Expectations.
+		c.Check(err, IsNil)
+		names := []string{}
+		for _, pkg := range packages {
+			names = append(names, pkg.Name)
+		}
+		c.Check(names, DeepEquals, args.expectedPackages)
+	}
+}
+
+func (s *suite) TestLocalPackagesInvalid(c *C) {
+	m := []struct {
+		comment      string
+		clutterFiles map[string]string
+		expectedErr  string
+	}{
+		{
+			"invalid package",
+			map[string]string{
+				"invalid-package.yaml": DefaultText,
+			},
+			"invalid package manifest",
+		},
+	}
+	for i, args := range m {
+		c.Logf("CASE #%d: %s", i, args.comment)
+
+		// Prepare.
+		ClearDirectory(s.repo.Path)
+		PrepareFiles(s.repo.PackagesPath(), args.clutterFiles)
+
+		// This is what we're testing here.
+		_, err := s.repo.LocalPackages("")
+
+		// Expectations.
+		c.Assert(err, NotNil)
+		c.Check(err.Error(), MatchesMultiline, args.expectedErr)
+	}
+}
+
 //
 // Utility
 //

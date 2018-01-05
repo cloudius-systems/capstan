@@ -16,7 +16,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -172,4 +175,19 @@ func StringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+// VersionStringToInt converts 1.2.3 into 1002003 to make it comparable.
+func VersionStringToInt(version string) (int, error) {
+	if ok, _ := regexp.MatchString(`^\d{1,3}(\.\d{1,3}){0,2}$`, version); !ok {
+		return 0, fmt.Errorf("Invalid version string: '%s'", version)
+	}
+	res := 0
+	weight := 1000000
+	for _, part := range strings.Split(version, ".") {
+		n, _ := strconv.Atoi(part)
+		res += weight * n
+		weight /= 1000
+	}
+	return res, nil
 }

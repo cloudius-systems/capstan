@@ -607,6 +607,31 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:      "update",
+					Usage:     "updates local packages from remote if remote version is newer",
+					ArgsUsage: "[package-name]",
+					Flags: []cli.Flag{
+						cli.BoolFlag{Name: "created", Usage: "update package also if created date is newer (regardless version)"},
+						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+					},
+					Action: func(c *cli.Context) error {
+						// Initialise the repository
+						repo := util.NewRepo(c.GlobalString("u"))
+
+						search := ""
+						if len(c.Args()) > 0 {
+							search = c.Args().First()
+						}
+
+						// Update the package
+						if err := cmd.UpdatePackages(repo, search, c.Bool("created"), c.Bool("verbose")); err != nil {
+							return cli.NewExitError(err.Error(), EX_DATAERR)
+						}
+
+						return nil
+					},
+				},
 			},
 		},
 		{
