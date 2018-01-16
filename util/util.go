@@ -21,7 +21,11 @@ import (
 )
 
 func ConfigDir() string {
-	return filepath.Join(HomePath(), ".capstan")
+	root := os.Getenv("CAPSTAN_ROOT")
+	if root == "" {
+		root = filepath.Join(HomePath(), "/.capstan/")
+	}
+	return root
 }
 
 func HomePath() string {
