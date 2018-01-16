@@ -29,6 +29,7 @@ var SupportedRuntimes []RuntimeType = []RuntimeType{
 	Native,
 	NodeJS,
 	Java,
+	Python,
 }
 
 type RunConfig struct {

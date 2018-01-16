@@ -715,7 +715,7 @@ func main() {
 					Usage: "list available runtimes",
 					Flags: []cli.Flag{},
 					Action: func(c *cli.Context) error {
-						cmd.RuntimeList()
+						fmt.Print(cmd.RuntimeList())
 
 						return nil
 					},
