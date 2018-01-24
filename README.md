@@ -81,6 +81,7 @@ Congratulations, your unikernel is up-and-running! Press CTRL + C to stop it.
     * [Python](Documentation/RuntimePython.md)
 * [.capstanignore](Documentation/Capstanignore.md)
 * [Attaching volumes](Documentation/Volumes.md)
+* [Capstan S3 Repository](Documentation/Repository.md)
 * [CLI Reference](Documentation/generated/CLI.md)
 
 ## License
