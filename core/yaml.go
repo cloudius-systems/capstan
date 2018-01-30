@@ -52,3 +52,11 @@ func (t YamlTime) String() string {
 		return "N/A"
 	}
 }
+
+func (t YamlTime) GetTime() *time.Time {
+	if v, ok := t.Time.(time.Time); ok {
+		return &v
+	} else {
+		return nil
+	}
+}

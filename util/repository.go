@@ -245,20 +245,38 @@ func (r *Repo) ListImages() string {
 
 func (r *Repo) ListPackages() string {
 	res := fmt.Sprintln(FileInfoHeader())
-	packages, _ := ioutil.ReadDir(r.PackagesPath())
-	for _, p := range packages {
-		if filepath.Ext(p.Name()) == ".yaml" {
-			pkg, err := core.ParsePackageManifest(filepath.Join(r.PackagesPath(), p.Name()))
-
-			// Skip the package if the manifest cannot be parsed.
-			if err != nil {
-				continue
-			}
-
-			res += fmt.Sprintln(pkg.String())
-		}
+	packages, _ := r.LocalPackages("")
+	for _, pkg := range packages {
+		res += fmt.Sprintln(pkg.String())
 	}
 	return res
+}
+
+func (r *Repo) LocalPackages(search string) ([]*core.Package, error) {
+	res := []*core.Package{}
+	packageDir := r.PackagesPath()
+	if _, err := os.Stat(packageDir); os.IsNotExist(err) {
+		return res, nil
+	}
+	err := filepath.Walk(packageDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !strings.HasSuffix(path, ".yaml") {
+			return nil
+		}
+		if search != "" && !strings.Contains(path, search) {
+			return nil
+		}
+
+		pkg, err := core.ParsePackageManifest(path)
+		if err != nil {
+			return fmt.Errorf("invalid package manifest: %s", err)
+		}
+		res = append(res, &pkg)
+		return nil
+	})
+	return res, err
 }
 
 func (r *Repo) DefaultImage() string {

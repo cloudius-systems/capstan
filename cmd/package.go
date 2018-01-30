@@ -700,3 +700,51 @@ func absTarPathMatches(tarPath, pathPattern string) (res bool) {
 	res, _ = regexp.MatchString(fmt.Sprintf("^/?%s$", pathPattern), tarPath)
 	return
 }
+
+func UpdatePackages(repo *util.Repo, search string, compareCreated, verbose bool) error {
+	localPackages, err := repo.LocalPackages(search)
+	if err != nil {
+		return fmt.Errorf("Could not read local packages: %s", err)
+	}
+	if len(localPackages) == 0 {
+		if verbose {
+			fmt.Println("No local packages were found.")
+		}
+		return nil
+	}
+	updateCount := 0
+	for idx, localPkg := range localPackages {
+		if verbose {
+			fmt.Printf("[%02d/%02d] %-50s", idx+1, len(localPackages), localPkg.Name)
+		}
+		remotePkg := util.RemotePackageInfo(repo.URL, fmt.Sprintf("packages/%s.yaml", localPkg.Name))
+		if remotePkg == nil {
+			if verbose {
+				fmt.Println("... package does not exist in remote repository")
+			}
+			continue
+		}
+		needsUpdate, err := util.NeedsUpdate(localPkg, remotePkg, compareCreated)
+		if err != nil && verbose { // Tolerate error because by updating package we will hopefully resolve it.
+			fmt.Print("... (invalid version) ")
+		}
+		if needsUpdate {
+			if verbose {
+				fmt.Printf("... updating %s -> %s\n", localPkg.Version, remotePkg.Version)
+			}
+			if err := repo.DownloadPackage(repo.URL, localPkg.Name); err != nil {
+				return fmt.Errorf("ERROR: %s", err)
+			} else {
+				updateCount += 1
+				if verbose {
+					fmt.Println("package successfully updated")
+				}
+			}
+		} else if verbose {
+			fmt.Println("... already latest")
+		}
+	}
+
+	fmt.Printf("Updated %d packages (out of %d that were found locally)\n", updateCount, len(localPackages))
+	return nil
+}

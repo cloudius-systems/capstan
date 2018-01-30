@@ -305,3 +305,27 @@ func IsRemotePackage(repo_url, name string) (bool, error) {
 
 	return false, nil
 }
+
+func NeedsUpdate(localPkg, remotePkg *core.Package, compareCreated bool) (bool, error) {
+	// Compare Version attribute.
+	localVersion, err := VersionStringToInt(localPkg.Version)
+	if err != nil {
+		return true, err
+	}
+	remoteVersion, err := VersionStringToInt(remotePkg.Version)
+	if err != nil {
+		return true, err
+	}
+	needsUpdate := localVersion < remoteVersion
+	if needsUpdate || !compareCreated {
+		return needsUpdate, nil
+	}
+
+	// Compare Created attribute.
+	createdLocal := localPkg.Created.GetTime()
+	createdRemote := remotePkg.Created.GetTime()
+	if createdLocal == nil || createdRemote == nil {
+		return true, nil
+	}
+	return createdLocal.Before(*createdRemote), nil
+}
