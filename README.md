@@ -83,6 +83,7 @@ Congratulations, your unikernel is up-and-running! Press CTRL + C to stop it.
 * [Attaching volumes](Documentation/Volumes.md)
 * [Capstan S3 Repository](Documentation/Repository.md)
 * [CLI Reference](Documentation/generated/CLI.md)
+* [OSv filesystem](Documentation/OsvFilesystem.md)
 
 ## License
 Capstan is distributed under the 3-clause BSD license.
