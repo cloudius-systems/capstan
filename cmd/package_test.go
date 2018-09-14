@@ -210,7 +210,7 @@ func (*suite) TestComposeNonPackageFails(c *C) {
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-app"
 
-	err := ComposePackage(repo, imageSize, false, false, false, tmp, appName, &BootOptions{})
+	err := ComposePackage(repo, imageSize, false, false, false, tmp, appName, &BootOptions{}, "zfs")
 
 	c.Assert(err, NotNil)
 }
@@ -231,12 +231,12 @@ func (*suite) TestComposeCorruptPackageFails(c *C) {
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-app"
 
-	err = ComposePackage(repo, imageSize, false, false, false, tmp, appName, &BootOptions{})
+	err = ComposePackage(repo, imageSize, false, false, false, tmp, appName, &BootOptions{}, "zfs")
 	c.Assert(err, NotNil)
 }
 
 func (*suite) TestCollectDirectoryContents(c *C) {
-	paths, err := collectDirectoryContents("testdata/hashing")
+	paths, err := CollectDirectoryContents("testdata/hashing")
 	c.Assert(err, IsNil)
 
 	expectedPaths := []string{"file1", "symlink-to-file1", "dir2", "dir2/file-in-dir2", "dir1",

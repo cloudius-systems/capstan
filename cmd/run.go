@@ -172,7 +172,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 				return err
 			}
 			bootOpts := BootOptions{Cmd: config.Cmd}
-			err = ComposePackage(repo, sz, true, false, true, wd, pkg.Name, &bootOpts)
+			err = ComposePackage(repo, sz, true, false, true, wd, pkg.Name, &bootOpts, "zfs")
 			if err != nil {
 				return err
 			}
