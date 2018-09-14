@@ -395,6 +395,8 @@ OSv loader and executed immediately after the kernel is booted
 
 * ``--verbose``: get detailed information about the files that are being uploaded onto the VM
 
+* ``--fs``: specify the OSv filesystem type; the allowed values are ``zfs`` (Zeta File System) or ``rofs`` (Read-Only File System), ``zfs`` is the default filesystem
+
 To compose a VM image, simply execute
 
 ```

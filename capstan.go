@@ -426,6 +426,7 @@ func main() {
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
 						cli.StringSliceFlag{Name: "boot", Usage: "specify default config_set name to boot unikernel with (repeatable, will be run left to right)"},
 						cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
+						cli.StringFlag{Name: "fs", Usage: "specify type of filesystem: zfs or rofs"},
 					},
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
@@ -458,8 +459,13 @@ func main() {
 							PackageDir: packageDir,
 						}
 
+						filesystem := c.String("fs")
+						if filesystem == "" || (filesystem != "zfs" && filesystem != "rofs") {
+							filesystem = "zfs"
+						}
+
 						if err := cmd.ComposePackage(repo, imageSize, updatePackage, verbose, pullMissing,
-							packageDir, appName, &bootOpts); err != nil {
+							packageDir, appName, &bootOpts, filesystem); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 

@@ -14,6 +14,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -159,7 +160,7 @@ func BuildPackage(packageDir string) (string, error) {
 // directory. Only modified files are uploaded and no file deletions are
 // possible at this time.
 func ComposePackage(repo *util.Repo, imageSize int64, updatePackage, verbose, pullMissing bool,
-	packageDir, appName string, bootOpts *BootOptions) error {
+	packageDir, appName string, bootOpts *BootOptions, filesystem string) error {
 
 	// Package content should be collected in a subdirectory called mpm-pkg.
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
@@ -178,7 +179,7 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage, verbose, pu
 	}
 
 	// If all is well, we have to start preparing the files for upload.
-	paths, err := collectDirectoryContents(targetPath)
+	paths, err := CollectDirectoryContents(targetPath)
 	if err != nil {
 		return err
 	}
@@ -191,32 +192,49 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage, verbose, pu
 		imageExists = true
 	}
 
-	imageCachePath := repo.ImageCachePath("qemu", appName)
-	var imageCache core.HashCache
+	if filesystem == "zfs" {
+		imageCachePath := repo.ImageCachePath("qemu", appName)
+		var imageCache core.HashCache
 
-	// If the user requested new image or requested to update a non-existent image,
-	// initialize it first.
-	if !updatePackage || !imageExists {
-		// Initialize an empty image based on the provided loader image. imageSize is used to
-		// determine the size of the user partition. Use default loader image.
-		if err := repo.InitializeImage("", appName, imageSize); err != nil {
-			return fmt.Errorf("Failed to initialize empty image named %s.\nError was: %s", appName, err)
+		// If the user requested new image or requested to update a non-existent image,
+		// initialize it first.
+		if !updatePackage || !imageExists {
+			// Initialize an empty image based on the provided loader image. imageSize is used to
+			// determine the size of the user partition. Use default loader image.
+			if err := repo.InitializeZfsImage("", appName, imageSize); err != nil {
+				return fmt.Errorf("Failed to initialize empty image named %s.\nError was: %s", appName, err)
+			}
+		} else {
+			// We are updating an existing image so try to parse the cache
+			// config file. Note that we are not interested in any errors as
+			// no-cache or invalid cache means that all files will be uploaded.
+			imageCache, _ = core.ParseHashCache(imageCachePath)
 		}
+
+		// Upload the specified path onto virtual image.
+		imageCache, err = UploadPackageContents(repo, imagePath, paths, imageCache, verbose)
+		if err != nil {
+			return err
+		}
+
+		// Save the new image cache
+		imageCache.WriteToFile(imageCachePath)
 	} else {
-		// We are updating an existing image so try to parse the cache
-		// config file. Note that we are not interested in any errors as
-		// no-cache or invalid cache means that all files will be uploaded.
-		imageCache, _ = core.ParseHashCache(imageCachePath)
-	}
+		// Create ROFS
+		// Create temporary folder in which the image will be composed.
+		tmp, _ := ioutil.TempDir("", "capstan")
+		// Once this function is finished, remove temporary file.
+		defer os.RemoveAll(tmp)
+		rofs_image_path := path.Join(tmp, "rofs.img")
 
-	// Upload the specified path onto virtual image.
-	imageCache, err = UploadPackageContents(repo, imagePath, paths, imageCache, verbose)
-	if err != nil {
-		return err
-	}
+		if err := util.WriteRofsImage(rofs_image_path, paths, targetPath, verbose); err != nil {
+			return fmt.Errorf("Failed to write ROFS image named %s.\nError was: %s", rofs_image_path, err)
+		}
 
-	// Save the new image cache
-	imageCache.WriteToFile(imageCachePath)
+		if err = repo.CreateRofsImage("", appName, rofs_image_path); err != nil {
+			return fmt.Errorf("Failed to create ROFS image named %s.\nError was: %s", appName, err)
+		}
+	}
 
 	// Set the command line.
 	if err = util.SetCmdLine(imagePath, commandLine); err != nil {
@@ -240,7 +258,7 @@ func ComposePackageAndUploadToRemoteInstance(repo *util.Repo, verbose, pullMissi
 	}
 
 	// If all is well, we have to start preparing the files for upload.
-	paths, err := collectDirectoryContents(targetPath)
+	paths, err := CollectDirectoryContents(targetPath)
 	if err != nil {
 		return err
 	}
@@ -406,7 +424,7 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing, remote, ver
 	return nil
 }
 
-func collectDirectoryContents(packageDir string) (map[string]string, error) {
+func CollectDirectoryContents(packageDir string) (map[string]string, error) {
 	packageDir, err := filepath.Abs(packageDir)
 
 	if _, err := os.Stat(packageDir); os.IsNotExist(err) {
@@ -445,6 +463,7 @@ func ImportPackage(repo *util.Repo, packageDir string) error {
 }
 
 func extractPackageContent(tarReader *tar.Reader, target, pkgName string) (*runtime.CmdConfig, error) {
+	fmt.Printf("extractPackageContent: %s\n", pkgName)
 	var cmdConf *runtime.CmdConfig
 	for {
 		header, err := tarReader.Next()

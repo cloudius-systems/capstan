@@ -291,7 +291,7 @@ func (r *Repo) DefaultImage() string {
 	return image
 }
 
-func (r *Repo) InitializeImage(loaderImage string, imageName string, imageSize int64) error {
+func (r *Repo) InitializeZfsImage(loaderImage string, imageName string, imageSize int64) error {
 	// Temporarily use the mike/osv-loader image. Note that in order for this to work
 	// one has to actually import mike/osv-loader image first!
 	//
@@ -348,6 +348,89 @@ func (r *Repo) InitializeImage(loaderImage string, imageName string, imageSize i
 	// Now that the partition has been created, resize the virtual image size.
 	if err := ResizeImage(imagePath, uint64(zfsSize+zfsStart)); err != nil {
 		fmt.Printf("Failed to set the target size (%db) of the image %s\n", (zfsSize + zfsStart), imagePath)
+		return err
+	}
+
+	// The image can now be imported into Capstan's repository.
+	return r.ImportImage(imageName, imagePath, "", time.Now().Format(core.FRIENDLY_TIME_F), "", "")
+}
+
+func (r *Repo) CreateRofsImage(loaderImage string, imageName string, rofsImagePath string) error {
+	// Temporarily use the mike/osv-loader image. Note that in order for this to work
+	// one has to actually import mike/osv-loader image first!
+	//
+	// capstan import mike/osv-loader /path/to/osv/build/release/loader.img
+	if loaderImage == "" {
+		loaderImage = "mike/osv-loader"
+	}
+
+	// Get the actual path of the loader image.
+	loaderImagePath := r.ImagePath("qemu", loaderImage)
+	// Check whether the base loader image exists
+	loaderInfo, err := os.Stat(loaderImagePath)
+	if os.IsNotExist(err) {
+		fmt.Printf("The specified loader image (%s) does not exist.\n", loaderImagePath)
+		return err
+	}
+
+	rofsInfo, err := os.Stat(rofsImagePath)
+	if os.IsNotExist(err) {
+		fmt.Printf("The specified ROFS image (%s) does not exist.\n", rofsImagePath)
+		return err
+	}
+
+	// Get the size of the loader image, then round that to the closest 2MB to start the user
+	// ROFS partition.
+	rofsStart := (loaderInfo.Size() + 2097151) & ^2097151
+	// Make filesystem size in bytes
+	rofsSize := rofsInfo.Size()
+
+	// Create temporary folder in which the image will be composed.
+	tmp, _ := ioutil.TempDir("", "capstan")
+	// Once this function is finished, remove temporary file.
+	defer os.RemoveAll(tmp)
+	imagePath := path.Join(tmp, "application.img")
+
+	// Copy the OSv base iamge into application image
+	if err := CopyLocalFile(imagePath, loaderImagePath); err != nil {
+		return err
+	}
+
+	// Now resize the virtual image size.
+	if err := ResizeImage(imagePath, uint64(rofsSize+rofsStart)); err != nil {
+		fmt.Printf("Failed to set the target size (%db) of the image %s\n", (rofsSize + rofsStart), imagePath)
+		return err
+	}
+
+	// Copy ROFS image
+	out, err := os.OpenFile(imagePath, os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	data, err := ioutil.ReadFile(rofsImagePath)
+	if err != nil {
+		return err
+	}
+	if _, err = out.Seek(rofsStart, 0); err != nil {
+		return err
+	}
+	if _, err = out.Write(data); err != nil {
+		return err
+	}
+	if err = out.Sync(); err != nil {
+		return err
+	}
+
+	// Convert the image to QCOW2 format.
+	if err := ConvertImageToQCOW2(imagePath); err != nil {
+		return err
+	}
+
+	// Store the information about the partition into the image.
+	if err := SetPartition(imagePath, 2, uint64(rofsStart), uint64(rofsSize)); err != nil {
+		fmt.Printf("Setting the ROFS partition failed for %s\n", imagePath)
 		return err
 	}
 

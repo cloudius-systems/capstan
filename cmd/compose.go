@@ -19,16 +19,16 @@ import (
 	"github.com/mikelangelo-project/capstan/util"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
-	"net"
 )
 
 func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath string, appName string) error {
 	// Initialize an empty image based on the provided loader image. imageSize is used to
 	// determine the size of the user partition.
-	err := r.InitializeImage(loaderImage, appName, imageSize)
+	err := r.InitializeZfsImage(loaderImage, appName, imageSize)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func UploadPackageContentsToRemoteGuest(uploadPaths map[string]string, remoteHos
 
 	fmt.Printf("Uploading files to %s...\n", remoteHostNameOrIpAddress)
 
-	conn, err := util.ConnectAndWait("tcp", remoteHostNameOrIpAddress + ":10000")
+	conn, err := util.ConnectAndWait("tcp", remoteHostNameOrIpAddress+":10000")
 	if err != nil {
 		if strings.Contains(err.Error(), "getsockopt: connection refused") {
 			fmt.Println("Could not connect to " + remoteHostNameOrIpAddress)
