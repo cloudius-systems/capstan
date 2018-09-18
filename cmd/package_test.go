@@ -117,7 +117,7 @@ func (s *suite) TestInitPackage(c *C) {
 				name: name
 				title: title
 				author: author
-				created: {TIMESTAMP}
+				created: "{TIMESTAMP}"
 			`,
 		},
 		{
@@ -133,7 +133,7 @@ func (s *suite) TestInitPackage(c *C) {
 				title: title
 				author: author
 				version: 1.2.3
-				created: {TIMESTAMP}
+				created: "{TIMESTAMP}"
 			`,
 		},
 		{
@@ -151,7 +151,7 @@ func (s *suite) TestInitPackage(c *C) {
 				require:
 				- demo1
 				- demo2
-				created: {TIMESTAMP}
+				created: "{TIMESTAMP}"
 			`,
 		},
 		{
@@ -166,7 +166,7 @@ func (s *suite) TestInitPackage(c *C) {
 				name: name
 				title: title
 				author: author
-				created: {TIMESTAMP}
+				created: "{TIMESTAMP}"
 			`,
 		},
 		{
@@ -181,7 +181,7 @@ func (s *suite) TestInitPackage(c *C) {
 				name: name
 				title: title
 				author: author
-				created: {TIMESTAMP}
+				created: "{TIMESTAMP}"
 				platform: Ubuntu-14.04
 			`,
 		},

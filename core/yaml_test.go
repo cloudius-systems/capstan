@@ -37,12 +37,12 @@ func (*yamlSuite) TestYamlTimeFieldMarshall(c *C) {
 		{
 			"simple",
 			"2017-09-14T18:08:16+02:00",
-			"created: 2017-09-14T18:08:16+02:00",
+			"created: \"2017-09-14T18:08:16+02:00\"",
 		},
 		{
 			"miliseconds should not get marshalled",
 			"2017-09-14T18:08:16.123456789+02:00",
-			"created: 2017-09-14T18:08:16+02:00",
+			"created: \"2017-09-14T18:08:16+02:00\"",
 		},
 		{
 			"empty",
@@ -80,7 +80,7 @@ func (*yamlSuite) TestYamlTimeFieldUnmarshall(c *C) {
 	}{
 		{
 			"RFC3339",
-			"created: 2017-09-14T18:08:16+02:00",
+			"created: \"2017-09-14T18:08:16+02:00\"",
 			"2017-09-14 18:08",
 		},
 		{
