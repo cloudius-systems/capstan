@@ -64,5 +64,5 @@ func (r *Repo) gitDir(image string) string {
 }
 
 func (r *Repo) workTree(image string) string {
-	return filepath.Join(r.Path, image)
+	return filepath.Join(r.RepoPath(), image)
 }

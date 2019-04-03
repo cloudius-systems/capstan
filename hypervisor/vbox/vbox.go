@@ -9,9 +9,9 @@ package vbox
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan/nat"
-	"github.com/cloudius-systems/capstan/util"
-	"gopkg.in/yaml.v1"
+	"github.com/mikelangelo-project/capstan/nat"
+	"github.com/mikelangelo-project/capstan/util"
+	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"net"
@@ -110,7 +110,7 @@ func vmCreate(c *VMConfig) error {
 	if err != nil {
 		return err
 	}
-	err = VBoxManage("storagectl", c.Name, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI")
+	err = VBoxManage("storagectl", c.Name, "--name", "SATA", "--add", "sata", "--controller", "IntelAHCI", "--hostiocache", "on")
 	if err != nil {
 		return err
 	}

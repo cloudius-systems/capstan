@@ -9,8 +9,8 @@ package gce
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan/util"
-	"gopkg.in/yaml.v1"
+	"github.com/mikelangelo-project/capstan/util"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"os/exec"

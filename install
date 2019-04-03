@@ -1,18 +1,16 @@
 #!/bin/sh
 
-package=github.com/cloudius-systems/capstan
+package=github.com/mikelangelo-project/capstan
+
+# Clone github repo into $GOPATH/src/$package, but don't install yet
+go get -d $package
+
+# Calculate version
+cd $GOPATH/src/$package
 version=$(scripts/version)
 
-OLDIFS=$IFS
-IFS=' '; set -- $(go version)
-IFS='.'; set -- $3
-IFS=$OLDIFS
-if [ $2 -gt 4 ]; then
-    link_operator="="
-else
-    link_operator=" "
-fi
+# Clean
+rm $GOPATH/bin/capstan 2> /dev/null
 
-go get $package
-go build -ldflags "-X main.VERSION$link_operator'$version'" $package
-go install $package
+# Install with VERSION string properly set
+go install -ldflags "-X main.VERSION='$version' -w -s" $package

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Cloudius Systems, Ltd.
+ * Modifications copyright (C) 2015 XLAB, Ltd.
  *
  * This work is open source software, licensed under the terms of the
  * BSD license as described in the LICENSE file in the top-level directory.
@@ -9,36 +10,23 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/cloudius-systems/capstan/core"
-	"github.com/cloudius-systems/capstan/hypervisor/gce"
-	"github.com/cloudius-systems/capstan/hypervisor/qemu"
-	"github.com/cloudius-systems/capstan/hypervisor/vbox"
-	"github.com/cloudius-systems/capstan/hypervisor/vmw"
-	"github.com/cloudius-systems/capstan/image"
-	"github.com/cloudius-systems/capstan/nat"
-	"github.com/cloudius-systems/capstan/util"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/mikelangelo-project/capstan/core"
+	"github.com/mikelangelo-project/capstan/hypervisor/gce"
+	"github.com/mikelangelo-project/capstan/hypervisor/qemu"
+	"github.com/mikelangelo-project/capstan/hypervisor/vbox"
+	"github.com/mikelangelo-project/capstan/hypervisor/vmw"
+	"github.com/mikelangelo-project/capstan/image"
+	"github.com/mikelangelo-project/capstan/runtime"
+	"github.com/mikelangelo-project/capstan/util"
 )
 
-type RunConfig struct {
-	InstanceName string
-	ImageName    string
-	Hypervisor   string
-	Verbose      bool
-	Memory       string
-	Cpus         int
-	Networking   string
-	Bridge       string
-	NatRules     []nat.Rule
-	GCEUploadDir string
-	MAC          string
-}
-
-func Run(repo *util.Repo, config *RunConfig) error {
+func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 	var path string
 	var cmd *exec.Cmd
 
@@ -48,7 +36,6 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		if instanceName != "" {
 			defer fmt.Println("")
 
-			fmt.Printf("Created instance: %s\n", instanceName)
 			// Do not set RawTerm for gce
 			if instancePlatform != "gce" {
 				util.RawTerm()
@@ -59,6 +46,9 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			switch instancePlatform {
 			case "qemu":
 				c, err := qemu.LoadConfig(instanceName)
+				// Also pass the command line to the instance (note that this is not stored in the config)
+				c.Cmd = config.Cmd
+
 				if err != nil {
 					return err
 				}
@@ -87,6 +77,11 @@ func Run(repo *util.Repo, config *RunConfig) error {
 				return err
 			}
 			if cmd != nil {
+				fmt.Println()
+				fmt.Println("Running (already existing) instance:", instanceName)
+				fmt.Println("NOTE: instance parameters will NOT reflect arguments to 'capstan run' command!")
+				fmt.Printf("      (use 'capstan delete %s' to remove existing instance first)\n", instanceName)
+				fmt.Println()
 				return cmd.Wait()
 			}
 			return nil
@@ -95,7 +90,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			// so, cmd like "capstan run cloudius/osv" will work
 			config.ImageName = config.InstanceName
 			config.InstanceName = strings.Replace(config.InstanceName, "/", "-", -1)
-			return Run(repo, config)
+			return RunInstance(repo, config)
 		}
 	} else if config.ImageName != "" && config.InstanceName != "" {
 		// Both ImageName and InstanceName are specified
@@ -139,27 +134,50 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		}
 		deleteInstance(config.InstanceName)
 	} else if config.ImageName == "" && config.InstanceName == "" {
-		// Valid only when Capstanfile is present
-		config.ImageName = repo.DefaultImage()
-		config.InstanceName = config.ImageName
-		if config.ImageName == "" {
-			return fmt.Errorf("No Capstanfile found, unable to run.")
-		}
-		if !repo.ImageExists(config.Hypervisor, config.ImageName) {
-			if !core.IsTemplateFile("Capstanfile") {
-				return fmt.Errorf("%s: no such image", config.ImageName)
+		if core.IsTemplateFile("Capstanfile") {
+			// Valid only when Capstanfile is present
+			config.ImageName = repo.DefaultImage()
+			config.InstanceName = config.ImageName
+			if config.ImageName == "" {
+				return fmt.Errorf("No Capstanfile found, unable to run.")
 			}
-			image := &core.Image{
-				Name:       config.ImageName,
-				Hypervisor: config.Hypervisor,
+			if !repo.ImageExists(config.Hypervisor, config.ImageName) {
+				//if !core.IsTemplateFile("Capstanfile") {
+				//return fmt.Errorf("%s: no such image", config.ImageName)
+				//}
+				image := &core.Image{
+					Name:       config.ImageName,
+					Hypervisor: config.Hypervisor,
+				}
+				template, err := core.ReadTemplateFile("Capstanfile")
+				if err != nil {
+					return err
+				}
+				if err := Build(repo, image, template, config.Verbose, config.Memory); err != nil {
+					return err
+				}
 			}
-			template, err := core.ReadTemplateFile("Capstanfile")
+		} else if pkg, err := core.ParsePackageManifest("meta/package.yaml"); err == nil {
+			// If the current directory represents an MPM package, try to compose and then
+			// run the VM.
+
+			// Set image and package name based on the package name.
+			config.ImageName = pkg.Name
+			config.InstanceName = pkg.Name
+
+			// Try to compose the package.
+			sz, _ := util.ParseMemSize("10G")
+			wd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
-			if err := Build(repo, image, template, config.Verbose, config.Memory); err != nil {
+			bootOpts := BootOptions{Cmd: config.Cmd}
+			err = ComposePackage(repo, sz, true, false, true, wd, pkg.Name, &bootOpts, "zfs")
+			if err != nil {
 				return err
 			}
+		} else {
+			return fmt.Errorf("Missing Capstanfile or package metadata")
 		}
 		path = repo.ImagePath(config.Hypervisor, config.ImageName)
 		deleteInstance(config.InstanceName)
@@ -211,7 +229,13 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			Monitor:     filepath.Join(dir, "osv.monitor"),
 			ConfigFile:  filepath.Join(dir, "osv.config"),
 			MAC:         config.MAC,
+			Cmd:         config.Cmd,
+			DisableKvm:  repo.DisableKvm,
+			Persist:     config.Persist,
+			Volumes:     config.Volumes,
+			AioType:     repo.QemuAioType,
 		}
+
 		cmd, err = qemu.LaunchVM(config)
 	case "vbox":
 		if format != image.VDI && format != image.VMDK {
@@ -222,6 +246,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		if bridge == "" {
 			bridge = "vboxnet0"
 		}
+		volumesNotSupported(config.Volumes)
 		config := &vbox.VMConfig{
 			Name:       id,
 			Dir:        filepath.Join(util.ConfigDir(), "instances/vbox"),
@@ -240,6 +265,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
 		dir := filepath.Join(util.ConfigDir(), "instances/gce", id)
+		volumesNotSupported(config.Volumes)
 		c := &gce.VMConfig{
 			Name:        id,
 			Image:       id,
@@ -262,6 +288,7 @@ func Run(repo *util.Repo, config *RunConfig) error {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)
 		}
 		dir := filepath.Join(util.ConfigDir(), "instances/vmw", id)
+		volumesNotSupported(config.Volumes)
 		config := &vmw.VMConfig{
 			Name:         id,
 			Dir:          dir,
@@ -282,13 +309,18 @@ func Run(repo *util.Repo, config *RunConfig) error {
 		return err
 	}
 	if cmd != nil {
-		return cmd.Wait()
+		err = cmd.Wait()
+		if err != nil && strings.Contains(err.Error(), "failed to initialize KVM: Device or resource busy") {
+			// Probably KVM is already in use e.g. by VirtualBox. Suggest user to turn it off.
+			fmt.Println("Could not run QEMU VM. Try to set 'disable_kvm:true' in ~/.capstan/config.yaml")
+		}
+		return err
 	} else {
 		return nil
 	}
 }
 
-func buildJarImage(repo *util.Repo, config *RunConfig) (*RunConfig, error) {
+func buildJarImage(repo *util.Repo, config *runtime.RunConfig) (*runtime.RunConfig, error) {
 	jarPath := config.ImageName
 	imageName, jarName := parseJarNames(jarPath)
 	image := &core.Image{
@@ -345,4 +377,11 @@ func deleteInstance(name string) error {
 		err = gce.DeleteVM(name)
 	}
 	return err
+}
+
+// volumesNotSupported prints warning if --volume is passed.
+func volumesNotSupported(volumes []string) {
+	if len(volumes) > 0 {
+		fmt.Println("WARNING: --volume is not yet supported for this hypervisor")
+	}
 }

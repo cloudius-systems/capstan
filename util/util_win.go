@@ -10,7 +10,7 @@
 package util
 
 import (
-	"github.com/natefinch/npipe"
+	"gopkg.in/natefinch/npipe.v2"
 	"net"
 )
 

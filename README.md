@@ -1,152 +1,94 @@
 # Capstan
 
-[![Build Status](https://secure.travis-ci.org/cloudius-systems/capstan.png?branch=master)](http://travis-ci.org/cloudius-systems/capstan)
+*This is an upgraded version of the [original Capstan](https://github.com/cloudius-systems/capstan) and
+is maintained by [MIKELANGELO consortium](https://www.mikelangelo-project.eu). Although it is still
+possible, joining this repository with the original Capstan is not very likely. We're looking towards
+the first stable release at the moment.*
 
-Capstan is a tool for rapidly building and running your application on OSv.
-Capstan is as simple and fast as using Docker for creating containers, but the
-result is a complete virtual machine image that will run on any hypervisor with
-OSv support.
+Capstan is a command-line tool for rapidly running your application on [OSv unikernel](http://osv.io).
+It focuses on improving user experience during building the unikernel and attempts to support
+not only a variety of runtimes (C, C++, Java, Node.js etc.), but also a variety of ready-to-run
+applications (Hadoop HDFS, MySQL, SimpleFOAM etc.).
+
+## Philosophy
+Buildning unikernels is generally a nightmare! It is a non-trivial task that requires deep
+knowledge of unikernel implementation. It depends on numerous installation tools and takes
+somewhat 10 minutes to prepare each unikernel once configured correctly.
+But an application-oriented developer is not willing to take a load of new knowledge about unikerel
+specifics, nor wait long minutes to compile! And that's where Capstan comes in.
+
+Capstan tends to be a tool that one configures with *application-oriented settings*
+(Where is application entry point? What environment variables to pass? etc.) and then
+runs a command or two to quickly boot up a new unikernel with application. Measured in seconds.
+
+To achieve this, Capstan uses **precompiled** artefacts: precompiled OSv kernel, precompiled Java runtime,
+precompiled MySQL, and many more. All you have to do is to name what precompiled packages you want
+to have available in your unikernel and that's it.
 
 ## Features
+Capstan is designed to prepare and run OSv unikernel for you.
+With Capstan it is possible to:
 
-* Run multiple VMs of an image as copy-on-write
-* Linux, FreeBSD, OS X, and Windows support
-* Hypervisors:
-    * QEMU/KVM
-    * VirtualBox
-    * VMware Workstation and Fusion
-* Cloud providers:
-    * Google Compute Engine
+* prepare OSv unikernel without compiling anything but your application, in seconds
+* use any precompiled package from the MIKELANGELO package repository, or a combination thereof
+* set arbitrary size of the target unikernel filesystem
+* run OSv unikernel using one of the supported providers
 
-## Installation
+But Capstan is not a magic tool that could solve all the problems for you.
+Capstan does **not**:
 
-You can install Capstan either by downloading pre-built binaries or building it
-from sources.
+* compile your application. If you have Java application, you need to use `javac` compiler and compile
+the application yourself prior using Capstan tool!
+* inspect your application. Capstan does nothing with your application but copies it into the unikernel
+* overcome OSv unikernel limits. Consult OSv documentation about what these limits are since they
+all still apply. Most notably, you can only run single process inside unikernel (forks are forbidden).
 
-### Prerequisites: local
+## Getting started
+Capstan can be installed using precompiled binary or compiled from source.
+[Step-by-step Capstan Installation Guide](Documentation/Installation.md)
 
-You need to have a hypervisor such as QEMU/KVM or VirtualBox installed on your
-machine to run local OSv VMs.
-
-If you want to build your own OSv images, you need QEMU installed.
-
-On Fedora:
-
+Using Capstan is rather simple: open up your project directory and create
+[Capstan configuration files](Documentation/ConfigurationFiles.md)
+there:
 ```
-$ sudo yum install qemu-system-x86 qemu-img
+$ cd $PROJECT_DIR
+$ capstan package init --name {name} --title {title} --author {author}
+$ capstan runtime init --runtime {runtime}
+# edit meta/run.yaml to match your application structure
 ```
-
-On OS X:
-
+Being in project root directory, then use Capstan command to create unikernel
+(consult [CLI Reference](Documentation/generated/CLI.md) for a list of available arguments):
 ```
-$ brew install qemu
+$ capstan package compose {unikernel-name}
 ```
-
-On FreeBSD:
-
+At this point, you have your unikernel built. It contains all your project files plus all the
+precompiled artefacts that you asked for. In other words, the unikernel contains everything and is
+ready to be started! As you might have expected, there is Capstan command to run unikernel for you
+(using KVM/QEMU hipervisor):
 ```
-$ sudo pkg install qemu
+$ capstan run {unikernel-name}
 ```
-
-### Prerequisites: Google Compute Engine
-
-To run your OSv images on Google Compute Engine, you will need the `gcutil` utility, which is part of the Google Cloud SDK.  Installation instructions are on the [gcutil home page](https://developers.google.com/compute/docs/gcutil/).
-
-### Installing Binaries
-
-To install the binaries, make sure ``$HOME/bin`` is part of the ``PATH``
-environment variable and then download the  ``capstan`` executable and place it
-in ``$HOME/bin``.
-
-```
-$ curl https://raw.githubusercontent.com/cloudius-systems/capstan/master/scripts/download | bash
-```
-
-### Installing from Sources
-
-You need a working Go environment installed. See [Go install
-instructions](http://golang.org/doc/install.html) for how to do that. Go
-version 1.1 or later is required.
-
-Make sure you have the ``GOPATH`` environment variable set to point to a
-writable Go workspace such as ``$HOME/go``.
-
-To install Capstan, type:
-
-```
-$ go get github.com/cloudius-systems/capstan
-```
-
-This installs a ``capstan`` executable to your Go workspace so make sure your
-``PATH`` environment variable includes ``$GOPATH/bin``.
-
-For more detailed information, check out [installation instructions](https://github.com/cloudius-systems/capstan/wiki/Capstan-Installation)
-on the wiki.
-
-### Updating from Sources
-
-To update capstan to the latest version execute the following commands:
-```sh
-$ cd $GOPATH/src/github.com/cloudius-systems/capstan
-$ git pull
-$ ./install
-```
-
-## Usage
-
-To run OSv on default hypervisor which is QEMU/KVM, type:
-
-```
-$ capstan run cloudius/osv
-```
-
-To run OSv on VirtualBox, type:
-
-```
-$ capstan run -p vbox cloudius/osv
-```
-
-To port-forwarding OSv port 22 to Host port 10022, type:
-
-```
-$ capstan run -f "10022:22" cloudius/osv
-```
-
-To bridging OSv vNIC to Host bridge interface, type:
-
-```
-On Linux:
-$ capstan run -n bridge cloudius/osv
-
-On OS X with VirtualBox:
-$ capstan run -n bridge -b <physical NIC name> cloudius/osv
-```
-
-To show a list of available remote images, type:
-
-```
-$ capstan search
-```
-
-To show a list of locally installed images, type:
-
-```
-$ capstan images
-```
-
-## Examples
-
-Check out the following example projects to get you going:
-
-* [Node.js](https://github.com/cloudius-systems/capstan-example-nodejs)
-* [Java](https://github.com/cloudius-systems/capstan-example-java)
-* [Clojure](https://github.com/cloudius-systems/capstan-example-clojure)
-* [Linux binaries](https://github.com/cloudius-systems/capstan-example)
+Congratulations, your unikernel is up-and-running! Press CTRL + C to stop it.
 
 ## Documentation
 
-* [Capstanfile](Documentation/Capstanfile.md)
+* [Step-by-step Capstan Installation Guide](Documentation/Installation.md)
+* [Running My First Application Inside Unikernel](Documentation/WalkthroughNodeJS.md)
+* [Configuration Files](Documentation/ConfigurationFiles.md)
+    * [Native](Documentation/RuntimeNative.md)
+    * [Java](Documentation/RuntimeJava.md)
+    * [Node.js](Documentation/RuntimeNode.md)
+    * [Python](Documentation/RuntimePython.md)
+* [.capstanignore](Documentation/Capstanignore.md)
+* [Attaching volumes](Documentation/Volumes.md)
+* [Capstan S3 Repository](Documentation/Repository.md)
+* [CLI Reference](Documentation/generated/CLI.md)
+* [OSv filesystem](Documentation/OsvFilesystem.md)
 
 ## License
-
 Capstan is distributed under the 3-clause BSD license.
+
+## Acknowledgements
+This code has been developed within the [MIKELANGELO project](https://www.mikelangelo-project.eu)
+(no. 645402), started in January 2015, and co-funded by the European Commission under the
+H2020-ICT-07-2014: Advanced Cloud Infrastructures and Services programme.

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Cloudius Systems, Ltd.
+ * Modifications copyright (C) 2015 XLAB, Ltd.
  *
  * This work is open source software, licensed under the terms of the
  * BSD license as described in the LICENSE file in the top-level directory.
@@ -12,12 +13,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cheggaaa/pb"
-	"github.com/cloudius-systems/capstan/core"
-	"github.com/cloudius-systems/capstan/cpio"
-	"github.com/cloudius-systems/capstan/hypervisor/qemu"
-	"github.com/cloudius-systems/capstan/nat"
-	"github.com/cloudius-systems/capstan/nbd"
-	"github.com/cloudius-systems/capstan/util"
+	"github.com/mikelangelo-project/capstan/core"
+	"github.com/mikelangelo-project/capstan/cpio"
+	"github.com/mikelangelo-project/capstan/hypervisor/qemu"
+	"github.com/mikelangelo-project/capstan/nat"
+	"github.com/mikelangelo-project/capstan/util"
 	"io"
 	"io/ioutil"
 	"net"
@@ -97,6 +97,7 @@ func UploadRPM(r *util.Repo, hypervisor string, image string, template *core.Tem
 		Networking:  "nat",
 		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
+		AioType:     r.QemuAioType,
 	}
 	vm, err := qemu.LaunchVM(vmconfig)
 	if err != nil {
@@ -129,13 +130,33 @@ func IsReg(m os.FileMode) bool {
 	return (m & nonreg) == 0
 }
 
-func copyFile(conn net.Conn, src string, dst string) error {
-	fi, err := os.Stat(src)
+func CopyFile(conn net.Conn, src string, dst string) error {
+	fi, err := os.Lstat(src)
 	if err != nil {
 		return err
 	}
 
-	if fi.IsDir() {
+	switch {
+	case fi.Mode()&os.ModeSymlink == os.ModeSymlink:
+		linkTarget, _ := os.Readlink(src)
+
+		if strings.HasPrefix(linkTarget, "/") || strings.HasPrefix(linkTarget, "..") {
+			srcDir := filepath.Dir(src)
+
+			if linkTarget, err = filepath.Abs(filepath.Join(srcDir, linkTarget)); err != nil {
+				return err
+			}
+
+			linkTarget = strings.TrimPrefix(linkTarget, strings.TrimSuffix(src, dst))
+		}
+
+		perm := uint64(fi.Mode()) & 0777
+		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISLNK|perm, int64(len(linkTarget))))
+		cpio.WritePadded(conn, []byte(linkTarget))
+
+		return nil
+
+	case fi.Mode().IsDir():
 		fi, err := os.Stat(src)
 		if err != nil {
 			return err
@@ -143,12 +164,8 @@ func copyFile(conn net.Conn, src string, dst string) error {
 		perm := uint64(fi.Mode()) & 0777
 		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISDIR|perm, 0))
 		return nil
-	}
 
-	if !IsReg(fi.Mode()) {
-		fmt.Println("skipping non-file path " + src)
-		return nil
-	} else {
+	case fi.Mode().IsRegular():
 		contents, err := ioutil.ReadFile(src)
 		if err != nil {
 			return nil
@@ -160,6 +177,10 @@ func copyFile(conn net.Conn, src string, dst string) error {
 		perm := uint64(fi.Mode()) & 0777
 		cpio.WritePadded(conn, cpio.ToWireFormat(dst, cpio.C_ISREG|perm, fi.Size()))
 		cpio.WritePadded(conn, contents)
+
+	default:
+		fmt.Println("skipping non-file path " + src)
+		return nil
 	}
 
 	return nil
@@ -178,6 +199,8 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 		Networking:  "nat",
 		NatRules:    []nat.Rule{nat.Rule{GuestPort: "10000", HostPort: "10000"}},
 		BackingFile: false,
+		DisableKvm:  r.DisableKvm,
+		AioType:     r.QemuAioType,
 	}
 	cmd, err := qemu.VMCommand(vmconfig)
 	if err != nil {
@@ -205,6 +228,9 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 			break
 		}
 	}
+
+	// Consuming stdout/stderr is mandatory once they are redirected to linux socket.
+	// If not, buffer will fill up and capstan will hang.
 	if verbose {
 		go io.Copy(os.Stdout, stdout)
 		go io.Copy(os.Stderr, stderr)
@@ -212,6 +238,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 		go io.Copy(ioutil.Discard, stdout)
 		go io.Copy(ioutil.Discard, stderr)
 	}
+
 	conn, err := util.ConnectAndWait("tcp", "localhost:10000")
 	if err != nil {
 		return err
@@ -237,7 +264,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 	}
 
 	for dst, src := range rootfsFiles {
-		err = copyFile(conn, src, dst)
+		err = CopyFile(conn, src, dst)
 		if verbose {
 			fmt.Println(src + "  --> " + dst)
 		} else {
@@ -249,7 +276,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 	}
 
 	for dst, src := range t.Files {
-		err = copyFile(conn, src, dst)
+		err = CopyFile(conn, src, dst)
 		if verbose {
 			fmt.Println(src + "  --> " + dst)
 		} else {
@@ -268,50 +295,22 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 
 func SetArgs(r *util.Repo, hypervisor, image string, args string) error {
 	file := r.ImagePath(hypervisor, image)
-	cmd := exec.Command("qemu-nbd", "-p", "10809", file)
-	stdout, err := cmd.StdoutPipe()
+	nbdFile, err := util.NewNbdFile(file)
 	if err != nil {
-		return err
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return err
-	}
-	err = cmd.Start()
-	if err != nil {
-		return err
-	}
-	go io.Copy(os.Stdout, stdout)
-	go io.Copy(os.Stderr, stderr)
-
-	conn, err := util.ConnectAndWait("tcp", "localhost:10809")
-	if err != nil {
-		return err
-	}
-
-	session := &nbd.NbdSession{
-		Conn:   conn,
-		Handle: 0,
-	}
-	if err := session.Handshake(); err != nil {
 		return err
 	}
 
 	padding := 512 - (len(args) % 512)
 
 	data := append([]byte(args), make([]byte, padding)...)
+	if err := nbdFile.Write(512, data); err != nil {
+		return err
+	}
 
-	if err := session.Write(512, data); err != nil {
+	// Close the image file.
+	if err := nbdFile.Close(); err != nil {
 		return err
 	}
-	if err := session.Flush(); err != nil {
-		return err
-	}
-	if err := session.Disconnect(); err != nil {
-		return err
-	}
-	conn.Close()
-	cmd.Wait()
 
 	return nil
 }

@@ -10,9 +10,9 @@ package vmw
 import (
 	"bufio"
 	"fmt"
-	"github.com/cloudius-systems/capstan/nat"
-	"github.com/cloudius-systems/capstan/util"
-	"gopkg.in/yaml.v1"
+	"github.com/mikelangelo-project/capstan/nat"
+	"github.com/mikelangelo-project/capstan/util"
+	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"net"

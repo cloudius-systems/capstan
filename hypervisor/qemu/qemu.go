@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Cloudius Systems, Ltd.
+ * Modifications copyright (C) 2015 XLAB, Ltd.
  *
  * This work is open source software, licensed under the terms of the
  * BSD license as described in the LICENSE file in the top-level directory.
@@ -10,9 +11,10 @@ package qemu
 import (
 	"bufio"
 	"fmt"
-	"github.com/cloudius-systems/capstan/nat"
-	"github.com/cloudius-systems/capstan/util"
-	"gopkg.in/yaml.v1"
+	"github.com/mikelangelo-project/capstan/hypervisor"
+	"github.com/mikelangelo-project/capstan/nat"
+	"github.com/mikelangelo-project/capstan/util"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net"
 	"os"
@@ -24,18 +26,23 @@ import (
 )
 
 type VMConfig struct {
-	Name        string
-	Image       string
+	Name        string // general
 	Verbose     bool
-	Memory      int64
-	Cpus        int
-	Networking  string
-	Bridge      string
-	NatRules    []nat.Rule
-	BackingFile bool
+	Cmd         string
+	DisableKvm  bool
+	Persist     bool
 	InstanceDir string
 	Monitor     string
 	ConfigFile  string
+	AioType     string
+	Image       string // storage
+	BackingFile bool
+	Volumes     []string
+	Memory      int64 // resources
+	Cpus        int
+	Networking  string // networking
+	Bridge      string
+	NatRules    []nat.Rule
 	MAC         string
 }
 
@@ -163,7 +170,14 @@ func VMCommand(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 		c.Image = newDisk
 	}
 
-	StoreConfig(c)
+	if c.Cmd != "" {
+		fmt.Printf("Setting cmdline: %s\n", c.Cmd)
+		util.SetCmdLine(c.Image, c.Cmd)
+	}
+
+	if c.Persist {
+		StoreConfig(c)
+	}
 
 	version, err := ProbeVersion()
 	if err != nil {
@@ -178,6 +192,7 @@ func VMCommand(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	cmd := exec.Command(path, args...)
 	return cmd, nil
 }
@@ -249,18 +264,51 @@ func (c *VMConfig) vmDriveCache() string {
 	return "unsafe"
 }
 
+func (c *VMConfig) ValidateVmArguments(version *Version) error {
+	if c.AioType != "native" && c.AioType != "threads" {
+		return fmt.Errorf("aio type must be [native|threads], got: %s", c.AioType)
+	}
+
+	return nil
+}
+
 func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
+	if err := c.ValidateVmArguments(version); err != nil {
+		return []string{}, fmt.Errorf("argument validation failed: %s", err.Error())
+	}
+
 	args := make([]string, 0)
 	args = append(args, "-nographic")
 	args = append(args, "-m", strconv.FormatInt(c.Memory, 10))
 	args = append(args, "-smp", strconv.Itoa(c.Cpus))
 	args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")
-	args = append(args, "-drive", "file="+c.Image+",if=none,id=hd0,aio=native,cache="+c.vmDriveCache())
+	args = append(args, "-drive", "file="+c.Image+",if=none,id=hd0,aio="+c.AioType+",cache="+c.vmDriveCache())
 	if version.Major >= 1 && version.Minor >= 3 {
 		args = append(args, "-device", "virtio-rng-pci")
 	}
 	args = append(args, "-chardev", "stdio,mux=on,id=stdio,signal=off")
 	args = append(args, "-device", "isa-serial,chardev=stdio")
+
+	if volumes, err := hypervisor.ParseVolumes(c.Volumes); err == nil {
+		for idx, v := range volumes {
+			bootIndex := idx + 1
+			driveId := fmt.Sprintf("hd%d", bootIndex)
+			deviceId := fmt.Sprintf("blk%d", bootIndex)
+			args = append(
+				args,
+				"-drive",
+				fmt.Sprintf("file=%s,if=none,id=%s,aio=%s,cache=%s,format=%s", v.Path, driveId, v.AioType, v.Cache, v.Format),
+			)
+			args = append(
+				args,
+				"-device",
+				fmt.Sprintf("virtio-blk-pci,id=%s,bootindex=%d,drive=%s", deviceId, bootIndex, driveId),
+			)
+		}
+	} else {
+		return nil, err
+	}
+
 	net, err := c.vmNetworking()
 	if err != nil {
 		return nil, err
@@ -268,7 +316,7 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	args = append(args, net...)
 	monitor := fmt.Sprintf("socket,id=charmonitor,path=%s,server,nowait", c.Monitor)
 	args = append(args, "-chardev", monitor, "-mon", "chardev=charmonitor,id=monitor,mode=control")
-	if runtime.GOOS == "linux" {
+	if !c.DisableKvm && runtime.GOOS == "linux" && checkKVM() {
 		args = append(args, "-enable-kvm", "-cpu", "host,+x2apic")
 	}
 	return args, nil
@@ -289,14 +337,20 @@ func (c *VMConfig) vmNetworking() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		args = append(args, "-netdev", fmt.Sprintf("bridge,id=hn0,br=%s,helper=/usr/libexec/qemu-bridge-helper", c.Bridge), "-device", fmt.Sprintf("virtio-net-pci,netdev=hn0,id=nic1,mac=%s", mac.String()))
+
+		bridgeHelper, err := qemuBridgeHelper()
+		if err != nil {
+			return nil, err
+		}
+
+		args = append(args, "-netdev", fmt.Sprintf("bridge,id=hn0,br=%s,helper=%s", c.Bridge, bridgeHelper), "-device", fmt.Sprintf("virtio-net-pci,netdev=hn0,id=nic1,mac=%s", mac.String()))
 		return args, nil
 	case "nat":
-		args = append(args, "-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1", "-device", "virtio-net-pci,netdev=un0")
+		netdevValue := "user,id=un0,net=192.168.122.0/24,host=192.168.122.1"
 		for _, portForward := range c.NatRules {
-			redirect := fmt.Sprintf("tcp:%s::%s", portForward.HostPort, portForward.GuestPort)
-			args = append(args, "-redir", redirect)
+			netdevValue = netdevValue + fmt.Sprintf(",hostfwd=tcp::%s-:%s", portForward.HostPort, portForward.GuestPort)
 		}
+		args = append(args, "-netdev", netdevValue, "-device", "virtio-net-pci,netdev=un0")
 		return args, nil
 	case "tap":
 		mac, err := c.vmMAC()
@@ -305,7 +359,15 @@ func (c *VMConfig) vmNetworking() ([]string, error) {
 		}
 		args = append(args, "-netdev", fmt.Sprintf("tap,id=hn0,ifname=%s,script=no,downscript=no", c.Bridge), "-device", fmt.Sprintf("virtio-net-pci,netdev=hn0,id=nic1,mac=%s", mac.String()))
 		return args, nil
+	case "vhost":
+		mac, err := c.vmMAC()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, "-net", fmt.Sprintf("nic,model=virtio,macaddr=%s,netdev=nic-0", mac.String()), "-netdev", "tap,id=nic-0,vhost=on")
+		return args, nil
 	}
+
 	return nil, fmt.Errorf("%s: networking not supported", c.Networking)
 }
 
@@ -325,4 +387,55 @@ func qemuExecutable() (string, error) {
 		}
 	}
 	return "", fmt.Errorf("No QEMU installation found. Use the CAPSTAN_QEMU_PATH environment variable to specify its path.")
+}
+
+func qemuBridgeHelper() (string, error) {
+	paths := []string{
+		"/usr/libexec",
+		"/usr/lib/qemu",
+		"/usr/lib",
+	}
+
+	// Use ENV variable if it exists. This allows users to set the location if not avaliable
+	// in standard directories.
+	bridgeHelper := os.Getenv("CAPSTAN_QEMU_BRIDGE_HELPER")
+	if bridgeHelper != "" {
+		if _, err := os.Stat(bridgeHelper); err == nil {
+			return bridgeHelper, nil
+		}
+	}
+
+	// If the ENV setting was not available or the file does not exist, try standard locations
+	for _, path := range paths {
+		bridgeHelper := filepath.Join(path, "qemu-bridge-helper")
+		if _, err := os.Stat(bridgeHelper); err == nil {
+			return bridgeHelper, nil
+		}
+	}
+
+	return "", fmt.Errorf("No QEMU bridge helper (qemu-bridge-helper) found. Use CAPSTAN_QEMU_BRIDGE_HELPER to set the path to qemu-bridge-helper.")
+}
+
+func checkKVM() bool {
+	cmd := exec.Command("kvm-ok")
+	if err := cmd.Start(); err != nil {
+		return false
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return false
+	}
+
+	return true
+}
+
+func CreateVolume(path, format string, sizeMB int64) error {
+	if _, err := os.Stat(path); err == nil {
+		return fmt.Errorf("Volume already exists")
+	}
+	cmd := exec.Command("qemu-img", "create", "-f", format, path, fmt.Sprintf("%dM", sizeMB))
+	if stdout, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("%s\n%s", stdout, err)
+	}
+	return nil
 }

@@ -8,10 +8,10 @@
 package image
 
 import (
-	"github.com/cloudius-systems/capstan/image/gce"
-	"github.com/cloudius-systems/capstan/image/qcow2"
-	"github.com/cloudius-systems/capstan/image/vdi"
-	"github.com/cloudius-systems/capstan/image/vmdk"
+	"github.com/mikelangelo-project/capstan/image/gce"
+	"github.com/mikelangelo-project/capstan/image/qcow2"
+	"github.com/mikelangelo-project/capstan/image/vdi"
+	"github.com/mikelangelo-project/capstan/image/vmdk"
 	"os"
 )
 
@@ -23,6 +23,7 @@ const (
 	VMDK
 	GCE_TARBALL
 	GCE_GS
+	RAW
 	Unknown
 )
 
@@ -52,7 +53,11 @@ func Probe(path string) (ImageFormat, error) {
 	if gce.ProbeTarball(f) {
 		return GCE_TARBALL, nil
 	}
-	return Unknown, nil
+	// Since Raw image format does not have a header we cannot tell whether the file is actually
+	// a raw image or just a bunch of bytes. qemu-img info nevertheless returns 'raw' format for
+	// files that do start with one of the common headers (magic). Raw format may be used for
+	// loader images, produced directly from OSv build process.
+	return RAW, nil
 }
 
 func IsCloudImage(path string) bool {
