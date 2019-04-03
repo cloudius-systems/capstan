@@ -1,10 +1,5 @@
 # Capstan
 
-*This is an upgraded version of the [original Capstan](https://github.com/cloudius-systems/capstan) and
-is maintained by [MIKELANGELO consortium](https://www.mikelangelo-project.eu). Although it is still
-possible, joining this repository with the original Capstan is not very likely. We're looking towards
-the first stable release at the moment.*
-
 Capstan is a command-line tool for rapidly running your application on [OSv unikernel](http://osv.io).
 It focuses on improving user experience during building the unikernel and attempts to support
 not only a variety of runtimes (C, C++, Java, Node.js etc.), but also a variety of ready-to-run
