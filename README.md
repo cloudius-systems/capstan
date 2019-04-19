@@ -6,17 +6,17 @@ not only a variety of runtimes (C, C++, Java, Node.js etc.), but also a variety 
 applications (Hadoop HDFS, MySQL, SimpleFOAM etc.).
 
 ## Philosophy
-Buildning unikernels is generally a nightmare! It is a non-trivial task that requires deep
+Building unikernels is generally a nightmare! It is a non-trivial task that requires deep
 knowledge of unikernel implementation. It depends on numerous installation tools and takes
 somewhat 10 minutes to prepare each unikernel once configured correctly.
-But an application-oriented developer is not willing to take a load of new knowledge about unikerel
+But an application-oriented developer is not willing to take a load of new knowledge about unikernel
 specifics, nor wait long minutes to compile! And that's where Capstan comes in.
 
 Capstan tends to be a tool that one configures with *application-oriented settings*
 (Where is application entry point? What environment variables to pass? etc.) and then
 runs a command or two to quickly boot up a new unikernel with application. Measured in seconds.
 
-To achieve this, Capstan uses **precompiled** artefacts: precompiled OSv kernel, precompiled Java runtime,
+To achieve this, Capstan uses **precompiled** artifacts: precompiled OSv kernel, precompiled Java runtime,
 precompiled MySQL, and many more. All you have to do is to name what precompiled packages you want
 to have available in your unikernel and that's it.
 
@@ -57,9 +57,9 @@ Being in project root directory, then use Capstan command to create unikernel
 $ capstan package compose {unikernel-name}
 ```
 At this point, you have your unikernel built. It contains all your project files plus all the
-precompiled artefacts that you asked for. In other words, the unikernel contains everything and is
+precompiled artifacts that you asked for. In other words, the unikernel contains everything and is
 ready to be started! As you might have expected, there is Capstan command to run unikernel for you
-(using KVM/QEMU hipervisor):
+(using KVM/QEMU hypervisor):
 ```
 $ capstan run {unikernel-name}
 ```
