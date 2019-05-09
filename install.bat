@@ -1,4 +1,4 @@
-set package=github.com/mikelangelo-project/capstan
+set package=github.com/cloudius-systems/capstan
 
 :: Clone github repo into $GOPATH/src/$package, but don't install yet
 go get -d %package%
