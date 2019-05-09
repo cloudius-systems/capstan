@@ -21,6 +21,8 @@ import (
 const (
 	NBD_REQUEST_MAGIC = 0x25609513
 	NBD_REPLY_MAGIC   = 0x67446698
+	NBD_OLD_STYLE_HANDSHAKE_MAGIC = 0x00420281861253
+	NBD_NEW_STYLE_HANDSHAKE_MAGIC = 0x49484156454F5054
 )
 
 const (
@@ -187,14 +189,51 @@ func (session *NbdSession) Handshake() error {
 	if string(nbd_magic) != "NBDMAGIC" {
 		return fmt.Errorf("NBD magic missing!")
 	}
-	buf := make([]byte, 8+8+4)
+	buf := make([]byte, 8)
 	session.Conn.Read(buf)
 	magic := binary.BigEndian.Uint64(buf)
-	if magic != 0x00420281861253 {
-		return fmt.Errorf("Bad magic: %x", magic)
+	if magic == NBD_NEW_STYLE_HANDSHAKE_MAGIC {
+		return session.NewStyleHandshake(magic)
+	} else {
+		return session.OldStyleHandshake(magic)
 	}
+}
+
+func (session *NbdSession) OldStyleHandshake(magic uint64) error {
+	if magic != NBD_OLD_STYLE_HANDSHAKE_MAGIC {
+		return fmt.Errorf("Bad magic: %x! Expected %x instead!", magic, NBD_OLD_STYLE_HANDSHAKE_MAGIC)
+	}
+	buf := make([]byte, 8+4)
+	session.Conn.Read(buf)
 	session.Size = binary.BigEndian.Uint64(buf)
 	session.Flags = binary.BigEndian.Uint32(buf)
+	session.Conn.Read(make([]byte, 124))
+	session.Handle += 1
+	return nil
+}
+
+func (session *NbdSession) NewStyleHandshake(magic uint64) error {
+	if magic != NBD_NEW_STYLE_HANDSHAKE_MAGIC {
+		return fmt.Errorf("Bad magic: %x! Expected %x instead!", magic, NBD_NEW_STYLE_HANDSHAKE_MAGIC)
+	}
+	buf := make([]byte, 2)
+	session.Conn.Read(buf)
+	handshakeFlags := binary.BigEndian.Uint16(buf)
+
+	endian := binary.BigEndian
+	b := make([]byte, 4+8+4+4)
+	endian.PutUint32(b[0:4], 0)
+	endian.PutUint64(b[4:12], NBD_NEW_STYLE_HANDSHAKE_MAGIC)
+	endian.PutUint32(b[12:16], 1) //NBD_OPT_EXPORT_NAME
+	endian.PutUint32(b[16:20], 0) //No option data
+	session.Conn.Write(b)
+
+	buf = make([]byte, 8+2)
+	session.Conn.Read(buf)
+	session.Size = binary.BigEndian.Uint64(buf)
+	transportFlags := binary.BigEndian.Uint16(buf)
+	session.Flags = uint32(handshakeFlags) << 16 + uint32(transportFlags)
+
 	session.Conn.Read(make([]byte, 124))
 	session.Handle += 1
 	return nil
