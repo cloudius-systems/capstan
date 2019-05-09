@@ -417,15 +417,11 @@ func qemuBridgeHelper() (string, error) {
 }
 
 func checkKVM() bool {
-	cmd := exec.Command("kvm-ok")
-	if err := cmd.Start(); err != nil {
+	file, err := os.OpenFile("/dev/kvm", os.O_RDWR, 0666)
+	if err != nil {
 		return false
 	}
-
-	if err := cmd.Wait(); err != nil {
-		return false
-	}
-
+	defer file.Close()
 	return true
 }
 
