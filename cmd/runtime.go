@@ -10,7 +10,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/mikelangelo-project/capstan/runtime"
+	"github.com/cloudius-systems/capstan/runtime"
 	"io/ioutil"
 	"os"
 	"regexp"

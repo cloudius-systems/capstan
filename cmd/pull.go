@@ -9,7 +9,7 @@
 package cmd
 
 import (
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/util"
 )
 
 func Pull(r *util.Repo, hypervisor string, image string) error {

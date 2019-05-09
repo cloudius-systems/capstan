@@ -12,8 +12,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mikelangelo-project/capstan/hypervisor"
-	"github.com/mikelangelo-project/capstan/hypervisor/qemu"
+	"github.com/cloudius-systems/capstan/hypervisor"
+	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 )
 
 // Volume is an extended version of hypervisor.Volume with volume creation data.

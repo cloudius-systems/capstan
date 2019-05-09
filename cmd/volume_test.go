@@ -12,10 +12,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mikelangelo-project/capstan/hypervisor"
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/hypervisor"
+	"github.com/cloudius-systems/capstan/util"
 
-	. "github.com/mikelangelo-project/capstan/testing"
+	. "github.com/cloudius-systems/capstan/testing"
 	. "gopkg.in/check.v1"
 )
 

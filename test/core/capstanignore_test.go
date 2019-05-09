@@ -10,7 +10,7 @@ package core_test
 import (
 	"testing"
 
-	"github.com/mikelangelo-project/capstan/core"
+	"github.com/cloudius-systems/capstan/core"
 	. "gopkg.in/check.v1"
 )
 

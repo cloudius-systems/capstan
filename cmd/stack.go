@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mikelangelo-project/capstan/provider/openstack"
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/provider/openstack"
+	"github.com/cloudius-systems/capstan/util"
 	"github.com/urfave/cli"
 )
 

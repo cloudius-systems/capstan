@@ -12,8 +12,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mikelangelo-project/capstan/nat"
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/nat"
+	"github.com/cloudius-systems/capstan/util"
 )
 
 type RuntimeType string

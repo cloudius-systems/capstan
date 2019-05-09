@@ -8,7 +8,7 @@
 package util
 
 import (
-	"github.com/mikelangelo-project/capstan/core"
+	"github.com/cloudius-systems/capstan/core"
 	"time"
 
 	. "gopkg.in/check.v1"

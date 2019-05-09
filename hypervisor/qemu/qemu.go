@@ -11,9 +11,9 @@ package qemu
 import (
 	"bufio"
 	"fmt"
-	"github.com/mikelangelo-project/capstan/hypervisor"
-	"github.com/mikelangelo-project/capstan/nat"
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/hypervisor"
+	"github.com/cloudius-systems/capstan/nat"
+	"github.com/cloudius-systems/capstan/util"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net"
