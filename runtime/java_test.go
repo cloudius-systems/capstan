@@ -10,7 +10,7 @@ package runtime
 import (
 	"testing"
 
-	. "github.com/mikelangelo-project/capstan/testing"
+	. "github.com/cloudius-systems/capstan/testing"
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
 )

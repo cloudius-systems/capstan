@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/cheggaaa/pb"
-	"github.com/mikelangelo-project/capstan/core"
+	"github.com/cloudius-systems/capstan/core"
 	"gopkg.in/yaml.v2"
 )
 

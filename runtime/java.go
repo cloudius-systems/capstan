@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/util"
 )
 
 // javaPackages specifies what packages are fully compatible with this runtime.

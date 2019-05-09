@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mikelangelo-project/capstan/core"
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/core"
+	"github.com/cloudius-systems/capstan/util"
 	"github.com/urfave/cli"
 )
 

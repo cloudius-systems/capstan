@@ -8,7 +8,7 @@
 package cmd
 
 import (
-	. "github.com/mikelangelo-project/capstan/testing"
+	. "github.com/cloudius-systems/capstan/testing"
 	. "gopkg.in/check.v1"
 )
 

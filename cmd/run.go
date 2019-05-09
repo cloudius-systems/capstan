@@ -16,14 +16,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mikelangelo-project/capstan/core"
-	"github.com/mikelangelo-project/capstan/hypervisor/gce"
-	"github.com/mikelangelo-project/capstan/hypervisor/qemu"
-	"github.com/mikelangelo-project/capstan/hypervisor/vbox"
-	"github.com/mikelangelo-project/capstan/hypervisor/vmw"
-	"github.com/mikelangelo-project/capstan/image"
-	"github.com/mikelangelo-project/capstan/runtime"
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/core"
+	"github.com/cloudius-systems/capstan/hypervisor/gce"
+	"github.com/cloudius-systems/capstan/hypervisor/qemu"
+	"github.com/cloudius-systems/capstan/hypervisor/vbox"
+	"github.com/cloudius-systems/capstan/hypervisor/vmw"
+	"github.com/cloudius-systems/capstan/image"
+	"github.com/cloudius-systems/capstan/runtime"
+	"github.com/cloudius-systems/capstan/util"
 )
 
 func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {

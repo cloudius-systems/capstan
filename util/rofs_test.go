@@ -8,8 +8,8 @@
 package util_test
 
 import (
-	"github.com/mikelangelo-project/capstan/cmd"
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/cmd"
+	"github.com/cloudius-systems/capstan/util"
 	. "gopkg.in/check.v1"
 	"io"
 	"io/ioutil"

@@ -20,9 +20,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mikelangelo-project/capstan/core"
-	"github.com/mikelangelo-project/capstan/runtime"
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/core"
+	"github.com/cloudius-systems/capstan/runtime"
+	"github.com/cloudius-systems/capstan/util"
 	"gopkg.in/yaml.v2"
 )
 

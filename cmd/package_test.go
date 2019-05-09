@@ -16,10 +16,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mikelangelo-project/capstan/core"
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/core"
+	"github.com/cloudius-systems/capstan/util"
 
-	. "github.com/mikelangelo-project/capstan/testing"
+	. "github.com/cloudius-systems/capstan/testing"
 	. "gopkg.in/check.v1"
 )
 

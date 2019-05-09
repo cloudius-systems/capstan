@@ -10,7 +10,7 @@ package util_test
 import (
 	"testing"
 
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/util"
 	. "gopkg.in/check.v1"
 )
 

@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mikelangelo-project/capstan/core"
-	"github.com/mikelangelo-project/capstan/image"
+	"github.com/cloudius-systems/capstan/core"
+	"github.com/cloudius-systems/capstan/image"
 	"gopkg.in/yaml.v2"
 )
 

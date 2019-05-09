@@ -12,10 +12,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/mikelangelo-project/capstan/cmd"
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/cmd"
+	"github.com/cloudius-systems/capstan/util"
 
-	. "github.com/mikelangelo-project/capstan/testing"
+	. "github.com/cloudius-systems/capstan/testing"
 	. "gopkg.in/check.v1"
 )
 
