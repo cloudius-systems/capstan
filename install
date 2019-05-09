@@ -1,6 +1,6 @@
 #!/bin/sh
 
-package=github.com/mikelangelo-project/capstan
+package=github.com/cloudius-systems/capstan
 
 # Clone github repo into $GOPATH/src/$package, but don't install yet
 go get -d $package
