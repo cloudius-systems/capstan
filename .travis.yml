@@ -12,7 +12,7 @@ before_install:
   - export PATH=/home/travis/gopath/bin:$PATH
   - go get gopkg.in/check.v1
 
-go_import_path: github.com/mikelangelo-project/capstan
+go_import_path: github.com/cloudius-systems/capstan
 
 install:
   - ./install

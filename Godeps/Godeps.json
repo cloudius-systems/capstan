@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/mikelangelo-project/capstan",
+	"ImportPath": "github.com/cloudius-systems/capstan",
 	"GoVersion": "go1.7",
 	"Packages": [
 		"./..."
