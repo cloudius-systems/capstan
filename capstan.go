@@ -45,6 +45,8 @@ func main() {
 	app.Usage = "pack, ship, and run applications in light-weight VMs"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{Name: "u", Usage: fmt.Sprintf("remote repository URL (default: \"%s\")", util.DefaultRepositoryUrl)},
+		cli.StringFlag{Name: "releaseTag,rt", Usage: "the release tag: any, latest, v0.51.0"},
+		cli.BoolFlag{Name: "s3", Usage: fmt.Sprintf("searches and downloads from S3 repository at (\"%s\")", util.DefaultRepositoryUrl)},
 	}
 	app.Commands = []cli.Command{
 		{
@@ -88,7 +90,7 @@ func main() {
 				if len(c.Args()) != 2 {
 					return cli.NewExitError("usage: capstan import [image-name] [image-file]", EX_USAGE)
 				}
-				repo := util.NewRepo(c.GlobalString("u"))
+				repo := util.NewRepoFromCli(c)
 				err := repo.ImportImage(c.Args()[0], c.Args()[1], c.String("v"), c.String("c"), c.String("d"), c.String("b"))
 				if err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
@@ -98,7 +100,7 @@ func main() {
 		},
 		{
 			Name:  "pull",
-			Usage: "pull an image from a repository",
+			Usage: "pull an image from a remote repository",
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
 			},
@@ -110,7 +112,7 @@ func main() {
 				if !isValidHypervisor(hypervisor) {
 					return cli.NewExitError(fmt.Sprintf("error: '%s' is not a supported hypervisor\n", c.String("p")), EX_DATAERR)
 				}
-				repo := util.NewRepo(c.GlobalString("u"))
+				repo := util.NewRepoFromCli(c)
 				err := cmd.Pull(repo, hypervisor, c.Args().First())
 				if err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
@@ -125,7 +127,7 @@ func main() {
 				if len(c.Args()) != 1 {
 					return cli.NewExitError("usage: capstan rmi [image-name]", EX_USAGE)
 				}
-				repo := util.NewRepo(c.GlobalString("u"))
+				repo := util.NewRepoFromCli(c)
 				err := repo.RemoveImage(c.Args().First())
 				if err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
@@ -192,7 +194,7 @@ func main() {
 				if !isValidHypervisor(config.Hypervisor) {
 					return cli.NewExitError(fmt.Sprintf("error: '%s' is not a supported hypervisor\n", config.Hypervisor), EX_DATAERR)
 				}
-				repo := util.NewRepo(c.GlobalString("u"))
+				repo := util.NewRepoFromCli(c)
 				if err := cmd.RunInstance(repo, config); err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
@@ -209,7 +211,7 @@ func main() {
 			},
 			Action: func(c *cli.Context) error {
 				imageName := c.Args().First()
-				repo := util.NewRepo(c.GlobalString("u"))
+				repo := util.NewRepoFromCli(c)
 				if len(c.Args()) != 1 {
 					imageName = repo.DefaultImage()
 				}
@@ -238,8 +240,10 @@ func main() {
 			Name:  "compose",
 			Usage: "compose the image from a folder or a file",
 			Flags: []cli.Flag{
-				cli.StringFlag{Name: "loader_image, l", Value: "mike/osv-loader", Usage: "the base loader image"},
+				cli.StringFlag{Name: "loader_image, l", Value: "osv-loader", Usage: "the base loader image"},
 				cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
+				cli.StringFlag{Name: "command_line, c", Usage: "command line OSv will boot with"},
+				cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 			},
 			Action: func(c *cli.Context) error {
 				if len(c.Args()) != 2 {
@@ -251,16 +255,20 @@ func main() {
 				// File or directory path that needs to be uploaded
 				uploadPath := c.Args()[1]
 
-				repo := util.NewRepo(c.GlobalString("u"))
+				repo := util.NewRepoFromCli(c)
 
 				loaderImage := c.String("l")
+
+				commandLine := c.String("c")
+
+				verbose := c.Bool("v")
 
 				imageSize, err := util.ParseMemSize(c.String("size"))
 				if err != nil {
 					return cli.NewExitError(fmt.Sprintf("Incorrect image size format: %s\n", err), EX_DATAERR)
 				}
 
-				if err := cmd.Compose(repo, loaderImage, imageSize, uploadPath, appName); err != nil {
+				if err := cmd.Compose(repo, loaderImage, imageSize, uploadPath, appName, commandLine, verbose); err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
 				return nil
@@ -271,7 +279,7 @@ func main() {
 			ShortName: "i",
 			Usage:     "list images",
 			Action: func(c *cli.Context) error {
-				repo := util.NewRepo(c.GlobalString("u"))
+				repo := util.NewRepoFromCli(c)
 				fmt.Print(repo.ListImages())
 
 				return nil
@@ -285,7 +293,7 @@ func main() {
 				if len(c.Args()) > 0 {
 					image = c.Args()[0]
 				}
-				repo := util.NewRepo(c.GlobalString("u"))
+				repo := util.NewRepoFromCli(c)
 				err := util.ListImagesRemote(repo.URL, image)
 				if err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
@@ -434,7 +442,7 @@ func main() {
 						}
 
 						// Use the provided repository.
-						repo := util.NewRepo(c.GlobalString("u"))
+						repo := util.NewRepoFromCli(c)
 
 						// Get the name of the application to be imported into Capstan's repository.
 						appName := c.Args().First()
@@ -486,7 +494,7 @@ func main() {
 						}
 
 						// Use the provided repository.
-						repo := util.NewRepo(c.GlobalString("u"))
+						repo := util.NewRepoFromCli(c)
 
 						// Get the remote host instance or IP address where files of the composed package will be uploaded to
 						remoteHostInstance := c.Args().First()
@@ -513,7 +521,7 @@ func main() {
 						cli.BoolFlag{Name: "remote", Usage: "set when previewing the compose-remote"},
 					},
 					Action: func(c *cli.Context) error {
-						repo := util.NewRepo(c.GlobalString("u"))
+						repo := util.NewRepoFromCli(c)
 						packageDir, _ := os.Getwd()
 
 						pullMissing := c.Bool("pull-missing")
@@ -529,7 +537,7 @@ func main() {
 					Name:  "list",
 					Usage: "lists the available packages",
 					Action: func(c *cli.Context) error {
-						repo := util.NewRepo(c.GlobalString("u"))
+						repo := util.NewRepoFromCli(c)
 
 						fmt.Print(repo.ListPackages())
 
@@ -541,7 +549,7 @@ func main() {
 					Usage: "builds the package at the given path and imports it into a chosen repository",
 					Action: func(c *cli.Context) error {
 						// Use the provided repository.
-						repo := util.NewRepo(c.GlobalString("u"))
+						repo := util.NewRepoFromCli(c)
 
 						packageDir, err := os.Getwd()
 						if err != nil {
@@ -561,8 +569,9 @@ func main() {
 					ArgsUsage: "[package-name]",
 					Action: func(c *cli.Context) error {
 						packageName := c.Args().First()
-						repo := util.NewRepo(c.GlobalString("u"))
-						if err := util.ListPackagesRemote(repo.URL, packageName); err != nil {
+
+						repo := util.NewRepoFromCli(c)
+						if err := repo.ListPackagesRemote(packageName); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
@@ -580,7 +589,7 @@ func main() {
 						}
 
 						// Initialise the repository
-						repo := util.NewRepo(c.GlobalString("u"))
+						repo := util.NewRepoFromCli(c)
 						if err := cmd.PullPackage(repo, c.Args().First()); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
@@ -599,7 +608,7 @@ func main() {
 						}
 
 						// Initialise the repository
-						repo := util.NewRepo(c.GlobalString("u"))
+						repo := util.NewRepoFromCli(c)
 
 						packageName := c.Args()[0]
 
@@ -623,7 +632,7 @@ func main() {
 					},
 					Action: func(c *cli.Context) error {
 						// Initialise the repository
-						repo := util.NewRepo(c.GlobalString("u"))
+						repo := util.NewRepoFromCli(c)
 
 						search := ""
 						if len(c.Args()) > 0 {

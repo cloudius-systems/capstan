@@ -18,7 +18,7 @@ func Pull(r *util.Repo, hypervisor string, image string) error {
 		return err
 	}
 	if remote {
-		return r.DownloadImage(r.URL, hypervisor, image)
+		return r.DownloadImage(hypervisor, image)
 	}
 	return r.PullImage(image)
 }

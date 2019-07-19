@@ -1,6 +1,7 @@
 # Capstan Repository
-Capstan tool downloads base unikernel and precompiled packages from publically available remote repository.
-By default, following S3 repository is used:
+Capstan tool downloads base unikernel and precompiled packages from OSv Github releases repository
+ (the default) or publicly available remote repository in AWS S3.
+If S3 mode selected (--s3), following S3 repository is used:
 
 ```
 https://mikelangelo-capstan.s3.amazonaws.com
@@ -9,8 +10,15 @@ https://mikelangelo-capstan.s3.amazonaws.com
 There is nothing special about repository, it's just a bunch of directories and files that are made
 available on the internet. No authentication is supported, just a simple HTTP/HTTPS download.
 
-## Repository Structure
-Repository is structured as follows:
+## OSv Github Repository
+By default capstan pulls OSv kernel and any required packages from [OSv Github repository](https://github.com/cloudius-systems/osv/releases).
+The global parameter ```--releaseTag``` (or ```-rt```) can be used to override default behavior and make
+capstan pull artifacts published for specific release (for example ```--rt v0.51.0```) or the latest release (```--rt latest```).
+By default capstan would pull first found artifact from the list of assets published for all releases (```--rt any```).
+
+## S3 Repository Structure
+One can use global ```--s3``` parameter to make capstan pull kernel and packages from repository in AWS S3.
+The default public repository created as part of MIKELANGELO project is structured as follows:
 
 ```
 mike

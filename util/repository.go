@@ -13,6 +13,7 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
+	"github.com/urfave/cli"
 	"io"
 	"io/ioutil"
 	"os"
@@ -28,7 +29,8 @@ import (
 )
 
 const (
-	DefaultRepositoryUrl = "https://mikelangelo-capstan.s3.amazonaws.com/"
+	NewLoaderImageName = "osv-loader"
+	OldLoaderImageName = "mike/osv-loader"
 )
 
 type Repo struct {
@@ -36,12 +38,15 @@ type Repo struct {
 	Path        string
 	DisableKvm  bool
 	QemuAioType string
+	UseS3       bool
+	ReleaseTag  string
 }
 
 type CapstanSettings struct {
 	RepoUrl     string `yaml:"repo_url"`
 	DisableKvm  bool   `yaml:"disable_kvm"`
 	QemuAioType string `yaml:"qemu_aio_type"`
+	ReleaseTag  string `yaml:"release_tag"`
 }
 
 func NewRepo(url string) *Repo {
@@ -52,6 +57,7 @@ func NewRepo(url string) *Repo {
 		RepoUrl:     "",
 		DisableKvm:  false,
 		QemuAioType: "threads",
+		ReleaseTag:  "",
 	}
 	data, err := ioutil.ReadFile(filepath.Join(root, "config.yaml"))
 	if err == nil {
@@ -90,7 +96,20 @@ func NewRepo(url string) *Repo {
 		Path:        root,
 		DisableKvm:  config.DisableKvm,
 		QemuAioType: config.QemuAioType,
+		UseS3:       false,
+		ReleaseTag:  "any",
 	}
+}
+
+func NewRepoFromCli(c *cli.Context) *Repo {
+	repo := NewRepo(c.GlobalString("u"))
+	repo.UseS3 = c.GlobalBool("s3")
+
+	if c.GlobalString("releaseTag") != "" {
+		repo.ReleaseTag = c.GlobalString("releaseTag")
+	}
+
+	return repo
 }
 
 type ImageInfo struct {
@@ -291,21 +310,46 @@ func (r *Repo) DefaultImage() string {
 	return image
 }
 
-func (r *Repo) InitializeZfsImage(loaderImage string, imageName string, imageSize int64) error {
-	// Temporarily use the mike/osv-loader image. Note that in order for this to work
-	// one has to actually import mike/osv-loader image first!
-	//
-	// capstan import mike/osv-loader /path/to/osv/build/release/loader.img
-	if loaderImage == "" {
-		loaderImage = "mike/osv-loader"
+func (r *Repo) getLoaderImageInfo(loaderImage string) (string, os.FileInfo, error) {
+	loaderImageName := loaderImage
+	if loaderImageName == "" {
+		loaderImageName = NewLoaderImageName
 	}
-
+	//
 	// Get the actual path of the loader image.
-	loaderImagePath := r.ImagePath("qemu", loaderImage)
+	loaderImagePath := r.ImagePath("qemu", loaderImageName)
 	// Check whether the base loader image exists
 	loaderInfo, err := os.Stat(loaderImagePath)
 	if os.IsNotExist(err) {
-		fmt.Printf("The specified loader image (%s) does not exist.\n", loaderImagePath)
+		if loaderImage == "" {
+			//
+			// Try older name
+			loaderImageName = OldLoaderImageName
+			loaderImagePath = r.ImagePath("qemu", loaderImageName)
+			// Check whether the base loader image exists
+			loaderInfo, err = os.Stat(loaderImagePath)
+			if os.IsNotExist(err) {
+				if loaderImageName, err = r.DownloadLoaderImage("qemu"); err != nil {
+					fmt.Printf("Failed to download default loader image (%s).\n", loaderImageName)
+					return "", nil, err
+				}
+				loaderImagePath = r.ImagePath("qemu", loaderImageName)
+				loaderInfo, err = os.Stat(loaderImagePath)
+			}
+		} else {
+			fmt.Printf("The specified loader image (%s) does not exist.\n", loaderImagePath)
+			return "", nil, err
+		}
+	}
+
+	return loaderImagePath, loaderInfo, err
+}
+
+func (r *Repo) InitializeZfsImage(loaderImage string, imageName string, imageSize int64) error {
+	// Get the base loader image info
+	loaderImagePath, loaderInfo, err := r.getLoaderImageInfo(loaderImage)
+	if err != nil {
+		println("Loader image could not be found or downloaded.\n")
 		return err
 	}
 
@@ -328,7 +372,7 @@ func (r *Repo) InitializeZfsImage(loaderImage string, imageName string, imageSiz
 	defer os.RemoveAll(tmp)
 	imagePath := path.Join(tmp, "application.img")
 
-	// Copy the OSv base iamge into application image
+	// Copy the OSv base image into application image
 	if err := CopyLocalFile(imagePath, loaderImagePath); err != nil {
 		return err
 	}
@@ -356,20 +400,10 @@ func (r *Repo) InitializeZfsImage(loaderImage string, imageName string, imageSiz
 }
 
 func (r *Repo) CreateRofsImage(loaderImage string, imageName string, rofsImagePath string) error {
-	// Temporarily use the mike/osv-loader image. Note that in order for this to work
-	// one has to actually import mike/osv-loader image first!
-	//
-	// capstan import mike/osv-loader /path/to/osv/build/release/loader.img
-	if loaderImage == "" {
-		loaderImage = "mike/osv-loader"
-	}
-
-	// Get the actual path of the loader image.
-	loaderImagePath := r.ImagePath("qemu", loaderImage)
-	// Check whether the base loader image exists
-	loaderInfo, err := os.Stat(loaderImagePath)
-	if os.IsNotExist(err) {
-		fmt.Printf("The specified loader image (%s) does not exist.\n", loaderImagePath)
+	// Get the base loader image info
+	loaderImagePath, loaderInfo, err := r.getLoaderImageInfo(loaderImage)
+	if err != nil {
+		println("Loader image could not be found or downloaded.\n")
 		return err
 	}
 
@@ -522,7 +556,7 @@ func (r *Repo) GetPackageDependencies(pkg core.Package, downloadMissing bool) ([
 		// from the remote repository.
 		if !r.PackageExists(requiredPackage) {
 			if downloadMissing {
-				if err := r.DownloadPackage(r.URL, requiredPackage); err != nil {
+				if err := r.DownloadPackageRemote(requiredPackage); err != nil {
 					return nil, err
 				}
 			} else {
@@ -551,21 +585,34 @@ func (r *Repo) GetPackageDependencies(pkg core.Package, downloadMissing bool) ([
 	return dependencies, nil
 }
 
-func mergeDependencies(existing []core.Package, additional []core.Package) []core.Package {
-	for _, newpkg := range additional {
-		// Check if the package has already been added as a dependency.
-		exists := false
-		for _, existingpkg := range existing {
-			if existingpkg.Name == newpkg.Name {
-				exists = true
-				break
-			}
-		}
-
-		if !exists {
-			existing = append(existing, newpkg)
-		}
+func (r *Repo) DownloadLoaderImage(hypervisor string) (string, error) {
+	if r.UseS3 {
+		return r.downloadLoaderImageFromS3(hypervisor)
+	} else {
+		return r.downloadLoaderImageFromGithub(hypervisor)
 	}
+}
 
-	return existing
+func (r *Repo) ListPackagesRemote(search string) error {
+	if r.UseS3 {
+		return r.s3ListPackagesRemote(search)
+	} else {
+		return r.githubListPackagesRemote(search)
+	}
+}
+
+func (r *Repo) DownloadPackageRemote(packageName string) error {
+	if r.UseS3 {
+		return r.downloadPackageFromS3(packageName)
+	} else {
+		return r.downloadPackageFromGithub(packageName)
+	}
+}
+
+func (r *Repo) PackageInfoRemote(packageName string) *core.Package {
+	if r.UseS3 {
+		return r.s3PackageInfoRemote(packageName)
+	} else {
+		return r.githubPackageInfoRemote(packageName)
+	}
 }

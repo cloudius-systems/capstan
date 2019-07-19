@@ -8,29 +8,19 @@
 package util
 
 import (
-	"compress/gzip"
 	"encoding/xml"
 	"fmt"
-	"io"
+	"github.com/cloudius-systems/capstan/core"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/cheggaaa/pb"
-	"github.com/cloudius-systems/capstan/core"
-	"gopkg.in/yaml.v2"
 )
 
-type FileInfo struct {
-	Namespace   string
-	Name        string
-	Description string
-	Version     string
-	Created     core.YamlTime `yaml:"created"`
-	Platform    string
-}
+const (
+	DefaultRepositoryUrl = "https://mikelangelo-capstan.s3.amazonaws.com/"
+)
 
 type Contents struct {
 	Key          string
@@ -43,87 +33,7 @@ type Query struct {
 	ContentsList []Contents `xml:"Contents"`
 }
 
-type FilesInfo struct {
-	images []FileInfo
-}
-
-func FileInfoHeader() string {
-	res := fmt.Sprintf("%-50s %-50s %-15s %-20s %-15s", "Name", "Description", "Version", "Created", "Platform")
-	return strings.TrimSpace(res)
-}
-
-func (f *FileInfo) String() string {
-	// Trim "/" prefix if there is one (happens when namespace is empty)
-	name := strings.TrimLeft(f.Namespace+"/"+f.Name, "/")
-	platform := f.Platform
-	if platform == "" {
-		platform = "N/A"
-	}
-	res := fmt.Sprintf("%-50s %-50s %-15s %-20s %-15s", name, f.Description, f.Version, f.Created, platform)
-	return strings.TrimSpace(res)
-}
-
-func ParseIndexYaml(path, ns, name string) (*FileInfo, error) {
-	data, err := ioutil.ReadFile(filepath.Join(path, ns, name, "index.yaml"))
-	if err != nil {
-		return nil, err
-	}
-	f := FileInfo{}
-	err = yaml.Unmarshal(data, &f)
-	if err != nil {
-		return nil, err
-	}
-	f.Namespace = ns
-	f.Name = name
-	return &f, nil
-}
-
-func RemoteFileInfo(repo_url string, path string) *FileInfo {
-	resp, err := http.Get(repo_url + path)
-	if err != nil {
-		return nil
-	}
-
-	parts := strings.Split(path, "/")
-	defer resp.Body.Close()
-	f := FileInfo{}
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil
-	}
-	err = yaml.Unmarshal(data, &f)
-	if err != nil {
-		return nil
-	}
-	if err != nil {
-		return nil
-	}
-	f.Namespace = parts[0]
-	f.Name = parts[1]
-	return &f
-}
-
-// RemotePackageInfo downloads the given manifest files and tries to parse it.
-// core.Package struct is returned if it succeeds, otherwise nil.
-func RemotePackageInfo(repo_url string, path string) *core.Package {
-	resp, err := http.Get(repo_url + path)
-	if err != nil {
-		return nil
-	}
-
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	var pkg core.Package
-
-	if err := pkg.Parse(data); err != nil {
-		return nil
-	}
-
-	return &pkg
-}
-
-func QueryRemote(repo_url string) (*Query, error) {
+func queryRemote(repo_url string) (*Query, error) {
 	resp, err := http.Get(repo_url)
 	if err != nil {
 		return nil, err
@@ -139,7 +49,7 @@ func QueryRemote(repo_url string) (*Query, error) {
 }
 
 func ListImagesRemote(repo_url string, search string) error {
-	q, err := QueryRemote(repo_url)
+	q, err := queryRemote(repo_url)
 	if err != nil {
 		return err
 	}
@@ -154,60 +64,7 @@ func ListImagesRemote(repo_url string, search string) error {
 	return nil
 }
 
-func ListPackagesRemote(repo_url string, search string) error {
-	q, err := QueryRemote(repo_url)
-	if err != nil {
-		return err
-	}
-	fmt.Println(FileInfoHeader())
-	for _, content := range q.ContentsList {
-		if strings.HasPrefix(content.Key, "packages/") && strings.HasSuffix(content.Key, ".yaml") {
-			if pkg := RemotePackageInfo(repo_url, content.Key); pkg != nil && strings.Contains(pkg.Name, search) {
-				fmt.Println(pkg.String())
-			}
-		}
-	}
-	return nil
-}
-
-func (r *Repo) downloadFile(repo_url string, destPath string, name string) error {
-	compressed := strings.HasSuffix(name, ".gz")
-	output, err := os.Create(filepath.Join(destPath, strings.TrimSuffix(name, ".gz")))
-	if err != nil {
-		return err
-	}
-	defer output.Close()
-	fmt.Printf("Downloading %s...\n", name)
-	tr := &http.Transport{
-		DisableCompression: true,
-		Proxy:              http.ProxyFromEnvironment,
-	}
-	client := &http.Client{Transport: tr}
-	resp, err := client.Get(repo_url + name)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	bar := pb.New64(resp.ContentLength).SetUnits(pb.U_BYTES)
-	bar.Start()
-	proxyReader := bar.NewProxyReader(resp.Body)
-	var reader io.Reader = proxyReader
-	if compressed {
-		gzipReader, err := gzip.NewReader(proxyReader)
-		if err != nil {
-			return err
-		}
-		reader = gzipReader
-	}
-	_, err = io.Copy(output, reader)
-	bar.Finish()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *Repo) DownloadImage(repo_url, hypervisor string, path string) error {
+func (r *Repo) DownloadImage(hypervisor string, path string) error {
 	parts := strings.Split(path, "/")
 	if len(parts) < 2 {
 		return fmt.Errorf("%s: wrong name format", path)
@@ -216,15 +73,17 @@ func (r *Repo) DownloadImage(repo_url, hypervisor string, path string) error {
 	if err != nil {
 		return err
 	}
-	err = r.downloadFile(repo_url, r.RepoPath(), fmt.Sprintf("%s/index.yaml", path))
+	fileName := fmt.Sprintf("%s/index.yaml", path)
+	err = r.downloadFile(r.URL+fileName, r.RepoPath(), fileName)
 	if err != nil {
 		return err
 	}
-	return r.downloadFile(repo_url, r.RepoPath(), fmt.Sprintf("%s/%s.%s.gz", path, parts[1], hypervisor))
+	fileName = fmt.Sprintf("%s/%s.%s.gz", path, parts[1], hypervisor)
+	return r.downloadFile(r.URL+fileName, r.RepoPath(), fileName)
 }
 
 func IsRemoteImage(repo_url, name string) (bool, error) {
-	q, err := QueryRemote(repo_url)
+	q, err := queryRemote(repo_url)
 	if err != nil {
 		return false, err
 	}
@@ -236,15 +95,31 @@ func IsRemoteImage(repo_url, name string) (bool, error) {
 	return false, nil
 }
 
+func (r *Repo) downloadLoaderImageFromS3(hypervisor string) (string, error) {
+	imageName := NewLoaderImageName
+	err := r.DownloadImage(hypervisor, imageName)
+	if err != nil {
+		imageName = OldLoaderImageName
+		err = r.DownloadImage(hypervisor, imageName)
+	}
+
+	if err == nil {
+		fmt.Printf("Downloaded loader image (%s) from S3.\n", imageName)
+		return imageName, nil
+	} else {
+		return imageName, err
+	}
+}
+
 // DownloadPackage downloads a package from the S3 repository into local.
-func (r *Repo) DownloadPackage(repo_url, packageName string) error {
-	remote, err := IsRemotePackage(r.URL, packageName)
+func (r *Repo) downloadPackageFromS3(packageName string) error {
+	remote, err := r.getRemotePackageInfoInS3(packageName)
 	if err != nil {
 		return err
 	}
 	// If the package is not found on a remote repository, inform the user.
-	if !remote {
-		return fmt.Errorf("package %s is not available in the given repository (%s)", packageName, repo_url)
+	if remote == nil {
+		return fmt.Errorf("package %s is not available in the given repository (%s)", packageName, r.URL)
 	}
 
 	// Get the root of the packages dir.
@@ -260,13 +135,13 @@ func (r *Repo) DownloadPackage(repo_url, packageName string) error {
 	packageFile := fmt.Sprintf("%s.mpm", packageName)
 
 	// Download manifest file.
-	err = r.downloadFile(repo_url+"packages/", packagesRoot, packageManifest)
+	err = r.downloadFile(r.URL+"packages/"+packageManifest, packagesRoot, packageManifest)
 	if err != nil {
 		return err
 	}
 
 	// Download package file.
-	err = r.downloadFile(repo_url+"packages/", packagesRoot, packageFile)
+	err = r.downloadFile(r.URL+"packages/"+packageFile, packagesRoot, packageFile)
 	if err != nil {
 		return err
 	}
@@ -277,55 +152,50 @@ func (r *Repo) DownloadPackage(repo_url, packageName string) error {
 // IsRemotePackage checks that the given package is available in the remote
 // repository. In order to confirm the package really exists, both manifest
 // and the actual package content must exist in remote repository.
-func IsRemotePackage(repo_url, name string) (bool, error) {
+func (r *Repo) getRemotePackageInfoInS3(name string) (*RemotePackageDownloadInfo, error) {
 	// Get file listing for the remote repository.
-	q, err := QueryRemote(repo_url)
+	q, err := queryRemote(r.URL)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	manifestFound := false
-	packageFound := false
+	info := RemotePackageDownloadInfo{}
 
 	for _, content := range q.ContentsList {
 		if strings.HasPrefix(content.Key, "packages/") {
 			// Check whether the current file is either package manifest or content file.
 			if strings.HasSuffix(content.Key, name+".yaml") {
-				manifestFound = true
+				info.manifestURL = r.URL + content.Key
 			} else if strings.HasSuffix(content.Key, name+".mpm") {
-				packageFound = true
+				info.fileURL = r.URL + content.Key
 			}
 
 			// Both must be found for package to exist in remote repository.
-			if manifestFound && packageFound {
-				return true, nil
+			if info.manifestURL != "" && info.fileURL != "" {
+				return &info, nil
 			}
 		}
 	}
 
-	return false, nil
+	return nil, nil
 }
 
-func NeedsUpdate(localPkg, remotePkg *core.Package, compareCreated bool) (bool, error) {
-	// Compare Version attribute.
-	localVersion, err := VersionStringToInt(localPkg.Version)
+func (r *Repo) s3ListPackagesRemote(search string) error {
+	q, err := queryRemote(r.URL)
 	if err != nil {
-		return true, err
+		return err
 	}
-	remoteVersion, err := VersionStringToInt(remotePkg.Version)
-	if err != nil {
-		return true, err
+	fmt.Println(FileInfoHeader())
+	for _, content := range q.ContentsList {
+		if strings.HasPrefix(content.Key, "packages/") && strings.HasSuffix(content.Key, ".yaml") {
+			if pkg := remotePackageInfo(r.URL + content.Key); pkg != nil && strings.Contains(pkg.Name, search) {
+				fmt.Println(pkg.String())
+			}
+		}
 	}
-	needsUpdate := localVersion < remoteVersion
-	if needsUpdate || !compareCreated {
-		return needsUpdate, nil
-	}
+	return nil
+}
 
-	// Compare Created attribute.
-	createdLocal := localPkg.Created.GetTime()
-	createdRemote := remotePkg.Created.GetTime()
-	if createdLocal == nil || createdRemote == nil {
-		return true, nil
-	}
-	return createdLocal.Before(*createdRemote), nil
+func (r *Repo) s3PackageInfoRemote(packageName string) *core.Package {
+	return remotePackageInfo(r.URL + fmt.Sprintf("packages/%s.yaml", packageName))
 }

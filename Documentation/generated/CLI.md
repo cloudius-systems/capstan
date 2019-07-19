@@ -10,6 +10,43 @@ DO NOT MODIFY IT MANUALLY, MODIFY THE SCRIPT INSTEAD.
 Here we describe Capstan CLI in detail. Please note that this very same information can be obtained
 by adding --help flag to any of the listed commands.
 
+## General:
+```
+NAME:
+   capstan - pack, ship, and run applications in light-weight VMs
+
+USAGE:
+   capstan [global options] command [command options] [arguments...]
+
+COMMANDS:
+     config            Capstan configuration
+     info              show disk image information
+     import            import an image to the local repository
+     pull              pull an image from a remote repository
+     rmi               delete an image from a repository
+     run               launch a VM. You may pass the image name as the first argument.
+     build             build an image
+     compose           compose the image from a folder or a file
+     images, i         list images
+     search            search a remote images
+     instances, I      list instances
+     stop              stop an instance
+     delete            delete an instance
+     package           package manipulation tools
+     stack, openstack  OpenStack manipulation tools
+     runtime           package runtime manipulation tools (meta/run.yaml)
+     volume            volume manipulation tools
+     help, h           Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   -u value                        remote repository URL (default: "https://mikelangelo-capstan.s3.amazonaws.com/")
+   --releaseTag value, --rt value  the release tag: any, latest, v0.51.0
+   --s3                            searches and downloads from S3 repository at ("https://mikelangelo-capstan.s3.amazonaws.com/")
+   --help, -h                      show help
+   --version, -v                   print the version
+
+```
+
 ## Working with application packages
 These commands are useful when packaging my application into Capstan package.
 
@@ -43,8 +80,8 @@ USAGE:
 
 OPTIONS:
    --pull-missing, -p  attempt to pull packages missing from a local repository
-   --boot value        specify config_set name to boot unikernel with
    --verbose, -v       verbose mode
+   --remote            set when previewing the compose-remote
    
 
 ```
@@ -63,8 +100,9 @@ OPTIONS:
    --verbose, -v           verbose mode
    --run value             the command line to be executed in the VM
    --pull-missing, -p      attempt to pull packages missing from a local repository
-   --boot value            specify default config_set name to boot unikernel with
+   --boot value            specify default config_set name to boot unikernel with (repeatable, will be run left to right)
    --env value             specify value of environment variable e.g. PORT=8000 (repeatable)
+   --fs value              specify type of filesystem: zfs or rofs
    
 
 ```
@@ -159,7 +197,7 @@ USAGE:
 
 OPTIONS:
    -i value                   image_name
-   -p value                   hypervisor: qemu|vbox|vmw|gce (default: "qemu")
+   -p value                   hypervisor: qemu|vbox|vmw|gce (default: "vbox")
    -m value                   memory size (default: "1G")
    -c value                   number of CPUs (default: 2)
    -n value                   networking: nat|bridge|tap|vhost (default: "nat")
@@ -169,7 +207,7 @@ OPTIONS:
    --gce-upload-dir value     Directory to upload local image to: e.g., gs://osvimg
    --mac value                MAC address. If not specified, the MAC address will be generated automatically.
    --execute value, -e value  set the command line to execute
-   --boot value               specify config_set name to boot unikernel with
+   --boot value               specify config_set name to boot unikernel with (repeatable, will be run left to right)
    --persist                  persist instance parameters (only relevant for qemu instances)
    --env value                specify value of environment variable e.g. PORT=8000 (repeatable)
    --volume value             {path}[:{key=val}], e.g. ./volume.img:format=raw (repeatable)
@@ -200,7 +238,7 @@ OPTIONS:
    --keep-image              don't delete local composed image in .capstan/repository/stack
    --verbose, -v             verbose mode
    --pull-missing, -p        attempt to pull packages missing from a local repository
-   --boot value              specify config_set name to boot unikernel with
+   --boot value              specify config_set name to boot unikernel with (repeatable, will be run left to right)
    --env value               specify value of environment variable e.g. PORT=8000 (repeatable)
    --OS_AUTH_URL value       OpenStack auth url (e.g. http://10.0.2.15:5000/v2.0)
    --OS_TENANT_ID value      OpenStack tenant id (e.g. 3dfe7bf545ff4885a3912a92a4a5f8e0)
@@ -276,7 +314,7 @@ OPTIONS:
 ```
 
 ---
-<sup>  Documentation compiled on: 2017/12/18 07:08
+<sup>  Documentation compiled on: 2019/07/19 04:31
   <br>
-  capstan version 'v0.2.1-66-g4248dd0'
+  capstan version
 </sup>

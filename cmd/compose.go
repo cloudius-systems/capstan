@@ -25,7 +25,7 @@ import (
 	"strings"
 )
 
-func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath string, appName string) error {
+func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath string, appName string, commandLine string, verbose bool) error {
 	// Initialize an empty image based on the provided loader image. imageSize is used to
 	// determine the size of the user partition.
 	err := r.InitializeZfsImage(loaderImage, appName, imageSize)
@@ -42,8 +42,16 @@ func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath strin
 	}
 
 	// Upload the specified path onto virtual image.
-	if _, err = UploadPackageContents(r, imagePath, paths, nil, false); err != nil {
+	if _, err = UploadPackageContents(r, imagePath, paths, nil, verbose); err != nil {
 		return err
+	}
+
+	if commandLine != "" {
+		// Set the command line.
+		if err = util.SetCmdLine(imagePath, commandLine); err != nil {
+			return err
+		}
+		fmt.Printf("Command line set to: '%s'\n", commandLine)
 	}
 
 	return nil

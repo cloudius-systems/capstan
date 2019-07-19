@@ -539,7 +539,7 @@ func extractPackageContent(tarReader *tar.Reader, target, pkgName string) (*runt
 // it into local repository.
 func PullPackage(r *util.Repo, packageName string) error {
 	// Try to download the package from the remote repository.
-	return r.DownloadPackage(r.URL, packageName)
+	return r.DownloadPackageRemote(packageName)
 }
 
 // ensureDirectoryStructureForFile creates directory path for given filepath.
@@ -736,7 +736,7 @@ func UpdatePackages(repo *util.Repo, search string, compareCreated, verbose bool
 		if verbose {
 			fmt.Printf("[%02d/%02d] %-50s", idx+1, len(localPackages), localPkg.Name)
 		}
-		remotePkg := util.RemotePackageInfo(repo.URL, fmt.Sprintf("packages/%s.yaml", localPkg.Name))
+		remotePkg := repo.PackageInfoRemote(localPkg.Name)
 		if remotePkg == nil {
 			if verbose {
 				fmt.Println("... package does not exist in remote repository")
@@ -751,7 +751,8 @@ func UpdatePackages(repo *util.Repo, search string, compareCreated, verbose bool
 			if verbose {
 				fmt.Printf("... updating %s -> %s\n", localPkg.Version, remotePkg.Version)
 			}
-			if err := repo.DownloadPackage(repo.URL, localPkg.Name); err != nil {
+
+			if err := repo.DownloadPackageRemote(localPkg.Name); err != nil {
 				return fmt.Errorf("ERROR: %s", err)
 			} else {
 				updateCount += 1

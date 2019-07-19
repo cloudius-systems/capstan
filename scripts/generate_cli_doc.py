@@ -74,7 +74,6 @@ GROUPS = [
           ]),
 ]
 
-
 def get_command_description(command, flags=['--help']):
     stdout, stderr = subprocess.Popen(
         command.cmd.split() + flags,
@@ -102,6 +101,13 @@ DO NOT MODIFY IT MANUALLY, MODIFY THE SCRIPT INSTEAD.
 Here we describe Capstan CLI in detail. Please note that this very same information can be obtained
 by adding --help flag to any of the listed commands.
 '''
+    general_descr = get_command_description(Command('capstan'))
+    res += '''
+## General:
+```
+%s
+```
+''' % (general_descr)
 
     for group in GROUPS:
         res += '''
