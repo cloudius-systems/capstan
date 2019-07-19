@@ -1,7 +1,6 @@
 package util
 
 import (
-	"github.com/cloudius-systems/capstan/util"
 	. "gopkg.in/check.v1"
 )
 
@@ -10,7 +9,7 @@ type suite struct {
 }
 
 func (s *suite) SetUpTest(c *C) {
-	s.repo = NewRepo(util.DefaultRepositoryUrl)
+	s.repo = NewRepo(DefaultRepositoryUrl)
 	s.repo.Path = c.MkDir()
 	s.repo.UseS3 = false
 }
