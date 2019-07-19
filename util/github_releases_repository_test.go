@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/mikelangelo-project/capstan/util"
+	"github.com/cloudius-systems/capstan/util"
 	. "gopkg.in/check.v1"
 )
 
