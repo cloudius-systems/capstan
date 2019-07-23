@@ -69,7 +69,7 @@ COMMANDS:
 
 GLOBAL OPTIONS:
    -u value                        remote repository URL (default: "https://mikelangelo-capstan.s3.amazonaws.com/")
-   --releaseTag value, --rt value  the release tag: any, latest, v0.51.0
+   --release-tag value, --r value  the release tag: any, latest, v0.51.0
    --s3                            searches and downloads from S3 repository at ("https://mikelangelo-capstan.s3.amazonaws.com/")
    --help, -h                      show help
    --version, -v                   print the version

@@ -12,9 +12,9 @@ available on the internet. No authentication is supported, just a simple HTTP/HT
 
 ## OSv Github Repository
 By default capstan pulls OSv kernel and any required packages from [OSv Github repository](https://github.com/cloudius-systems/osv/releases).
-The global parameter ```--releaseTag``` (or ```-rt```) can be used to override default behavior and make
-capstan pull artifacts published for specific release (for example ```--rt v0.51.0```) or the latest release (```--rt latest```).
-By default capstan would pull first found artifact from the list of assets published for all releases (```--rt any```).
+The global parameter ```--release-tag``` (or ```-r```) can be used to override default behavior and make
+capstan pull artifacts published for specific release (for example ```--r v0.51.0```) or the latest release (```--r latest```).
+By default capstan would pull first found artifact from the list of assets published for all releases (```--r any```).
 
 ## S3 Repository Structure
 One can use global ```--s3``` parameter to make capstan pull kernel and packages from repository in AWS S3.

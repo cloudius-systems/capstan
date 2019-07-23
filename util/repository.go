@@ -105,8 +105,8 @@ func NewRepoFromCli(c *cli.Context) *Repo {
 	repo := NewRepo(c.GlobalString("u"))
 	repo.UseS3 = c.GlobalBool("s3")
 
-	if c.GlobalString("releaseTag") != "" {
-		repo.ReleaseTag = c.GlobalString("releaseTag")
+	if c.GlobalString("release-tag") != "" {
+		repo.ReleaseTag = c.GlobalString("release-tag")
 	}
 
 	return repo

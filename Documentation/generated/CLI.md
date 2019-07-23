@@ -39,11 +39,11 @@ COMMANDS:
      help, h           Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   -u value                        remote repository URL (default: "https://mikelangelo-capstan.s3.amazonaws.com/")
-   --releaseTag value, --rt value  the release tag: any, latest, v0.51.0
-   --s3                            searches and downloads from S3 repository at ("https://mikelangelo-capstan.s3.amazonaws.com/")
-   --help, -h                      show help
-   --version, -v                   print the version
+   -u value                       remote repository URL (default: "https://mikelangelo-capstan.s3.amazonaws.com/")
+   --release-tag value, -r value  the release tag: any, latest, v0.51.0
+   --s3                           searches and downloads from S3 repository at ("https://mikelangelo-capstan.s3.amazonaws.com/")
+   --help, -h                     show help
+   --version, -v                  print the version
 
 ```
 
@@ -197,7 +197,7 @@ USAGE:
 
 OPTIONS:
    -i value                   image_name
-   -p value                   hypervisor: qemu|vbox|vmw|gce (default: "vbox")
+   -p value                   hypervisor: qemu|vbox|vmw|gce (default: "qemu")
    -m value                   memory size (default: "1G")
    -c value                   number of CPUs (default: 2)
    -n value                   networking: nat|bridge|tap|vhost (default: "nat")
@@ -314,7 +314,7 @@ OPTIONS:
 ```
 
 ---
-<sup>  Documentation compiled on: 2019/07/19 04:31
+<sup>  Documentation compiled on: 2019/07/23 12:22
   <br>
-  capstan version
+  capstan version 
 </sup>

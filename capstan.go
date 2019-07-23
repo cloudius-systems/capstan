@@ -45,7 +45,7 @@ func main() {
 	app.Usage = "pack, ship, and run applications in light-weight VMs"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{Name: "u", Usage: fmt.Sprintf("remote repository URL (default: \"%s\")", util.DefaultRepositoryUrl)},
-		cli.StringFlag{Name: "releaseTag,rt", Usage: "the release tag: any, latest, v0.51.0"},
+		cli.StringFlag{Name: "release-tag,r", Usage: "the release tag: any, latest, v0.51.0"},
 		cli.BoolFlag{Name: "s3", Usage: fmt.Sprintf("searches and downloads from S3 repository at (\"%s\")", util.DefaultRepositoryUrl)},
 	}
 	app.Commands = []cli.Command{
