@@ -89,7 +89,7 @@ func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string
 	}
 
 	// TODO Have to come up with a better error handling if necessary. Be more verbose on errors.
-	cmd, err := qemu.VMCommand(vmconfig)
+	cmd, err := qemu.VMCommand(vmconfig, verbose)
 	if err != nil {
 		return nil, err
 	}

@@ -52,7 +52,7 @@ func (s *suite) TestVmArguments(c *C) {
 			"basic",
 			VMConfig{},
 			[]string{
-				"-nographic",
+				"-vnc", ":1",
 				"-m", "0",
 				"-smp", "0",
 				"-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0",

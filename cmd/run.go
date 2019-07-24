@@ -52,7 +52,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 				if err != nil {
 					return err
 				}
-				cmd, err = qemu.LaunchVM(c)
+				cmd, err = qemu.LaunchVM(c, config.Verbose)
 			case "vbox":
 				c, err := vbox.LoadConfig(instanceName)
 				if err != nil {
@@ -215,7 +215,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 		if bridge == "" {
 			bridge = "virbr0"
 		}
-		config := &qemu.VMConfig{
+		newConfig := &qemu.VMConfig{
 			Name:        id,
 			Image:       path,
 			Verbose:     true,
@@ -236,7 +236,7 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 			AioType:     repo.QemuAioType,
 		}
 
-		cmd, err = qemu.LaunchVM(config)
+		cmd, err = qemu.LaunchVM(newConfig, config.Verbose)
 	case "vbox":
 		if format != image.VDI && format != image.VMDK {
 			return fmt.Errorf("%s: image format of %s is not supported, unable to run it.", config.Hypervisor, path)

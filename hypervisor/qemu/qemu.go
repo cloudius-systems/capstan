@@ -23,6 +23,7 @@ import (
 	"regexp"
 	"runtime"
 	"strconv"
+	"strings"
 )
 
 type VMConfig struct {
@@ -142,7 +143,7 @@ func StoreConfig(c *VMConfig) error {
 	return ioutil.WriteFile(c.ConfigFile, data, 0644)
 }
 
-func VMCommand(c *VMConfig, extra ...string) (*exec.Cmd, error) {
+func VMCommand(c *VMConfig, verbose bool, extra ...string) (*exec.Cmd, error) {
 	if c.BackingFile {
 		dir := c.InstanceDir
 		err := os.MkdirAll(dir, 0775)
@@ -193,12 +194,24 @@ func VMCommand(c *VMConfig, extra ...string) (*exec.Cmd, error) {
 		return nil, err
 	}
 
+	if verbose {
+		fmt.Printf("Invoking QEMU at: %s with arguments:", path)
+		for _, arg := range args {
+			if strings.HasPrefix(arg, "-") {
+				fmt.Printf("\n  %s", arg)
+			} else {
+				fmt.Printf(" %s", arg)
+			}
+		}
+		fmt.Printf("\n")
+	}
+
 	cmd := exec.Command(path, args...)
 	return cmd, nil
 }
 
-func LaunchVM(c *VMConfig, extra ...string) (*exec.Cmd, error) {
-	cmd, err := VMCommand(c, extra...)
+func LaunchVM(c *VMConfig, verbose bool, extra ...string) (*exec.Cmd, error) {
+	cmd, err := VMCommand(c, verbose, extra...)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +291,7 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	}
 
 	args := make([]string, 0)
-	args = append(args, "-nographic")
+	args = append(args, "-vnc", ":1")
 	args = append(args, "-m", strconv.FormatInt(c.Memory, 10))
 	args = append(args, "-smp", strconv.Itoa(c.Cpus))
 	args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")

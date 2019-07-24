@@ -99,7 +99,7 @@ func UploadRPM(r *util.Repo, hypervisor string, image string, template *core.Tem
 		BackingFile: false,
 		AioType:     r.QemuAioType,
 	}
-	vm, err := qemu.LaunchVM(vmconfig)
+	vm, err := qemu.LaunchVM(vmconfig, verbose)
 	if err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func UploadFiles(r *util.Repo, hypervisor string, image string, t *core.Template
 		DisableKvm:  r.DisableKvm,
 		AioType:     r.QemuAioType,
 	}
-	cmd, err := qemu.VMCommand(vmconfig)
+	cmd, err := qemu.VMCommand(vmconfig, verbose)
 	if err != nil {
 		return err
 	}
