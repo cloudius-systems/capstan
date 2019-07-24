@@ -14,7 +14,7 @@ feel free to let us know.*
 ## Installation
 
 You must first install Capstan from [this
-repository](https://github.com/mikelangelo-project/capstan). You can install
+repository](https://github.com/cloudius/capstan). You can install
 binary version or follow the instructions for build it from source code. Ensure
 the ``capstan`` is in your ``$PATH``.
 
@@ -48,25 +48,31 @@ USAGE:
    capstan [global options] command [command options] [arguments...]
 
 COMMANDS:
-   info         show disk image information
-   import       import an image to the local repository
-   pull         pull an image from a repository
-   rmi          delete an image from a repository
-   run          launch a VM. You may pass the image name as the first argument.
-   build        build an image
-   compose      compose the image from a folder or a file
-   images, i    list images
-   search       search a remote images
-   instances, I list instances
-   stop         stop an instance
-   delete       delete an instance
-   package      package manipulation tools
-   help, h      Shows a list of commands or help for one command
+     config            Capstan configuration
+     info              show disk image information
+     import            import an image to the local repository
+     pull              pull an image from a repository
+     rmi               delete an image from a repository
+     run               launch a VM. You may pass the image name as the first argument.
+     build             build an image
+     compose           compose the image from a folder or a file
+     images, i         list images
+     search            search a remote images
+     instances, I      list instances
+     stop              stop an instance
+     delete            delete an instance
+     package           package manipulation tools
+     stack, openstack  OpenStack manipulation tools
+     runtime           package runtime manipulation tools (meta/run.yaml)
+     volume            volume manipulation tools
+     help, h           Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   -u "https://mikelangelo-capstan.s3.amazonaws.com/"   remote repository URL
-   --help, -h                                           show help
-   --version, -v                                        print the version
+   -u value                        remote repository URL (default: "https://mikelangelo-capstan.s3.amazonaws.com/")
+   --release-tag value, --r value  the release tag: any, latest, v0.51.0
+   --s3                            searches and downloads from S3 repository at ("https://mikelangelo-capstan.s3.amazonaws.com/")
+   --help, -h                      show help
+   --version, -v                   print the version
 ```
 
 Each of the available commands furthermore provides additional help, for example
@@ -81,8 +87,10 @@ USAGE:
    capstan compose [command options] [arguments...]
 
 OPTIONS:
-   --loader_image, -l "mike/osv-loader" the base loader image
-   --size, -s "10G"                   size of the target user partition (use M or G suffix)
+   --loader_image value, -l value  the base loader image (default: "osv-loader")
+   --size value, -s value          size of the target user partition (use M or G suffix) (default: "10G")
+   --command_line value, -c value  command line OSv will boot with
+   --verbose, -v                   verbose mode
 ```
 
 ## Package management
@@ -99,13 +107,20 @@ USAGE:
    capstan package command [command options] [arguments...]
 
 COMMANDS:
-   init        initialise package structure
-   build       builds the package into a compressed file
-   compose     composes the package and all its dependencies into OSv image
-   collect     collects contents of this package and all required packages
-   list        lists the available packages
-   import      builds the package at the given path and imports it into a chosen repository
-   help, h     Shows a list of commands or help for one command
+     init            initialise package structure
+     build           builds the package into a compressed file
+     compose         composes the package and all its dependencies into OSv image
+     compose-remote  composes the package and all its dependencies and uploads resulting files into remote OSv instance
+     collect         collects contents of this package and all required packages
+     list            lists the available packages
+     import          builds the package at the given path and imports it into a chosen repository
+     search          searches for packages in the remote repository (partial name matches are also supported)
+     pull            pulls the package from remote repository and imports it into local package storage
+     describe        describes the package from local repository
+     update          updates local packages from remote if remote version is newer
+
+OPTIONS:
+   --help, -h  show help
 ```
 
 The following subsections explain these commands in detail.
@@ -123,7 +138,15 @@ project
 The following subsections provide more information about each of these files.
 
 #### package.yaml (required)
-TODO
+This file is a simple descriptor that allows specifying basic package attributes like name, title and its author.
+It also allows to specify a list of any other packages it depends on using require tag.
+```yaml
+name: my-super-application
+title: DEMO App
+author: myname (myname@email.com)
+require:
+    - osv.cli
+```
 
 #### run.yaml (optional)
 This file specifies run options. Actual set of options depends on runtime that this package is about

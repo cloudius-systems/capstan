@@ -25,7 +25,9 @@ Capstan is designed to prepare and run OSv unikernel for you.
 With Capstan it is possible to:
 
 * prepare OSv unikernel without compiling anything but your application, in seconds
-* use any precompiled package from the MIKELANGELO package repository, or a combination thereof
+* build OSv image using Capstanfile (ala Dockerfile) or compose it from pre-built packages
+* use any precompiled package from the OSv github releases repository or MIKELANGELO package repository, or a combination thereof
+* build your own packages or base image
 * set arbitrary size of the target unikernel filesystem
 * run OSv unikernel using one of the supported providers
 
@@ -68,7 +70,9 @@ Congratulations, your unikernel is up-and-running! Press CTRL + C to stop it.
 ## Documentation
 
 * [Step-by-step Capstan Installation Guide](Documentation/Installation.md)
+* [User Guide](Documentation/ApplicationManagement.md)
 * [Running My First Application Inside Unikernel](Documentation/WalkthroughNodeJS.md)
+* [Capstanfile](Documentation/Capstanfile.md)
 * [Configuration Files](Documentation/ConfigurationFiles.md)
     * [Native](Documentation/RuntimeNative.md)
     * [Java](Documentation/RuntimeJava.md)
