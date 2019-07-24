@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -210,7 +211,10 @@ func (r *Repo) githubPackageInfoRemote(packageName string) *core.Package {
 }
 
 func githubMakeReleaseApiCall(suffix string) ([]byte, error) {
-	resp, err := http.Get(OsvReleasesGitHubRepositoryApiUrl + suffix)
+	var netClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
+	resp, err := netClient.Get(OsvReleasesGitHubRepositoryApiUrl + suffix)
 	if err != nil {
 		return nil, err
 	}
@@ -218,6 +222,10 @@ func githubMakeReleaseApiCall(suffix string) ([]byte, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("The request %s returned non-200 [%d] response: %s.",
+			OsvReleasesGitHubRepositoryApiUrl+suffix, resp.StatusCode, string(body))
 	}
 	return body, nil
 }

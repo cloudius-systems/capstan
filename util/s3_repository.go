@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -34,7 +35,10 @@ type Query struct {
 }
 
 func queryRemote(repo_url string) (*Query, error) {
-	resp, err := http.Get(repo_url)
+	var netClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
+	resp, err := netClient.Get(repo_url)
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +46,10 @@ func queryRemote(repo_url string) (*Query, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("The request %s returned non-200 [%d] response: %s.",
+			repo_url, resp.StatusCode, string(body))
 	}
 	var q Query
 	xml.Unmarshal(body, &q)

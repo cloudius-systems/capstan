@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type FileInfo struct {
@@ -64,7 +65,10 @@ func ParseIndexYaml(path, ns, name string) (*FileInfo, error) {
 }
 
 func RemoteFileInfo(repo_url string, path string) *FileInfo {
-	resp, err := http.Get(repo_url + path)
+	var netClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
+	resp, err := netClient.Get(repo_url + path)
 	if err != nil {
 		return nil
 	}
@@ -74,6 +78,11 @@ func RemoteFileInfo(repo_url string, path string) *FileInfo {
 	f := FileInfo{}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		return nil
+	}
+	if resp.StatusCode != 200 {
+		fmt.Printf("The request %s returned non-200 [%d] response: %s.",
+			repo_url+path, resp.StatusCode, string(data))
 		return nil
 	}
 	err = yaml.Unmarshal(data, &f)
@@ -91,7 +100,10 @@ func RemoteFileInfo(repo_url string, path string) *FileInfo {
 // remotePackageInfo downloads the given manifest files and tries to parse it.
 // core.Package struct is returned if it succeeds, otherwise nil.
 func remotePackageInfo(package_url string) *core.Package {
-	resp, err := http.Get(package_url)
+	var netClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
+	resp, err := netClient.Get(package_url)
 	if err != nil {
 		return nil
 	}
@@ -99,6 +111,12 @@ func remotePackageInfo(package_url string) *core.Package {
 	defer resp.Body.Close()
 
 	data, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		fmt.Printf("The request %s returned non-200 [%d] response: %s.",
+			package_url, resp.StatusCode, string(data))
+		return nil
+	}
+
 	var pkg core.Package
 
 	if err := pkg.Parse(data); err != nil {
