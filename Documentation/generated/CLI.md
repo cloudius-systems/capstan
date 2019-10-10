@@ -82,6 +82,7 @@ OPTIONS:
    --pull-missing, -p  attempt to pull packages missing from a local repository
    --verbose, -v       verbose mode
    --remote            set when previewing the compose-remote
+   --require value     specify extra package dependency
    
 
 ```
@@ -103,6 +104,7 @@ OPTIONS:
    --boot value            specify default config_set name to boot unikernel with (repeatable, will be run left to right)
    --env value             specify value of environment variable e.g. PORT=8000 (repeatable)
    --fs value              specify type of filesystem: zfs or rofs
+   --require value         specify extra package dependency
    
 
 ```
@@ -309,12 +311,13 @@ USAGE:
 OPTIONS:
    --verbose, -v       verbose mode
    --pull-missing, -p  attempt to pull packages missing from a local repository
+   --require value     specify extra package dependency
    
 
 ```
 
 ---
-<sup>  Documentation compiled on: 2019/07/23 12:22
+<sup>  Documentation compiled on: 2019/10/10 19:29
   <br>
   capstan version 
 </sup>

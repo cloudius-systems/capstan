@@ -159,7 +159,7 @@ func BuildPackage(packageDir string) (string, error) {
 // by comparing previous MD5 hashes to the ones in the current package
 // directory. Only modified files are uploaded and no file deletions are
 // possible at this time.
-func ComposePackage(repo *util.Repo, imageSize int64, updatePackage, verbose, pullMissing bool,
+func ComposePackage(repo *util.Repo, extraDependencies []string, imageSize int64, updatePackage, verbose, pullMissing bool,
 	packageDir, appName string, bootOpts *BootOptions, filesystem string) error {
 
 	// Package content should be collected in a subdirectory called mpm-pkg.
@@ -174,7 +174,7 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage, verbose, pu
 	}
 
 	// First, collect the contents of the package.
-	if err := CollectPackage(repo, packageDir, pullMissing, false, verbose); err != nil {
+	if err := CollectPackage(repo, packageDir, extraDependencies, pullMissing, false, verbose); err != nil {
 		return err
 	}
 
@@ -245,7 +245,8 @@ func ComposePackage(repo *util.Repo, imageSize int64, updatePackage, verbose, pu
 	return nil
 }
 
-func ComposePackageAndUploadToRemoteInstance(repo *util.Repo, verbose, pullMissing bool, packageDir, remoteHostInstance string) error {
+func ComposePackageAndUploadToRemoteInstance(repo *util.Repo, extraDependencies []string, verbose, pullMissing bool,
+	packageDir, remoteHostInstance string) error {
 
 	// Package content should be collected in a subdirectory called mpm-pkg.
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
@@ -253,7 +254,7 @@ func ComposePackageAndUploadToRemoteInstance(repo *util.Repo, verbose, pullMissi
 	defer os.RemoveAll(targetPath)
 
 	// First, collect the contents of the package.
-	if err := CollectPackage(repo, packageDir, pullMissing, true, verbose); err != nil {
+	if err := CollectPackage(repo, packageDir, extraDependencies, pullMissing, true, verbose); err != nil {
 		return err
 	}
 
@@ -268,9 +269,9 @@ func ComposePackageAndUploadToRemoteInstance(repo *util.Repo, verbose, pullMissi
 
 // CollectPackage will try to resolve all of the dependencies of the given package
 // and collect the content in the $CWD/mpm-pkg directory.
-func CollectPackage(repo *util.Repo, packageDir string, pullMissing, remote, verbose bool) error {
+func CollectPackage(repo *util.Repo, packageDir string, extraDependencies []string, pullMissing, remote, verbose bool) error {
 	// Get the manifest file of the given package.
-	pkg, err := core.ParsePackageManifest(filepath.Join(packageDir, "meta", "package.yaml"))
+	pkg, err := core.ParsePackageManifestAndFallbackToDefault(filepath.Join(packageDir, "meta", "package.yaml"))
 	if err != nil {
 		return err
 	}
@@ -286,6 +287,9 @@ func CollectPackage(repo *util.Repo, packageDir string, pullMissing, remote, ver
 			genRuntime.GetRuntimeName(), genRuntime.GetDependencies())
 		pkg.Require = append(genRuntime.GetDependencies(), pkg.Require...)
 	}
+
+	// If user passed extra dependencies from command line append it as well
+	pkg.Require = append(pkg.Require, extraDependencies...)
 
 	// The bootstrap package is implicitly required by every application package,
 	// so we add it to the list of required packages. Even if user has added

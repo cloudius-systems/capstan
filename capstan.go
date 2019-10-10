@@ -435,6 +435,7 @@ func main() {
 						cli.StringSliceFlag{Name: "boot", Usage: "specify default config_set name to boot unikernel with (repeatable, will be run left to right)"},
 						cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
 						cli.StringFlag{Name: "fs", Usage: "specify type of filesystem: zfs or rofs"},
+						cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
 					},
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
@@ -472,7 +473,7 @@ func main() {
 							filesystem = "zfs"
 						}
 
-						if err := cmd.ComposePackage(repo, imageSize, updatePackage, verbose, pullMissing,
+						if err := cmd.ComposePackage(repo, c.StringSlice("require"), imageSize, updatePackage, verbose, pullMissing,
 							packageDir, appName, &bootOpts, filesystem); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
@@ -487,6 +488,7 @@ func main() {
 					Flags: []cli.Flag{
 						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+						cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
 					},
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
@@ -505,7 +507,8 @@ func main() {
 						// Always use the current directory for the package to compose.
 						packageDir, _ := os.Getwd()
 
-						if err := cmd.ComposePackageAndUploadToRemoteInstance(repo, verbose, pullMissing, packageDir, remoteHostInstance); err != nil {
+						if err := cmd.ComposePackageAndUploadToRemoteInstance(repo, c.StringSlice("require"), verbose, pullMissing,
+							packageDir, remoteHostInstance); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
@@ -519,6 +522,7 @@ func main() {
 						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
 						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 						cli.BoolFlag{Name: "remote", Usage: "set when previewing the compose-remote"},
+						cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
 					},
 					Action: func(c *cli.Context) error {
 						repo := util.NewRepoFromCli(c)
@@ -526,7 +530,7 @@ func main() {
 
 						pullMissing := c.Bool("pull-missing")
 
-						if err := cmd.CollectPackage(repo, packageDir, pullMissing, c.Bool("remote"), c.Bool("verbose")); err != nil {
+						if err := cmd.CollectPackage(repo, packageDir, c.StringSlice("require"), pullMissing, c.Bool("remote"), c.Bool("verbose")); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
