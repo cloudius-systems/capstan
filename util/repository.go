@@ -578,8 +578,8 @@ func (r *Repo) GetPackageDependencies(pkg core.Package, downloadMissing bool) ([
 			return nil, err
 		}
 
-		dependencies = append(dependencies, rpkg)
 		dependencies = append(dependencies, rdeps...)
+		dependencies = append(dependencies, rpkg)
 	}
 
 	return dependencies, nil
