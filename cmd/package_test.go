@@ -866,7 +866,7 @@ func (s *suite) TestGetCmd(c *C) {
 			"empty command line",
 			BootOptions{},
 			"",
-			"",
+			"runscript /run/default;",
 			"",
 		},
 		{

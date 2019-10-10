@@ -693,9 +693,6 @@ func (b *BootOptions) GetCmd() (string, error) {
 				command = runtime.BootCmdForScript(strings.Split(cmdConf.ConfigSetDefault, ","))
 			}
 		}
-	} else { // Fallback is empty bootcmd.
-		fmt.Println("Empty command line will be set for this image")
-		command = ""
 	}
 
 	// Prepend environment variables to the command.
@@ -705,6 +702,11 @@ func (b *BootOptions) GetCmd() (string, error) {
 		}
 	} else {
 		return "", err
+	}
+
+	if command == "" { // Fallback is default boot
+		fmt.Println("Command line will be set to default boot")
+		command = runtime.BootCmdForScript([]string {"default"})
 	}
 
 	return command, nil
