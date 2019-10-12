@@ -206,11 +206,19 @@ func (*suite) TestComposeWithNoManifestSucceeds(c *C) {
 	tmp, _ := ioutil.TempDir("", "pkg")
 	defer os.RemoveAll(tmp)
 
+	capstanTmp, _ := ioutil.TempDir("", "capstan")
+	defer os.RemoveAll(capstanTmp)
+
 	repo := util.NewRepo(util.DefaultRepositoryUrl)
+	repo.Path = capstanTmp
+	mockServer := MockGitHubApiServer()
+	defer mockServer.Close()
+	repo.GithubURL = mockServer.URL
+
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-corrupt-app"
 
-	err := ComposePackage(repo, []string {}, imageSize, false, false, true, tmp, appName, &BootOptions{}, "rofs")
+	err := ComposePackage(repo, []string{}, imageSize, false, false, true, tmp, appName, &BootOptions{}, "rofs")
 
 	c.Assert(err, IsNil)
 }
@@ -231,7 +239,7 @@ func (*suite) TestComposeCorruptPackageFails(c *C) {
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-corrupt-app"
 
-	err = ComposePackage(repo, []string {}, imageSize, false, false, false, tmp, appName, &BootOptions{}, "zfs")
+	err = ComposePackage(repo, []string{}, imageSize, false, false, false, tmp, appName, &BootOptions{}, "zfs")
 	c.Assert(err, NotNil)
 }
 
@@ -320,7 +328,7 @@ func (s *suite) TestRecursiveRunYamls(c *C) {
 	s.requireFakeDemoPkg(c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, []string {}, false, false, false)
+	err := CollectPackage(s.repo, s.packageDir, []string{}, false, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -344,7 +352,7 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYaml(c *C) {
 	`, c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, []string {},false, false, false)
+	err := CollectPackage(s.repo, s.packageDir, []string{}, false, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -369,7 +377,7 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYamlOverwrite(c *C) {
 	`, c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, []string {},false, false, false)
+	err := CollectPackage(s.repo, s.packageDir, []string{}, false, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -400,7 +408,7 @@ func (s *suite) TestRecursiveRunYamlsWithOwnRunYamlEnv(c *C) {
 	`, c)
 
 	// This is what we're testing here.
-	err := CollectPackage(s.repo, s.packageDir, []string {}, false, false, false)
+	err := CollectPackage(s.repo, s.packageDir, []string{}, false, false, false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
@@ -586,7 +594,7 @@ func (s *suite) TestRuntimeInheritance(c *C) {
 		s.setRunYaml(args.runYamlText, c)
 
 		// This is what we're testing here.
-		err := CollectPackage(s.repo, s.packageDir, []string {}, false, false, false)
+		err := CollectPackage(s.repo, s.packageDir, []string{}, false, false, false)
 
 		// Expectations.
 		c.Assert(err, IsNil)
@@ -663,7 +671,7 @@ func (s *suite) TestRuntimeInheritInvalid(c *C) {
 		s.setRunYaml(args.runYamlText, c)
 
 		// This is what we're testing here.
-		err := CollectPackage(s.repo, s.packageDir, []string {},false, false, false)
+		err := CollectPackage(s.repo, s.packageDir, []string{}, false, false, false)
 
 		// Expectations.
 		c.Assert(err, NotNil)
@@ -846,7 +854,7 @@ func (s *suite) TestRuntimeInheritanceTwoLevels(c *C) {
 		s.setRunYaml(args.runYamlText, c)
 
 		// This is what we're testing here.
-		err := CollectPackage(s.repo, s.packageDir, []string {},false, false, false)
+		err := CollectPackage(s.repo, s.packageDir, []string{}, false, false, false)
 
 		// Expectations.
 		c.Assert(err, IsNil)
@@ -986,7 +994,7 @@ func (s *suite) TestImplicitlyRequiredPackages(c *C) {
 		// Prepare
 
 		// This is what we're testing here.
-		err := CollectPackage(s.repo, s.packageDir, []string {}, false, args.remote, false)
+		err := CollectPackage(s.repo, s.packageDir, []string{}, false, args.remote, false)
 
 		// Expectations.
 		c.Assert(err, IsNil)
