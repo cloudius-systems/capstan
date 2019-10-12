@@ -1,0 +1,7 @@
+name: osv.httpserver-html5-gui
+title: OSv HTML5 GUI (frontend)
+author: Waldek Kozaczuk
+version: 0.51.0
+require:
+- osv.httpserver-api
+created: 2018-05-30T04:03:58Z

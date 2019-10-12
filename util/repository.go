@@ -31,6 +31,7 @@ import (
 const (
 	NewLoaderImageName = "osv-loader"
 	OldLoaderImageName = "mike/osv-loader"
+	GitHubRepositoryApiUrl = "https://api.github.com"
 )
 
 type Repo struct {
@@ -40,6 +41,7 @@ type Repo struct {
 	QemuAioType string
 	UseS3       bool
 	ReleaseTag  string
+	GithubURL   string
 }
 
 type CapstanSettings struct {
@@ -104,6 +106,7 @@ func NewRepo(url string) *Repo {
 func NewRepoFromCli(c *cli.Context) *Repo {
 	repo := NewRepo(c.GlobalString("u"))
 	repo.UseS3 = c.GlobalBool("s3")
+	repo.GithubURL = GitHubRepositoryApiUrl
 
 	if c.GlobalString("release-tag") != "" {
 		repo.ReleaseTag = c.GlobalString("release-tag")

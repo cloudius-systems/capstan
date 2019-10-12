@@ -1,0 +1,5 @@
+name: osv.redis-memonly
+title: Redis
+author: Waldek Kozaczuk
+version: 3.2.8
+created: 2018-05-30T04:04:43Z
