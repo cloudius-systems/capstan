@@ -1,0 +1,8 @@
+name: osv.cli
+title: OSv Command Line
+author: Anonymous
+version: 0.54.0
+created: "2019-09-16T07:53:09-04:00"
+platform: Ubuntu 19.04
+require:
+- osv.httpserver-api

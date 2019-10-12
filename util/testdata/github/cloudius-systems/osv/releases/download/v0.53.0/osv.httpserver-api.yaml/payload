@@ -1,0 +1,5 @@
+name: osv.httpserver-api
+title: OSv httpserver with APIs (backend)
+author: Waldek Kozaczuk
+version: 0.53.0
+created: 2019-03-12T03:11:16Z

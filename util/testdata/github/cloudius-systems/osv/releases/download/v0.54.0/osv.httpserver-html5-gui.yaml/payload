@@ -1,0 +1,8 @@
+name: osv.httpserver-html5-gui
+title: OSv HTML5 GUI (frontend)
+author: Anonymous
+version: 0.54.0
+created: "2019-09-16T07:52:51-04:00"
+platform: Ubuntu 19.04
+require:
+- osv.httpserver-api

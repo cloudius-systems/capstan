@@ -1,0 +1,8 @@
+name: osv.httpserver-html5-cli
+title: OSv HTML5 Terminal (frontend)
+author: Anonymous
+version: 1.0.0
+created: "2019-09-16T07:53:04-04:00"
+platform: Ubuntu 19.04
+require:
+- osv.httpserver-api
