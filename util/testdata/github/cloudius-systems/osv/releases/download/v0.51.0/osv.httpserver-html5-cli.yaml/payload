@@ -1,0 +1,7 @@
+name: osv.httpserver-html5-cli
+title: OSv HTML5 Terminal (frontend)
+author: Waldek Kozaczuk
+version: 0.51.0
+require:
+- osv.httpserver-api
+created: 2018-05-30T04:04:07Z

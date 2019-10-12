@@ -1,0 +1,6 @@
+name: osv.httpserver-api
+title: OSv httpserver with APIs (backend)
+author: Anonymous
+version: 0.54.0
+created: "2019-09-16T07:52:43-04:00"
+platform: Ubuntu 19.04
