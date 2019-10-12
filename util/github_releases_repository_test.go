@@ -16,7 +16,7 @@ func (s *suite) SetUpSuite(c *C) {
 			fmt.Printf("httptest: Mocking: %s with %s \n", r.RequestURI, path)
 			if payload, err := ioutil.ReadFile(path); err == nil {
 				payloadStr := string(payload)
-				payloadStr = strings.ReplaceAll(payloadStr, "https://github.com", s.server.URL)
+				payloadStr = strings.Replace(payloadStr, "https://github.com", s.server.URL, -1)
 				w.Write([]byte(payloadStr))
 			} else {
 				http.Error(w, "not found", http.StatusNotFound)
