@@ -15,7 +15,7 @@ files:
   /tools/hello.so: hello.so
 ```
 
-``base`` specifies the base image that is amended with ``files`` use ``capstan search`` (remote images) or ``capstan images`` (local images) for a list of available images.
+``base`` specifies the base image that is amended with ``files`` use ``capstan images`` (local images) for a list of available images.
 
 ``cmdline`` is the startup command line passed to OSv.
 
@@ -48,6 +48,14 @@ is the file that is picked up from the local filesystem.
 in the base image will be the same as in the rootfs directory. If rootfs is not specified
 in Capstanfile, a default rootfs directory named ROOTFS will be used. If both files and rootfs
 are specified, both will be used to amended the base image.
+
+## How to create base images
+The easiest way to create Capstan base images is to use the OSv shell script [`build-capstan-base-image`](https://github.com/cloudius-systems/osv/blob/master/scripts/build-capstan-base-image).
+The aforementioned script accepts list of OSv apps, creates an image and optionally copies
+it to the local Capstan repo like so:
+```bash
+./scripts/build-capstan-base-image cloudius/python3 python3x 'OSv base with Python 3'
+``` 
 
 ## RPM support
 

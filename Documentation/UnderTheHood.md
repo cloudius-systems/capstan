@@ -12,4 +12,4 @@ TODO
 
 ## Implementation details
 Please find Capstan implementation documentation here:
-[![GoDoc](https://godoc.org/github.com/mikelangelo-project/capstan?status.svg)](https://godoc.org/github.com/mikelangelo-project/capstan)
+[![GoDoc](https://godoc.org/github.com/cloudius-systems/capstan?status.svg)](https://godoc.org/github.com/cloudius-systems/capstan)

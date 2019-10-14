@@ -11,7 +11,7 @@
 #   *
 #
 # Run like this:
-#   $ cd $HOME/go/src/github.com/mikelangelo-project/capstan
+#   $ cd $HOME/go/src/github.com/cloudius-systems/capstan
 #   $ ./scripts/generate_cli_doc.py
 # The result is Documentation/generated/CLI.md file (overrides the old file completely).
 #

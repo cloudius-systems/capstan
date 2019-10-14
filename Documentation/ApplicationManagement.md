@@ -1,36 +1,14 @@
-# Application Management
+# Application Management Using Packages
 
 The purpose of this document is to guide you through the first steps of the
-application management using a tool developed in
-[MIKELANGELO](https://mikelangelo-project.eu). The tool is based on
-[Capstan](https://github.com/cloudius-systems/capstan),
-provided by ScyllaDB as part of their support for building lightweight
-OSv-based Virtual Machines.
-
-*Please note: this preliminary version of the documentation may omit/miss important information.
-If you have any comments or suggestions about the tool, the packages or this documentation,
-feel free to let us know.*
+application management using packages.
 
 ## Installation
 
 You must first install Capstan from [this
 repository](https://github.com/cloudius/capstan). You can install
-binary version or follow the instructions for build it from source code. Ensure
+the binary version or [follow the instructions](Documentation/Installation.md) to build it from source code. Ensure
 the ``capstan`` is in your ``$PATH``.
-
-This version of Capstan currently does not support automatic downloading of
-required packages. In order to install packages locally, first download them
-from [MIKELANGELO project
-page](https://mikelangelo-project.eu/mikelangelo-packages.v0.2.0.tar.gz). Then
-import them into Capstan's local repository (always at ``$HOME/.capstan``):
-
-```
-$ tar -C ~/ -xvzf mikelangelo-packages.v0.2.0.tar.gz
-```
-
-This will extract the packages and the required OSv launcher VM, a small VM
-built by the OSv build system. It contains only a ramdisk with the kernel and
-some additional tools required to compose applications in the following stages.
 
 ## Help
 
@@ -177,7 +155,7 @@ $ capstan runtime init -r <runtime-name>
 
 // meta/run.yaml stub successfully added to your package. Please customize it in editor.
 ```
-To preview what content will be written to `meta/run.yaml` without changing any files, execute commmand:
+To preview what content will be written to `meta/run.yaml` without changing any files, execute command:
 ```
 $ capstan runtime preview -r <runtime-name>
 
@@ -230,7 +208,7 @@ $ capstan runtime init -r <runtime-name> --named
 
 // meta/run.yaml stub successfully added to your package. Please customize it in editor.
 ```
-To preview what content will be written to `meta/run.yaml` without changing any files, execute commmand:
+To preview what content will be written to `meta/run.yaml` without changing any files, execute command:
 ```
 $ capstan runtime preview -r <runtime-name> --named
 
@@ -349,6 +327,10 @@ well.
 A package may override the content of any of its required packages which allows
 users to customise or to reconfigure one of the base packages.
 
+Please note that by default capstan tries to locate the required dependencies in the local repository.
+You can instruct capstan to pull missing dependencies from remote repository - OSv Github releases assets repo or S3 repository
+by adding `--pull-missing` or `-p` flag when executing the `package compose` command.  
+
 ### Listing available packages
 
 To list all packages available in your local repository, use ``capstan package
@@ -367,6 +349,22 @@ osv.bootstrap               OSv Bootstrap                  0.24-46-g464f4e0
 osv.cli                     OSv Command Line Interface     0.24-46-g464f4e0
 osv.httpserver              OSv HTTP REST Server           0.24-46-g464f4e0
 osv.java                    Java JRE 1.7.0                 1.7.0-openjdk-1.7.0.60-2.4.7.4.fc20.x86_64
+```
+
+You can also list packages available is remote repository using `package search` command like in this example:
+
+```bash
+$ capstan -r latest package search
+
+Release   Name                                               Description                                        Version         Created              Platform
+v0.54.0   osv.bootstrap                                      OSv Bootstrap                                      0.54.0          2019-09-16 07:52     Ubuntu 19.04
+v0.54.0   osv.cli                                            OSv Command Line                                   0.54.0          2019-09-16 07:53     Ubuntu 19.04
+v0.54.0   osv.httpserver-api                                 OSv httpserver with APIs (backend)                 0.54.0          2019-09-16 07:52     Ubuntu 19.04
+v0.54.0   osv.httpserver-html5-cli                           OSv HTML5 Terminal (frontend)                      1.0.0           2019-09-16 07:53     Ubuntu 19.04
+v0.54.0   osv.httpserver-html5-gui                           OSv HTML5 GUI (frontend)                           0.54.0          2019-09-16 07:52     Ubuntu 19.04
+v0.54.0   osv.libz                                           libz                                               1.0.0           2019-09-16 07:53     Ubuntu 19.04
+v0.54.0   osv.run-go                                         Run Golang wrapper                                 0.54.0          2019-09-16 07:53     Ubuntu 19.04
+v0.54.0   osv.run-java                                       Run Java wrapper                                   0.54.0          2019-09-16 07:53     Ubuntu 19.04
 ```
 
 ### Collecting package content

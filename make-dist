@@ -1,6 +1,6 @@
 #!/bin/bash
 
-package=github.com/mikelangelo-project/capstan
+package=github.com/cloudius-systems/capstan
 git_version=$(scripts/version)
 
 IFS='-' read -ra version_parts <<< "$git_version"

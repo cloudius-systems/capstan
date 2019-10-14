@@ -35,18 +35,13 @@ $ sudo pkg install qemu
 ```
 
 ## Install Capstan
-Run [this](https://raw.githubusercontent.com/mikelangelo-project/capstan/master/scripts/download)
-script to download Capstan binary into `$HOME/bin` directory:
-```
-$ wget -O - https://raw.githubusercontent.com/mikelangelo-project/capstan/master/scripts/download | bash
-```
+Install capstan by manually downloading the relevant binary from
+[the latest Github release assets page](https://github.com/cloudius-systems/capstan/releases/latest)
+into `$HOME/bin` directory:
+
 You can then use Capstan tool with `$HOME/bin/capstan --help` or include `$HOME/bin` into `PATH` and
 use it simply with `capstan --help`.
 
-First thing to do after installing Capstan binary is to pull base image from repository:
-```
-$ capstan pull mike/osv-loader
-```
 There you go, happy unikernel creating!
 
 ## Install Capstan from source (advanced)
@@ -56,9 +51,9 @@ Capstan is a Go project and needs to be compiled first. But heads up, compiling 
 as long as you have Go installed. Consult [official documentation](https://golang.org/doc/install)
 to learn how to install Go, or use this bash snippet to do it for you:
 ```bash
-curl https://storage.googleapis.com/golang/go1.7.4.linux-amd64.tar.gz | sudo tar xz -C /usr/local
-sudo mv /usr/local/go /usr/local/go1.7
-sudo ln -s /usr/local/go1.7 /usr/local/go
+curl https://storage.googleapis.com/golang/go1.12.6.linux-amd64.tar.gz | sudo tar xz -C /usr/local
+sudo mv /usr/local/go /usr/local/go1.12
+sudo ln -s /usr/local/go1.12 /usr/local/go
 
 export GOPATH=$HOME/go
 export PATH=$GOPATH/bin:$PATH
@@ -68,8 +63,8 @@ export PATH=/usr/local/go/bin:$PATH
 ### Compile Capstan
 Since Capstan is hosted on GitHub, the compilation process is as simple as:
 ```
-go get github.com/mikelangelo-project/capstan
-go install github.com/mikelangelo-project/capstan
+go get github.com/cloudius-systems/capstan
+go install github.com/cloudius-systems/capstan
 ```
 That's it, we have Capstan installed. You should be able to use Capstan immediately because it was
 installed in `$GOPATH/bin` added to your `$PATH` above. To test that it works, try:
@@ -84,19 +79,19 @@ your own values and this section describes how. Actually, there are three ways t
 
 ### 1) using command-line arguments
 You can override some variables using command-line arguments. Please note that you need to repeat
-the argument for every command you use, Capstan doesn't memorize it. Also please pay attention of
+the argument for every command you use, Capstan does not memorize it. Also please pay attention to
 the location of the argument. Capstan command must look like this:
 ```bash
 $ capstan {command-line-configuration} other sub commands and args
 # For example:
-$ capstan -u https://mikelangelo-capstan.s3.amazonaws.com/ package compose img1 --size 10GB
-          |-------------- here ---------------------------|
+$ capstan -r v0.53.0 package compose img1 --size 10GB
+          |- here --|
 ```
 
 List of supported arguments:
 
-* `-u <repo-URL>` overrides the default remote repository URL that is used to fetch precompiled
-packages from.
+* `-r <release-tag>` specifies the OSv github release tag that is used to fetch precompiled
+kernel and packages from.
 
 ### 2) using configuration file
 Capstan supports configuration file to permanently override some internal defaults. This file is
@@ -110,12 +105,12 @@ qemu_aio_type: threads
 ```
 List of supported keys:
 
-* `repo_url` overrides the default remote repository URL that is used to fetch precompiled
-packages from.
+* `repo_url` overrides the default remote S3 repository URL that is used to fetch precompiled
+packages from if `--s3` flag is enabled.
 * `disable_kvm` by default KVM acceleration is turned on to speed up unikernel creation, but in
 certain circumstances this results in error. Set this to `true` if you have problems using KVM.
-* `qemu_aio_type` by default QEMU aio type is set to "threads" for compatibility reasons. A faster
-option aio is "native", but it's not supported on all platforms.
+* `qemu_aio_type` by default QEMU aio type is set to `threads` for compatibility reasons. A faster
+aio option may be `native` depending on the version of QEMU, but it's not supported on all platforms.
 
 Please note that if command line argument is used to override the same value (e.g. -u for repository
 URL), then the value from configuration file is ignored.
@@ -143,11 +138,3 @@ There is a Capstan command to double-check which configuration values are eventu
 ```
 capstan config print
 ```
-
-
-
-
-
-
-
-

@@ -1,7 +1,7 @@
 # Capstan
 
 Capstan is a command-line tool for rapidly running your application on [OSv unikernel](http://osv.io).
-It focuses on improving user experience during building the unikernel and attempts to support
+It focuses on improving user experience when building the unikernel and attempts to support
 not only a variety of runtimes (C, C++, Java, Node.js etc.), but also a variety of ready-to-run
 applications (Hadoop HDFS, MySQL, SimpleFOAM etc.).
 
@@ -16,8 +16,15 @@ Capstan tends to be a tool that one configures with *application-oriented settin
 (Where is application entry point? What environment variables to pass? etc.) and then
 runs a command or two to quickly boot up a new unikernel with application. Measured in seconds.
 
-To achieve this, Capstan uses **precompiled** artifacts: precompiled OSv kernel, precompiled Java runtime,
-precompiled MySQL, and many more. All you have to do is to name what precompiled packages you want
+Capstan has been designed to operate in two distinct modes:
+- a mode based on **Capstanfile** (conceptually similar to Dockerfile) where the Capstanfile specifies base OSv image,
+ optional build command, list of files to append to the image and the boot command line 
+ (for details look at [Capstanfile specification](Documentation/Capstanfile.md)) 
+- a mode based on **packages** (conceptually similar to Docker compose), where Capstan 
+ uses **prebuilt** artifacts: precompiled OSv kernel, Java runtime from the Linux host,
+ precompiled MySQL, and many more. 
+
+Either way, all you have to do is to write a Capstanfile or identify what prebuilt packages you want
 to have available in your unikernel and that's it.
 
 ## Features
@@ -26,10 +33,10 @@ With Capstan it is possible to:
 
 * prepare OSv unikernel without compiling anything but your application, in seconds
 * build OSv image using Capstanfile (ala Dockerfile) or compose it from pre-built packages
-* use any precompiled package from the OSv github releases repository or MIKELANGELO package repository, or a combination thereof
-* build your own packages or base image
+* use any prebuilt package from the OSv github releases repository or S3 package repository, or a combination thereof
+* build your own packages or base images
 * set arbitrary size of the target unikernel filesystem
-* run OSv unikernel using one of the supported providers
+* run OSv unikernel one one of the supported hypervisors
 
 But Capstan is not a magic tool that could solve all the problems for you.
 Capstan does **not**:
@@ -53,36 +60,36 @@ $ capstan package init --name {name} --title {title} --author {author}
 $ capstan runtime init --runtime {runtime}
 # edit meta/run.yaml to match your application structure
 ```
-Being in project root directory, then use Capstan command to create unikernel
+Add your application files to the project root directory and then use Capstan command to create unikernel image
 (consult [CLI Reference](Documentation/generated/CLI.md) for a list of available arguments):
 ```
-$ capstan package compose {unikernel-name}
+$ capstan package compose {unikernel-image-name}
 ```
-At this point, you have your unikernel built. It contains all your project files plus all the
-precompiled artifacts that you asked for. In other words, the unikernel contains everything and is
+At this point, you have your unikernel image built. It contains all your project files plus all the
+precompiled artifacts that you asked for. In other words, the unikernel image contains everything and is
 ready to be started! As you might have expected, there is Capstan command to run unikernel for you
-(using KVM/QEMU hypervisor):
+(using KVM/QEMU hypervisor on Linux):
 ```
-$ capstan run {unikernel-name}
+$ capstan run {unikernel-image-name}
 ```
 Congratulations, your unikernel is up-and-running! Press CTRL + C to stop it.
 
 ## Documentation
 
 * [Step-by-step Capstan Installation Guide](Documentation/Installation.md)
-* [User Guide](Documentation/ApplicationManagement.md)
-* [Running My First Application Inside Unikernel](Documentation/WalkthroughNodeJS.md)
 * [Capstanfile](Documentation/Capstanfile.md)
+* [Guide to Build Apps from Packages](Documentation/ApplicationManagement.md)
+* [Running My First Application Inside Unikernel](Documentation/WalkthroughNodeJS.md)
 * [Configuration Files](Documentation/ConfigurationFiles.md)
-    * [Native](Documentation/RuntimeNative.md)
-    * [Java](Documentation/RuntimeJava.md)
-    * [Node.js](Documentation/RuntimeNode.md)
-    * [Python](Documentation/RuntimePython.md)
+    * [Native Runtime](Documentation/RuntimeNative.md)
+    * [Java Runtime](Documentation/RuntimeJava.md)
+    * [Node.js Runtime](Documentation/RuntimeNode.md)
+    * [Python Runtime](Documentation/RuntimePython.md)
 * [.capstanignore](Documentation/Capstanignore.md)
-* [Attaching volumes](Documentation/Volumes.md)
-* [Capstan S3 Repository](Documentation/Repository.md)
+* [Attaching Volumes](Documentation/Volumes.md)
+* [Packages Repository](Documentation/Repository.md)
 * [CLI Reference](Documentation/generated/CLI.md)
-* [OSv filesystem](Documentation/OsvFilesystem.md)
+* [OSv Filesystem](Documentation/OsvFilesystem.md)
 
 ## License
 Capstan is distributed under the 3-clause BSD license.
