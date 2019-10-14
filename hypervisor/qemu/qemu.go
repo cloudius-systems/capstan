@@ -332,6 +332,13 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	if !c.DisableKvm && runtime.GOOS == "linux" && checkKVM() {
 		args = append(args, "-enable-kvm", "-cpu", "host,+x2apic")
 	}
+	if runtime.GOOS == "darwin" {
+		if checkHAXM() {
+			args = append(args, "-accel", "hax")
+		} else {
+			fmt.Println("Running QEMU without acceleration: please install Intel HAXM from https://github.com/intel/haxm/releases")
+		}
+	}
 	return args, nil
 }
 
@@ -436,6 +443,16 @@ func checkKVM() bool {
 	}
 	defer file.Close()
 	return true
+}
+
+func checkHAXM() bool {
+	cmd := exec.Command("kextstat", "-l", "-b", "com.intel.kext.intelhaxm")
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+
+	return strings.Contains(string(output), "com.intel.kext.intelhaxm")
 }
 
 func CreateVolume(path, format string, sizeMB int64) error {
