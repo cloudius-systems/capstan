@@ -21,6 +21,7 @@ import (
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
 	"github.com/cloudius-systems/capstan/hypervisor/vbox"
 	"github.com/cloudius-systems/capstan/hypervisor/vmw"
+	"github.com/cloudius-systems/capstan/hypervisor/hyperkit"
 	"github.com/cloudius-systems/capstan/image"
 	"github.com/cloudius-systems/capstan/runtime"
 	"github.com/cloudius-systems/capstan/util"
@@ -104,14 +105,14 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 				if err != nil {
 					return err
 				}
+				path = repo.ImagePath(config.Hypervisor, config.ImageName)
 				if remote {
 					err := Pull(repo, config.Hypervisor, config.ImageName)
 					if err != nil {
 						return err
 					}
-					path = repo.ImagePath(config.Hypervisor, config.ImageName)
 				} else {
-					return fmt.Errorf("%s: no such image", config.ImageName)
+					return fmt.Errorf("%s: no such image at: %s", config.ImageName, path)
 				}
 			}
 			if config.Hypervisor == "gce" && !image.IsCloudImage(config.ImageName) {
@@ -302,6 +303,26 @@ func RunInstance(repo *util.Repo, config *runtime.RunConfig) error {
 			ConfigFile:   filepath.Join(dir, "osv.config"),
 		}
 		cmd, err = vmw.LaunchVM(config)
+	case "hkit":
+		dir := filepath.Join(util.ConfigDir(), "instances/hkit", id)
+		vmlinuzLoaderPath, err := repo.GetVmlinuzLoaderPath()
+		if err != nil {
+			return err
+		}
+		newConfig := &hyperkit.VMConfig{
+			Name:        id,
+			Image:       path,
+			VmlinuzPath: vmlinuzLoaderPath,
+			Memory:      size,
+			Cpus:        config.Cpus,
+			Networking:  config.Networking,
+			ConfigFile:  filepath.Join(dir, "osv.config"),
+			InstanceDir: dir,
+			MAC:         config.MAC,
+			Cmd:         config.Cmd,
+		}
+
+		cmd, err = hyperkit.LaunchVM(newConfig, config.Verbose)
 	default:
 		err = fmt.Errorf("%s: is not a supported hypervisor", config.Hypervisor)
 	}

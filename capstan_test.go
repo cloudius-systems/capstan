@@ -42,7 +42,7 @@ func TestCommandErrorCodes(t *testing.T) {
 		{"import", 64, "usage: capstan import [image-name] [image-file]\n"},
 		{"import foo", 64, "usage: capstan import [image-name] [image-file]\n"},
 		{"rmi", 64, "usage: capstan rmi [image-name]\n"},
-		{"run foo", 65, "foo: no such image\n"},
+		{"run foo", 65, "Command line will be set to default boot\nfoo: no such image at: " + root + "/repository/foo/foo.qemu\n"},
 		{"run", 65, "Missing Capstanfile or package metadata\n"},
 		{"package help compose", 0, "capstan package compose - composes the package and all its dependencies into OSv imag"},
 	}

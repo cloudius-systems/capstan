@@ -31,6 +31,7 @@ import (
 const (
 	NewLoaderImageName = "osv-loader"
 	OldLoaderImageName = "mike/osv-loader"
+	VmlinuzLoaderName = "osv-vmlinuz.bin"
 	GitHubRepositoryApiUrl = "https://api.github.com"
 )
 
@@ -346,6 +347,20 @@ func (r *Repo) getLoaderImageInfo(loaderImage string) (string, os.FileInfo, erro
 	}
 
 	return loaderImagePath, loaderInfo, err
+}
+
+func (r *Repo) GetVmlinuzLoaderPath() (string, error) {
+	//
+	// Get the actual path of the loader image.
+	loaderImagePath := filepath.Join(r.RepoPath(), NewLoaderImageName, VmlinuzLoaderName)
+	// Check whether the base loader image exists
+	_, err := os.Stat(loaderImagePath)
+	if os.IsNotExist(err) {
+		fmt.Printf("The specified loader image (%s) does not exist.\n", loaderImagePath)
+		return "", err
+	}
+
+	return loaderImagePath, err
 }
 
 func (r *Repo) InitializeZfsImage(loaderImage string, imageName string, imageSize int64) error {
