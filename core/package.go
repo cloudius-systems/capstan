@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -45,6 +46,21 @@ func (p *Package) Parse(data []byte) error {
 	}
 
 	return nil
+}
+
+func ParsePackageManifestAndFallbackToDefault(manifestFile string) (Package, error) {
+	// Make sure the metadata file exists.
+	if _, err := os.Stat(manifestFile); os.IsNotExist(err) {
+		fmt.Printf("Manifest file %s does not exist. Assuming default manifest\n", manifestFile)
+		return Package{
+			Name:   "App",
+			Title:  "App",
+			Author: "Anonymous",
+			Created: YamlTime{time.Now()},
+		}, nil
+	} else {
+		return ParsePackageManifest(manifestFile)
+	}
 }
 
 func ParsePackageManifest(manifestFile string) (Package, error) {

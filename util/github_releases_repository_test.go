@@ -1,27 +1,13 @@
 package util
 
 import (
-	"fmt"
+	"github.com/cloudius-systems/capstan/testing"
 	. "gopkg.in/check.v1"
-	"io/ioutil"
-	"net/http"
 	"net/http/httptest"
-	"strings"
 )
 
 func (s *suite) SetUpSuite(c *C) {
-	s.server = httptest.NewServer(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			path := "testdata/github" + r.RequestURI + "/payload"
-			fmt.Printf("httptest: Mocking: %s with %s \n", r.RequestURI, path)
-			if payload, err := ioutil.ReadFile(path); err == nil {
-				payloadStr := string(payload)
-				payloadStr = strings.Replace(payloadStr, "https://github.com", s.server.URL, -1)
-				w.Write([]byte(payloadStr))
-			} else {
-				http.Error(w, "not found", http.StatusNotFound)
-			}
-		}))
+	s.server = testing.MockGitHubApiServer()
 }
 
 func (s *suite) TearDownSuite(c *C) {
@@ -29,7 +15,7 @@ func (s *suite) TearDownSuite(c *C) {
 }
 
 type suite struct {
-	repo *Repo
+	repo   *Repo
 	server *httptest.Server
 }
 
