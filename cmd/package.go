@@ -160,7 +160,7 @@ func BuildPackage(packageDir string) (string, error) {
 // directory. Only modified files are uploaded and no file deletions are
 // possible at this time.
 func ComposePackage(repo *util.Repo, extraDependencies []string, imageSize int64, updatePackage, verbose, pullMissing bool,
-	packageDir, appName string, bootOpts *BootOptions, filesystem string) error {
+	packageDir, appName string, bootOpts *BootOptions, filesystem string, loaderImage string) error {
 
 	// Package content should be collected in a subdirectory called mpm-pkg.
 	targetPath := filepath.Join(packageDir, "mpm-pkg")
@@ -201,7 +201,7 @@ func ComposePackage(repo *util.Repo, extraDependencies []string, imageSize int64
 		if !updatePackage || !imageExists {
 			// Initialize an empty image based on the provided loader image. imageSize is used to
 			// determine the size of the user partition. Use default loader image.
-			if err := repo.InitializeZfsImage("", appName, imageSize); err != nil {
+			if err := repo.InitializeZfsImage(loaderImage, appName, imageSize); err != nil {
 				return fmt.Errorf("Failed to initialize empty image named %s.\nError was: %s", appName, err)
 			}
 		} else {
@@ -231,7 +231,7 @@ func ComposePackage(repo *util.Repo, extraDependencies []string, imageSize int64
 			return fmt.Errorf("Failed to write ROFS image named %s.\nError was: %s", rofs_image_path, err)
 		}
 
-		if err = repo.CreateRofsImage("", appName, rofs_image_path); err != nil {
+		if err = repo.CreateRofsImage(loaderImage, appName, rofs_image_path); err != nil {
 			return fmt.Errorf("Failed to create ROFS image named %s.\nError was: %s", appName, err)
 		}
 	}

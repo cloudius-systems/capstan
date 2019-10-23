@@ -72,7 +72,7 @@ func OpenStackPush(c *cli.Context) error {
 
 	// Compose image locally.
 	fmt.Printf("Creating image of user-usable size %d MB.\n", sizeMB)
-	err = ComposePackage(repo, []string {}, sizeMB, false, verbose, pullMissing, packageDir, appName, &bootOpts, "zfs")
+	err = ComposePackage(repo, []string {}, sizeMB, false, verbose, pullMissing, packageDir, appName, &bootOpts, "zfs", "")
 	if err != nil {
 		return err
 	}

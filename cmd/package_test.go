@@ -218,7 +218,7 @@ func (*suite) TestComposeWithNoManifestSucceeds(c *C) {
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-corrupt-app"
 
-	err := ComposePackage(repo, []string{}, imageSize, false, false, true, tmp, appName, &BootOptions{}, "rofs")
+	err := ComposePackage(repo, []string{}, imageSize, false, false, true, tmp, appName, &BootOptions{}, "rofs", "")
 
 	c.Assert(err, IsNil)
 }
@@ -239,7 +239,7 @@ func (*suite) TestComposeCorruptPackageFails(c *C) {
 	imageSize, _ := util.ParseMemSize("64M")
 	appName := "test-corrupt-app"
 
-	err = ComposePackage(repo, []string{}, imageSize, false, false, false, tmp, appName, &BootOptions{}, "zfs")
+	err = ComposePackage(repo, []string{}, imageSize, false, false, false, tmp, appName, &BootOptions{}, "zfs", "")
 	c.Assert(err, NotNil)
 }
 

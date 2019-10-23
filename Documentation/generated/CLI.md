@@ -96,15 +96,16 @@ USAGE:
    capstan package compose [command options] image-name
 
 OPTIONS:
-   --size value, -s value  total size of the target image (use M or G suffix) (default: "10G")
-   --update                updates the existing target VM by uploading only modified files
-   --verbose, -v           verbose mode
-   --run value             the command line to be executed in the VM
-   --pull-missing, -p      attempt to pull packages missing from a local repository
-   --boot value            specify default config_set name to boot unikernel with (repeatable, will be run left to right)
-   --env value             specify value of environment variable e.g. PORT=8000 (repeatable)
-   --fs value              specify type of filesystem: zfs or rofs
-   --require value         specify extra package dependency
+   --size value, -s value          total size of the target image (use M or G suffix) (default: "10G")
+   --update                        updates the existing target VM by uploading only modified files
+   --verbose, -v                   verbose mode
+   --run value                     the command line to be executed in the VM
+   --pull-missing, -p              attempt to pull packages missing from a local repository
+   --boot value                    specify default config_set name to boot unikernel with (repeatable, will be run left to right)
+   --env value                     specify value of environment variable e.g. PORT=8000 (repeatable)
+   --fs value                      specify type of filesystem: zfs or rofs
+   --require value                 specify extra package dependency
+   --loader_image value, -l value  the base loader image (default: "osv-loader")
    
 
 ```
@@ -199,10 +200,10 @@ USAGE:
 
 OPTIONS:
    -i value                   image_name
-   -p value                   hypervisor: qemu|vbox|vmw|gce (default: "qemu")
+   -p value                   hypervisor: qemu|vbox|vmw|gce|hkit (default: "qemu")
    -m value                   memory size (default: "1G")
    -c value                   number of CPUs (default: 2)
-   -n value                   networking: nat|bridge|tap|vhost (default: "nat")
+   -n value                   networking: nat|bridge|tap|vhost|vnet|vpnkit (default: "nat")
    -v                         verbose mode
    -b value                   networking device (bridge or tap): e.g., virbr0, vboxnet0, tap0
    -f value                   port forwarding rules
@@ -317,7 +318,7 @@ OPTIONS:
 ```
 
 ---
-<sup>  Documentation compiled on: 2019/10/10 19:29
+<sup>  Documentation compiled on: 2019/10/23 02:54
   <br>
   capstan version 
 </sup>

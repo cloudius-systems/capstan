@@ -436,6 +436,7 @@ func main() {
 						cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
 						cli.StringFlag{Name: "fs", Usage: "specify type of filesystem: zfs or rofs"},
 						cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
+				                cli.StringFlag{Name: "loader_image, l", Value: "osv-loader", Usage: "the base loader image"},
 					},
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
@@ -453,6 +454,8 @@ func main() {
 						if err != nil {
 							return cli.NewExitError(fmt.Sprintf("Incorrect image size format: %s\n", err), EX_USAGE)
 						}
+
+				                loaderImage := c.String("l")
 
 						updatePackage := c.Bool("update")
 						verbose := c.Bool("verbose")
@@ -474,7 +477,7 @@ func main() {
 						}
 
 						if err := cmd.ComposePackage(repo, c.StringSlice("require"), imageSize, updatePackage, verbose, pullMissing,
-							packageDir, appName, &bootOpts, filesystem); err != nil {
+							packageDir, appName, &bootOpts, filesystem, loaderImage); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						}
 
