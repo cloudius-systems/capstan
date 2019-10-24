@@ -608,6 +608,9 @@ func main() {
 					Name:      "describe",
 					Usage:     "describes the package from local repository",
 					ArgsUsage: "[package-name]",
+					Flags: []cli.Flag{
+						cli.BoolFlag{Name: "content, c", Usage: "show file content"},
+					},
 					Action: func(c *cli.Context) error {
 						// Name of the package is required argument.
 						if len(c.Args()) != 1 {
@@ -620,7 +623,7 @@ func main() {
 						packageName := c.Args()[0]
 
 						// Describe the package
-						if s, err := cmd.DescribePackage(repo, packageName); err != nil {
+						if s, err := cmd.DescribePackage(repo, packageName, c.Bool("content")); err != nil {
 							return cli.NewExitError(err.Error(), EX_DATAERR)
 						} else {
 							fmt.Println(s)

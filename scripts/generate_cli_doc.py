@@ -42,6 +42,7 @@ GROUPS = [
               Command('capstan package init'),
               Command('capstan package collect'),
               Command('capstan package compose'),
+              Command('capstan package describe'),
           ]),
     Group('Integrating existing packages',
           'These commands are useful when we intend to use package from remote repository.', [

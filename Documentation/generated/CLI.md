@@ -110,6 +110,20 @@ OPTIONS:
 
 ```
 
+### capstan package describe
+```
+NAME:
+   capstan package describe - describes the package from local repository
+
+USAGE:
+   capstan package describe [command options] [package-name]
+
+OPTIONS:
+   --content, -c  show file content
+   
+
+```
+
 ## Integrating existing packages
 These commands are useful when we intend to use package from remote repository.
 
@@ -318,7 +332,7 @@ OPTIONS:
 ```
 
 ---
-<sup>  Documentation compiled on: 2019/10/23 02:54
+<sup>  Documentation compiled on: 2019/10/24 03:51
   <br>
   capstan version 
 </sup>

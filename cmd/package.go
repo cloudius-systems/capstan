@@ -560,7 +560,7 @@ func ensureDirectoryStructureForFile(currfilepath string) error {
 }
 
 // DescribePackage describes package with given name without extracting it.
-func DescribePackage(repo *util.Repo, packageName string) (string, error) {
+func DescribePackage(repo *util.Repo, packageName string, showContent bool) (string, error) {
 	if !repo.PackageExists(packageName) {
 		return "", fmt.Errorf("Package %s does not exist in your local repository. Pull it using "+
 			"'capstan package pull %s'", packageName, packageName)
@@ -574,6 +574,8 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 	var pkg *core.Package
 	var cmdConf *runtime.CmdConfig
 	var readme string
+
+	var content []*tar.Header
 
 	for {
 		header, err := tarReader.Next()
@@ -608,10 +610,12 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 				return "", err
 			}
 			readme = string(data)
+		} else if showContent && !absTarPathMatches(header.Name, "/meta/") {
+			content = append(content, header)
 		}
 
 		// Stop reading if we have all the information
-		if pkg != nil && cmdConf != nil && readme != "" {
+		if pkg != nil && cmdConf != nil && readme != "" && !showContent {
 			break
 		}
 	}
@@ -665,6 +669,18 @@ func DescribePackage(repo *util.Repo, packageName string) (string, error) {
 	if readme != "" {
 		s += fmt.Sprintln("PACKAGE DOCUMENTATION")
 		s += fmt.Sprintln(readme)
+	}
+
+	if showContent {
+		s += fmt.Sprintln("PACKAGE CONTENT")
+		for _, header := range content {
+			s += fmt.Sprintf("%s  %d %d      %d %11d %s %s",
+				header.FileInfo().Mode().String(), 0, 0, 0, header.Size, header.FileInfo().ModTime().Format(time.RFC822), header.Name)
+			if header.FileInfo().Mode()&os.ModeSymlink == os.ModeSymlink {
+				s += fmt.Sprintf(" -> %s", header.Linkname)
+			}
+			s += fmt.Sprintln("")
+		}
 	}
 
 	return s, nil

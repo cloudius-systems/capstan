@@ -314,7 +314,7 @@ func (s *suite) TestDescribePackage(c *C) {
 	ImportPackage(s.repo, s.packageDir)
 
 	// This is what we're testing here.
-	descr, err := DescribePackage(s.repo, "package-name")
+	descr, err := DescribePackage(s.repo, "package-name", false)
 
 	// Expectations.
 	c.Assert(err, IsNil)
