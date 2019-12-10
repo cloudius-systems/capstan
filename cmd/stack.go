@@ -14,7 +14,7 @@ import (
 
 	"github.com/cloudius-systems/capstan/provider/openstack"
 	"github.com/cloudius-systems/capstan/util"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 // OpenStackPush picks best flavor, composes package, builds .qcow2 image and uploads it to OpenStack.
@@ -28,7 +28,7 @@ func OpenStackPush(c *cli.Context) error {
 	}
 
 	// Use the provided repository.
-	repo := util.NewRepo(c.GlobalString("u"))
+	repo := util.NewRepo(c.String("u"))
 
 	// Get temporary name of the application.
 	appName := imageName
@@ -72,7 +72,7 @@ func OpenStackPush(c *cli.Context) error {
 
 	// Compose image locally.
 	fmt.Printf("Creating image of user-usable size %d MB.\n", sizeMB)
-	err = ComposePackage(repo, []string {}, sizeMB, false, verbose, pullMissing, packageDir, appName, &bootOpts, "zfs", "")
+	err = ComposePackage(repo, []string{}, sizeMB, false, verbose, pullMissing, packageDir, appName, &bootOpts, "zfs", "")
 	if err != nil {
 		return err
 	}

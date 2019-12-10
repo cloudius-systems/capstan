@@ -19,7 +19,7 @@ import (
 	"github.com/cloudius-systems/capstan/provider/openstack"
 	"github.com/cloudius-systems/capstan/runtime"
 	"github.com/cloudius-systems/capstan/util"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -44,15 +44,15 @@ func main() {
 	app.Version = VERSION
 	app.Usage = "pack, ship, and run applications in light-weight VMs"
 	app.Flags = []cli.Flag{
-		cli.StringFlag{Name: "u", Usage: fmt.Sprintf("remote repository URL (default: \"%s\")", util.DefaultRepositoryUrl)},
-		cli.StringFlag{Name: "release-tag,r", Usage: "the release tag: any, latest, v0.51.0"},
-		cli.BoolFlag{Name: "s3", Usage: fmt.Sprintf("searches and downloads from S3 repository at (\"%s\")", util.DefaultRepositoryUrl)},
+		&cli.StringFlag{Name: "u", Usage: fmt.Sprintf("remote repository URL (default: \"%s\")", util.DefaultRepositoryUrl)},
+		&cli.StringFlag{Name: "release-tag,r", Usage: "the release tag: any, latest, v0.51.0"},
+		&cli.BoolFlag{Name: "s3", Usage: fmt.Sprintf("searches and downloads from S3 repository at (\"%s\")", util.DefaultRepositoryUrl)},
 	}
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		{
 			Name:  "config",
 			Usage: "Capstan configuration",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:  "print",
 					Usage: "print current capstan configuration",
@@ -67,10 +67,10 @@ func main() {
 			Name:  "info",
 			Usage: "show disk image information",
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) != 1 {
+				if c.Args().Len() != 1 {
 					return cli.NewExitError("usage: capstan info [image-file]", EX_USAGE)
 				}
-				image := c.Args()[0]
+				image := c.Args().Get(0)
 				if err := cmd.Info(image); err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
@@ -81,17 +81,17 @@ func main() {
 			Name:  "import",
 			Usage: "import an image to the local repository",
 			Flags: []cli.Flag{
-				cli.StringFlag{Name: "v", Value: "", Usage: "image version"},
-				cli.StringFlag{Name: "c", Value: "", Usage: "image creation date"},
-				cli.StringFlag{Name: "d", Value: "", Usage: "image description"},
-				cli.StringFlag{Name: "b", Value: "", Usage: "image build command"},
+				&cli.StringFlag{Name: "v", Value: "", Usage: "image version"},
+				&cli.StringFlag{Name: "c", Value: "", Usage: "image creation date"},
+				&cli.StringFlag{Name: "d", Value: "", Usage: "image description"},
+				&cli.StringFlag{Name: "b", Value: "", Usage: "image build command"},
 			},
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) != 2 {
+				if c.Args().Len() != 2 {
 					return cli.NewExitError("usage: capstan import [image-name] [image-file]", EX_USAGE)
 				}
 				repo := util.NewRepoFromCli(c)
-				err := repo.ImportImage(c.Args()[0], c.Args()[1], c.String("v"), c.String("c"), c.String("d"), c.String("b"))
+				err := repo.ImportImage(c.Args().Get(0), c.Args().Get(1), c.String("v"), c.String("c"), c.String("d"), c.String("b"))
 				if err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
@@ -102,10 +102,10 @@ func main() {
 			Name:  "pull",
 			Usage: "pull an image from a remote repository",
 			Flags: []cli.Flag{
-				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
+				&cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
 			},
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) != 1 {
+				if c.Args().Len() != 1 {
 					return cli.NewExitError("usage: capstan pull [image-name]", EX_USAGE)
 				}
 				hypervisor := c.String("p")
@@ -124,7 +124,7 @@ func main() {
 			Name:  "rmi",
 			Usage: "delete an image from a repository",
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) != 1 {
+				if c.Args().Len() != 1 {
 					return cli.NewExitError("usage: capstan rmi [image-name]", EX_USAGE)
 				}
 				repo := util.NewRepoFromCli(c)
@@ -140,21 +140,21 @@ func main() {
 			Usage:     "launch a VM. You may pass the image name as the first argument.",
 			ArgsUsage: "instance-name",
 			Flags: []cli.Flag{
-				cli.StringFlag{Name: "i", Value: "", Usage: "image_name"},
-				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce|hkit"},
-				cli.StringFlag{Name: "m", Value: "1G", Usage: "memory size"},
-				cli.IntFlag{Name: "c", Value: 2, Usage: "number of CPUs"},
-				cli.StringFlag{Name: "n", Value: "nat", Usage: "networking: nat|bridge|tap|vhost|vnet|vpnkit"},
-				cli.BoolFlag{Name: "v", Usage: "verbose mode"},
-				cli.StringFlag{Name: "b", Value: "", Usage: "networking device (bridge or tap): e.g., virbr0, vboxnet0, tap0"},
-				cli.StringSliceFlag{Name: "f", Value: new(cli.StringSlice), Usage: "port forwarding rules"},
-				cli.StringFlag{Name: "gce-upload-dir", Value: "", Usage: "Directory to upload local image to: e.g., gs://osvimg"},
-				cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
-				cli.StringFlag{Name: "execute,e", Usage: "set the command line to execute"},
-				cli.StringSliceFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with (repeatable, will be run left to right)"},
-				cli.BoolFlag{Name: "persist", Usage: "persist instance parameters (only relevant for qemu instances)"},
-				cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
-				cli.StringSliceFlag{Name: "volume", Value: new(cli.StringSlice), Usage: `{path}[:{key=val}], e.g. ./volume.img:format=raw (repeatable)
+				&cli.StringFlag{Name: "i", Value: "", Usage: "image_name"},
+				&cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce|hkit"},
+				&cli.StringFlag{Name: "m", Value: "1G", Usage: "memory size"},
+				&cli.IntFlag{Name: "c", Value: 2, Usage: "number of CPUs"},
+				&cli.StringFlag{Name: "n", Value: "nat", Usage: "networking: nat|bridge|tap|vhost|vnet|vpnkit"},
+				&cli.BoolFlag{Name: "v", Usage: "verbose mode"},
+				&cli.StringFlag{Name: "b", Value: "", Usage: "networking device (bridge or tap): e.g., virbr0, vboxnet0, tap0"},
+				&cli.StringSliceFlag{Name: "f", Value: new(cli.StringSlice), Usage: "port forwarding rules"},
+				&cli.StringFlag{Name: "gce-upload-dir", Value: "", Usage: "Directory to upload local image to: e.g., gs://osvimg"},
+				&cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
+				&cli.StringFlag{Name: "execute,e", Usage: "set the command line to execute"},
+				&cli.StringSliceFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with (repeatable, will be run left to right)"},
+				&cli.BoolFlag{Name: "persist", Usage: "persist instance parameters (only relevant for qemu instances)"},
+				&cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
+				&cli.StringSliceFlag{Name: "volume", Value: new(cli.StringSlice), Usage: `{path}[:{key=val}], e.g. ./volume.img:format=raw (repeatable)
 				Default options are :format=raw:aio=native:cache=none`},
 			},
 			Action: func(c *cli.Context) error {
@@ -205,14 +205,14 @@ func main() {
 			Name:  "build",
 			Usage: "build an image",
 			Flags: []cli.Flag{
-				cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
-				cli.StringFlag{Name: "m", Value: "512M", Usage: "memory size"},
-				cli.BoolFlag{Name: "v", Usage: "verbose mode"},
+				&cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
+				&cli.StringFlag{Name: "m", Value: "512M", Usage: "memory size"},
+				&cli.BoolFlag{Name: "v", Usage: "verbose mode"},
 			},
 			Action: func(c *cli.Context) error {
 				imageName := c.Args().First()
 				repo := util.NewRepoFromCli(c)
-				if len(c.Args()) != 1 {
+				if c.Args().Len() != 1 {
 					imageName = repo.DefaultImage()
 				}
 				if imageName == "" {
@@ -240,20 +240,20 @@ func main() {
 			Name:  "compose",
 			Usage: "compose the image from a folder or a file",
 			Flags: []cli.Flag{
-				cli.StringFlag{Name: "loader_image, l", Value: "osv-loader", Usage: "the base loader image"},
-				cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
-				cli.StringFlag{Name: "command_line, c", Usage: "command line OSv will boot with"},
-				cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+				&cli.StringFlag{Name: "loader_image, l", Value: "osv-loader", Usage: "the base loader image"},
+				&cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
+				&cli.StringFlag{Name: "command_line, c", Usage: "command line OSv will boot with"},
+				&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 			},
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) != 2 {
+				if c.Args().Len() != 2 {
 					return cli.NewExitError("Usage: capstan compose [image-name] [path-to-upload]", EX_USAGE)
 				}
 
 				// Name of the application (or image) that will be used in the internal repository.
-				appName := c.Args()[0]
+				appName := c.Args().Get(0)
 				// File or directory path that needs to be uploaded
-				uploadPath := c.Args()[1]
+				uploadPath := c.Args().Get(1)
 
 				repo := util.NewRepoFromCli(c)
 
@@ -275,9 +275,9 @@ func main() {
 			},
 		},
 		{
-			Name:      "images",
-			ShortName: "i",
-			Usage:     "list images",
+			Name:    "images",
+			Aliases: []string{"i"},
+			Usage:   "list images",
 			Action: func(c *cli.Context) error {
 				repo := util.NewRepoFromCli(c)
 				fmt.Print(repo.ListImages())
@@ -290,8 +290,8 @@ func main() {
 			Usage: "search a remote images",
 			Action: func(c *cli.Context) error {
 				image := ""
-				if len(c.Args()) > 0 {
-					image = c.Args()[0]
+				if c.Args().Len() > 0 {
+					image = c.Args().Get(0)
 				}
 				repo := util.NewRepoFromCli(c)
 				err := util.ListImagesRemote(repo.URL, image)
@@ -302,9 +302,9 @@ func main() {
 			},
 		},
 		{
-			Name:      "instances",
-			ShortName: "I",
-			Usage:     "list instances",
+			Name:    "instances",
+			Aliases: []string{"I"},
+			Usage:   "list instances",
 			Action: func(c *cli.Context) error {
 				cmd.Instances()
 
@@ -315,10 +315,10 @@ func main() {
 			Name:  "stop",
 			Usage: "stop an instance",
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) != 1 {
+				if c.Args().Len() != 1 {
 					return cli.NewExitError("usage: capstan stop [instance_name]", EX_USAGE)
 				}
-				instance := c.Args()[0]
+				instance := c.Args().Get(0)
 				if err := cmd.Stop(instance); err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
@@ -329,10 +329,10 @@ func main() {
 			Name:  "delete",
 			Usage: "delete an instance",
 			Action: func(c *cli.Context) error {
-				if len(c.Args()) != 1 {
+				if c.Args().Len() != 1 {
 					return cli.NewExitError("usage: capstan delete [instance_name]", EX_USAGE)
 				}
-				instance := c.Args()[0]
+				instance := c.Args().Get(0)
 				if err := cmd.Delete(instance); err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
@@ -342,30 +342,30 @@ func main() {
 		{
 			Name:  "package",
 			Usage: "package manipulation tools",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:      "init",
 					Usage:     "initialise package structure",
 					ArgsUsage: "[path]",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "name,n", Usage: "package name"},
-						cli.StringFlag{Name: "title,t", Usage: "package title"},
-						cli.StringFlag{Name: "author,a", Usage: "package author"},
-						cli.StringFlag{Name: "version,v", Usage: "package version"},
-						cli.StringSliceFlag{Name: "require", Usage: "specify package dependency"},
-						cli.StringFlag{Name: "runtime", Usage: "runtime to stub package for. Use 'capstan runtime list' to list all"},
-						cli.StringFlag{Name: "p, platform", Usage: "platform where package was built on"},
+						&cli.StringFlag{Name: "name,n", Usage: "package name"},
+						&cli.StringFlag{Name: "title,t", Usage: "package title"},
+						&cli.StringFlag{Name: "author,a", Usage: "package author"},
+						&cli.StringFlag{Name: "version,v", Usage: "package version"},
+						&cli.StringSliceFlag{Name: "require", Usage: "specify package dependency"},
+						&cli.StringFlag{Name: "runtime", Usage: "runtime to stub package for. Use 'capstan runtime list' to list all"},
+						&cli.StringFlag{Name: "p, platform", Usage: "platform where package was built on"},
 					},
 					Action: func(c *cli.Context) error {
-						if len(c.Args()) > 1 {
+						if c.Args().Len() > 1 {
 							return cli.NewExitError("usage: capstan package init [path]", EX_USAGE)
 						}
 
 						// The package path is the current working dir...
 						packagePath, _ := os.Getwd()
 						// ... unless the user has provided the exact location.
-						if len(c.Args()) == 1 {
-							packagePath = c.Args()[0]
+						if c.Args().Len() == 1 {
+							packagePath = c.Args().Get(0)
 						}
 
 						// Author is a mandatory field.
@@ -427,19 +427,19 @@ func main() {
 					Usage:     "composes the package and all its dependencies into OSv image",
 					ArgsUsage: "image-name",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "size, s", Value: "10G", Usage: "total size of the target image (use M or G suffix)"},
-						cli.BoolFlag{Name: "update", Usage: "updates the existing target VM by uploading only modified files"},
-						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
-						cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
-						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
-						cli.StringSliceFlag{Name: "boot", Usage: "specify default config_set name to boot unikernel with (repeatable, will be run left to right)"},
-						cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
-						cli.StringFlag{Name: "fs", Usage: "specify type of filesystem: zfs or rofs"},
-						cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
-				                cli.StringFlag{Name: "loader_image, l", Value: "osv-loader", Usage: "the base loader image"},
+						&cli.StringFlag{Name: "size, s", Value: "10G", Usage: "total size of the target image (use M or G suffix)"},
+						&cli.BoolFlag{Name: "update", Usage: "updates the existing target VM by uploading only modified files"},
+						&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						&cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
+						&cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+						&cli.StringSliceFlag{Name: "boot", Usage: "specify default config_set name to boot unikernel with (repeatable, will be run left to right)"},
+						&cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
+						&cli.StringFlag{Name: "fs", Usage: "specify type of filesystem: zfs or rofs"},
+						&cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
+						&cli.StringFlag{Name: "loader_image, l", Value: "osv-loader", Usage: "the base loader image"},
 					},
 					Action: func(c *cli.Context) error {
-						if len(c.Args()) != 1 {
+						if c.Args().Len() != 1 {
 							return cli.NewExitError("Usage: capstan package compose [image-name]", EX_USAGE)
 						}
 
@@ -455,7 +455,7 @@ func main() {
 							return cli.NewExitError(fmt.Sprintf("Incorrect image size format: %s\n", err), EX_USAGE)
 						}
 
-				                loaderImage := c.String("l")
+						loaderImage := c.String("l")
 
 						updatePackage := c.Bool("update")
 						verbose := c.Bool("verbose")
@@ -489,12 +489,12 @@ func main() {
 					Usage:     "composes the package and all its dependencies and uploads resulting files into remote OSv instance",
 					ArgsUsage: "remote-instance",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
-						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
-						cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
+						&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						&cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+						&cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
 					},
 					Action: func(c *cli.Context) error {
-						if len(c.Args()) != 1 {
+						if c.Args().Len() != 1 {
 							return cli.NewExitError("Usage: capstan package compose-remote [remote-instance]", EX_USAGE)
 						}
 
@@ -522,10 +522,10 @@ func main() {
 					Name:  "collect",
 					Usage: "collects contents of this package and all required packages",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
-						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
-						cli.BoolFlag{Name: "remote", Usage: "set when previewing the compose-remote"},
-						cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
+						&cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+						&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						&cli.BoolFlag{Name: "remote", Usage: "set when previewing the compose-remote"},
+						&cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
 					},
 					Action: func(c *cli.Context) error {
 						repo := util.NewRepoFromCli(c)
@@ -591,7 +591,7 @@ func main() {
 					ArgsUsage: "[package-name]",
 					Action: func(c *cli.Context) error {
 						// Name of the package is required argument.
-						if len(c.Args()) != 1 {
+						if c.Args().Len() != 1 {
 							return cli.NewExitError("usage: capstan package pull [package-name]", EX_USAGE)
 						}
 
@@ -609,18 +609,18 @@ func main() {
 					Usage:     "describes the package from local repository",
 					ArgsUsage: "[package-name]",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "content, c", Usage: "show file content"},
+						&cli.BoolFlag{Name: "content, c", Usage: "show file content"},
 					},
 					Action: func(c *cli.Context) error {
 						// Name of the package is required argument.
-						if len(c.Args()) != 1 {
+						if c.Args().Len() != 1 {
 							return cli.NewExitError("usage: capstan package describe [package-name]", EX_USAGE)
 						}
 
 						// Initialise the repository
 						repo := util.NewRepoFromCli(c)
 
-						packageName := c.Args()[0]
+						packageName := c.Args().Get(0)
 
 						// Describe the package
 						if s, err := cmd.DescribePackage(repo, packageName, c.Bool("content")); err != nil {
@@ -637,15 +637,15 @@ func main() {
 					Usage:     "updates local packages from remote if remote version is newer",
 					ArgsUsage: "[package-name]",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "created", Usage: "update package also if created date is newer (regardless version)"},
-						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						&cli.BoolFlag{Name: "created", Usage: "update package also if created date is newer (regardless version)"},
+						&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 					},
 					Action: func(c *cli.Context) error {
 						// Initialise the repository
 						repo := util.NewRepoFromCli(c)
 
 						search := ""
-						if len(c.Args()) > 0 {
+						if c.Args().Len() > 0 {
 							search = c.Args().First()
 						}
 
@@ -663,21 +663,21 @@ func main() {
 			Name:    "stack",
 			Aliases: []string{"openstack"},
 			Usage:   "OpenStack manipulation tools",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:  "push",
 					Usage: "composes OSv image and pushes it to OpenStack",
 					Flags: append(
 						[]cli.Flag{
-							cli.StringFlag{Name: "size, s", Value: "10G", Usage: "minimal size of the target user partition (use M or G suffix).\n" +
+							&cli.StringFlag{Name: "size, s", Value: "10G", Usage: "minimal size of the target user partition (use M or G suffix).\n" +
 								"\tNOTE: will be enlarged to match flavor size."},
-							cli.StringFlag{Name: "flavor, f", Usage: "OpenStack flavor name that created OSv image should fit to"},
-							cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
-							cli.BoolFlag{Name: "keep-image", Usage: "don't delete local composed image in .capstan/repository/stack"},
-							cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
-							cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
-							cli.StringSliceFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with (repeatable, will be run left to right)"},
-							cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
+							&cli.StringFlag{Name: "flavor, f", Usage: "OpenStack flavor name that created OSv image should fit to"},
+							&cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
+							&cli.BoolFlag{Name: "keep-image", Usage: "don't delete local composed image in .capstan/repository/stack"},
+							&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+							&cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+							&cli.StringSliceFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with (repeatable, will be run left to right)"},
+							&cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
 						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
 					ArgsUsage:   "image-name",
 					Description: "Compose package, build .qcow2 image and upload it to OpenStack under nickname <image-name>.",
@@ -695,11 +695,11 @@ func main() {
 					Usage: "runs image that was previously pushed to OpenStack",
 					Flags: append(
 						[]cli.Flag{
-							cli.StringFlag{Name: "flavor, f", Usage: "OpenStack flavor to be run with"},
-							cli.StringFlag{Name: "mem, m", Usage: "MB of memory (RAM) to be run with"},
-							cli.StringFlag{Name: "name, n", Usage: "instance name"},
-							cli.IntFlag{Name: "count, c", Value: 1, Usage: "number of instances to run"},
-							cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+							&cli.StringFlag{Name: "flavor, f", Usage: "OpenStack flavor to be run with"},
+							&cli.StringFlag{Name: "mem, m", Usage: "MB of memory (RAM) to be run with"},
+							&cli.StringFlag{Name: "name, n", Usage: "instance name"},
+							&cli.IntFlag{Name: "count, c", Value: 1, Usage: "number of instances to run"},
+							&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
 					ArgsUsage: "image-name",
 					Description: "Run image that you've previously uploaded with 'capstan stack push'.\n   " +
@@ -720,13 +720,13 @@ func main() {
 		{
 			Name:  "runtime",
 			Usage: "package runtime manipulation tools (meta/run.yaml)",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:  "preview",
 					Usage: "prints runtime yaml template to the console",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "runtime, r", Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
-						cli.BoolFlag{Name: "plain", Usage: "Remove comments"},
+						&cli.StringFlag{Name: "runtime, r", Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
+						&cli.BoolFlag{Name: "plain", Usage: "Remove comments"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.String("runtime") == "" {
@@ -744,9 +744,9 @@ func main() {
 					Name:  "init",
 					Usage: "prepares meta/run.yaml stub for selected runtime",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "runtime, r", Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
-						cli.BoolFlag{Name: "plain", Usage: "Remove comments"},
-						cli.BoolFlag{Name: "force, f", Usage: "Override existing meta/run.yaml"},
+						&cli.StringFlag{Name: "runtime, r", Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
+						&cli.BoolFlag{Name: "plain", Usage: "Remove comments"},
+						&cli.BoolFlag{Name: "force, f", Usage: "Override existing meta/run.yaml"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.String("runtime") == "" {
@@ -775,17 +775,17 @@ func main() {
 		{
 			Name:  "volume",
 			Usage: "volume manipulation tools",
-			Subcommands: []cli.Command{
+			Subcommands: []*cli.Command{
 				{
 					Name:      "create",
 					Usage:     "create empty volume and store it into ./volumes directory",
 					ArgsUsage: "[volume-name]",
 					Flags: []cli.Flag{
-						cli.StringFlag{Name: "size, s", Value: "1G", Usage: "total size of the target image (use M or G suffix)"},
-						cli.StringFlag{Name: "format, f", Usage: "volume format, e.g. [raw|qcow2|vdi|vmdk|...]"},
+						&cli.StringFlag{Name: "size, s", Value: "1G", Usage: "total size of the target image (use M or G suffix)"},
+						&cli.StringFlag{Name: "format, f", Usage: "volume format, e.g. [raw|qcow2|vdi|vmdk|...]"},
 					},
 					Action: func(c *cli.Context) error {
-						if len(c.Args()) != 1 {
+						if c.Args().Len() != 1 {
 							return cli.NewExitError("usage: capstan volume create [volume-name]", EX_USAGE)
 						}
 
@@ -814,10 +814,10 @@ func main() {
 					Usage:     "delete volume by name",
 					ArgsUsage: "[volume-name]",
 					Flags: []cli.Flag{
-						cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
 					},
 					Action: func(c *cli.Context) error {
-						if len(c.Args()) != 1 {
+						if c.Args().Len() != 1 {
 							return cli.NewExitError("usage: capstan volume delete [volume-name]", EX_USAGE)
 						}
 						name := c.Args().First()

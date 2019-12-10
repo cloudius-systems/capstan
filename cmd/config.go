@@ -13,12 +13,12 @@ import (
 
 	"github.com/cloudius-systems/capstan/core"
 	"github.com/cloudius-systems/capstan/util"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 // ConfigPrint prints current capstan configuration to console.
 func ConfigPrint(c *cli.Context) error {
-	repo := util.NewRepo(c.GlobalString("u"))
+	repo := util.NewRepo(c.String("u"))
 	fmt.Println("--- global configuration")
 	repo.PrintRepo()
 	fmt.Println()

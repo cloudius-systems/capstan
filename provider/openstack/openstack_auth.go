@@ -11,20 +11,20 @@ import (
 	"fmt"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"os"
 )
 
 // OPENSTACK_CREDENTIALS_FLAGS is a list of argumets that are used for OpenStack authentication.
 // Append it to Flags list to enable direct authentication i.e. without environment variables.
 var OPENSTACK_CREDENTIALS_FLAGS = []cli.Flag{
-	cli.StringFlag{Name: "OS_AUTH_URL", Usage: "OpenStack auth url (e.g. http://10.0.2.15:5000/v2.0)"},
-	cli.StringFlag{Name: "OS_TENANT_ID", Usage: "OpenStack tenant id (e.g. 3dfe7bf545ff4885a3912a92a4a5f8e0)"},
-	cli.StringFlag{Name: "OS_TENANT_NAME", Usage: "OpenStack tenant name (e.g. admin)"},
-	cli.StringFlag{Name: "OS_PROJECT_NAME", Usage: "OpenStack project name (e.g. admin)"},
-	cli.StringFlag{Name: "OS_USERNAME", Usage: "OpenStack username (e.g. admin)"},
-	cli.StringFlag{Name: "OS_PASSWORD", Usage: "OpenStack password (*TODO*: leave blank to be prompted)"},
-	cli.StringFlag{Name: "OS_REGION_NAME", Usage: "OpenStack username (e.g. RegionOne)"},
+	&cli.StringFlag{Name: "OS_AUTH_URL", Usage: "OpenStack auth url (e.g. http://10.0.2.15:5000/v2.0)"},
+	&cli.StringFlag{Name: "OS_TENANT_ID", Usage: "OpenStack tenant id (e.g. 3dfe7bf545ff4885a3912a92a4a5f8e0)"},
+	&cli.StringFlag{Name: "OS_TENANT_NAME", Usage: "OpenStack tenant name (e.g. admin)"},
+	&cli.StringFlag{Name: "OS_PROJECT_NAME", Usage: "OpenStack project name (e.g. admin)"},
+	&cli.StringFlag{Name: "OS_USERNAME", Usage: "OpenStack username (e.g. admin)"},
+	&cli.StringFlag{Name: "OS_PASSWORD", Usage: "OpenStack password (*TODO*: leave blank to be prompted)"},
+	&cli.StringFlag{Name: "OS_REGION_NAME", Usage: "OpenStack username (e.g. RegionOne)"},
 }
 
 // ObtainCredentials attempts to obtain OpenStack credentials either from command args eihter from env.

@@ -12,7 +12,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/cheggaaa/pb"
+	"github.com/cheggaaa/pb/v3"
 	"github.com/cloudius-systems/capstan/core"
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"

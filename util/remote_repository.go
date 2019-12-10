@@ -3,7 +3,7 @@ package util
 import (
 	"compress/gzip"
 	"fmt"
-	"github.com/cheggaaa/pb"
+	"github.com/cheggaaa/pb/v3"
 	"github.com/cloudius-systems/capstan/core"
 	"gopkg.in/yaml.v2"
 	"io"
@@ -168,7 +168,7 @@ func (r *Repo) downloadFile(fileURL string, destPath string, name string) error 
 		return err
 	}
 	defer resp.Body.Close()
-	bar := pb.New64(resp.ContentLength).SetUnits(pb.U_BYTES)
+	bar := pb.New64(resp.ContentLength).Set(pb.Bytes, true)
 	bar.Start()
 	proxyReader := bar.NewProxyReader(resp.Body)
 	var reader io.Reader = proxyReader

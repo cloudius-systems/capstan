@@ -11,7 +11,7 @@ import (
 	"bufio"
 	"crypto/md5"
 	"fmt"
-	"github.com/cheggaaa/pb"
+	"github.com/cheggaaa/pb/v3"
 	"github.com/cloudius-systems/capstan/core"
 	"github.com/cloudius-systems/capstan/cpio"
 	"github.com/cloudius-systems/capstan/hypervisor/qemu"
@@ -172,7 +172,8 @@ func uploadFiles(conn net.Conn, uploadPaths map[string]string, imageCache core.H
 	// silent mode is activated.
 	var bar *pb.ProgressBar
 	if !verbose {
-		bar = pb.StartNew(len(uploadPaths)).Prefix("Uploading files ")
+		tmpl := `{{ yellow "Uploading files " }} {{ bar . "<" "-" (cycle . "↖" "↗" "↘" "↙" ) "." ">"}} {{speed . | green}} {{percent . | blue}}`
+		bar = pb.ProgressBarTemplate(tmpl).Start(len(uploadPaths))
 	}
 
 	// Initialise a dictionary for the up-to-date file hashes.
@@ -215,7 +216,7 @@ func uploadFiles(conn net.Conn, uploadPaths map[string]string, imageCache core.H
 	}
 
 	if !verbose {
-		bar.FinishPrint("All files uploaded")
+		bar.Finish()
 	}
 
 	// Finalise the transfer.

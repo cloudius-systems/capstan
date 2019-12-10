@@ -46,14 +46,14 @@ There you go, happy unikernel creating!
 
 ## Install Capstan from source (advanced)
 
-### Install Go 1.7+
+### Install Go 1.11+
 Capstan is a Go project and needs to be compiled first. But heads up, compiling Go project is trivial,
 as long as you have Go installed. Consult [official documentation](https://golang.org/doc/install)
 to learn how to install Go, or use this bash snippet to do it for you:
 ```bash
-curl https://storage.googleapis.com/golang/go1.12.6.linux-amd64.tar.gz | sudo tar xz -C /usr/local
-sudo mv /usr/local/go /usr/local/go1.12
-sudo ln -s /usr/local/go1.12 /usr/local/go
+curl https://dl.google.com/go/go1.13.5.linux-amd64.tar.gz | sudo tar xz -C /usr/local
+sudo mv /usr/local/go /usr/local/go1.13
+sudo ln -s /usr/local/go1.13 /usr/local/go
 
 export GOPATH=$HOME/go
 export PATH=$GOPATH/bin:$PATH
@@ -63,14 +63,23 @@ export PATH=/usr/local/go/bin:$PATH
 ### Compile Capstan
 Since Capstan is hosted on GitHub, the compilation process is as simple as:
 ```
-go get github.com/cloudius-systems/capstan
-go install github.com/cloudius-systems/capstan
+git clone git@github.com:cloudius-systems/capstan.git
+cd capstan
+export GO111MODULE=on        # Needed for Go 1.11, 1.12
+go install
 ```
-That's it, we have Capstan installed. You should be able to use Capstan immediately because it was
-installed in `$GOPATH/bin` added to your `$PATH` above. To test that it works, try:
+That's it, we have Capstan installed. You should be able to use Capstan immediately because it was installed in `$GOPATH/bin` added to your `$PATH` above. To test that it works, try:
 ```
 capstan --help
 ```
+
+## Maintain Capstan
+Capstan is managed with Go Modules as [recommended](https://blog.golang.org/using-go-modules), while developing on Capstan, you should follow these steps:
+1. Update import path and corresponding code as you might do
+2. Test you changes with `go test ./...`
+3. Clear up `go.mod` and `go.sum` file with `go mod tidy`
+
+Then you are ready to tag and release new version. To learn more details about maintaining Go project on Module Mode, see [Go Modules Serial Blogs](https://blog.golang.org/using-go-modules)
 
 ## Configure Capstan (advanced)
 Capstan uses optimized default values under the hood. But you are allowed to override them with
