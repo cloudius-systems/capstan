@@ -13,7 +13,7 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"io"
 	"io/ioutil"
 	"os"
@@ -105,12 +105,12 @@ func NewRepo(url string) *Repo {
 }
 
 func NewRepoFromCli(c *cli.Context) *Repo {
-	repo := NewRepo(c.GlobalString("u"))
-	repo.UseS3 = c.GlobalBool("s3")
+	repo := NewRepo(c.String("u"))
+	repo.UseS3 = c.Bool("s3")
 	repo.GithubURL = GitHubRepositoryApiUrl
 
-	if c.GlobalString("release-tag") != "" {
-		repo.ReleaseTag = c.GlobalString("release-tag")
+	if c.String("release-tag") != "" {
+		repo.ReleaseTag = c.String("release-tag")
 	}
 
 	return repo
