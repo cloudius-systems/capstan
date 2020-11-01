@@ -1,15 +1,31 @@
 # Runtime `python`
 This document describes how to write a valid `meta/run.yaml` configuration file
-for running **Python** application. Please note that you needn't require Python
-MPM package manually since Capstan will require following package automatically:
+for running **Python** applications.
 
+# Newer `native` method
+Require python:
+```yaml
+require:
+        - osv.python3x
+```
+
+And set `bootcmd` to `python3`:
+```yaml
+# meta/run.yaml
+runtime: native
+
+config_set: 
+   default:
+      bootcmd: python3
+```
+
+# Deprecated `python` method
+Note that you needn't require Python MPM package manually since Capstan will require following package automatically:
 ```
 - python-2.7
 ```
 
-## Interactive python interpreter
-Following configuration can be used to run interactive Python interpreter inside OSv:
-
+The following configuration runs an interactive Python interpreter using the python runtime:
 ```yaml
 # meta/run.yaml
 
