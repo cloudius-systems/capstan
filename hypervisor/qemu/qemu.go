@@ -45,6 +45,7 @@ type VMConfig struct {
 	Bridge      string
 	NatRules    []nat.Rule
 	MAC         string
+	VNCFile     string // VNC domain socket path
 }
 
 type Version struct {
@@ -60,8 +61,9 @@ func DeleteVM(name string) error {
 		Monitor:     filepath.Join(dir, "osv.monitor"),
 		Image:       filepath.Join(dir, "disk.qcow2"),
 		ConfigFile:  filepath.Join(dir, "osv.config"),
+		VNCFile:     filepath.Join(dir, "vnc-domain-socket"),
 	}
-	cmd := exec.Command("rm", "-f", c.Image, " ", c.Monitor, " ", c.ConfigFile)
+	cmd := exec.Command("rm", "-f", c.Image, " ", c.Monitor, " ", c.ConfigFile, " ", c.VNCFile)
 	_, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("rm failed: %s, %s", c.Image, c.Monitor)
@@ -170,6 +172,8 @@ func VMCommand(c *VMConfig, verbose bool, extra ...string) (*exec.Cmd, error) {
 		}
 		c.Image = newDisk
 	}
+
+	c.VNCFile = filepath.Join(c.InstanceDir, "vnc-domain-socket")
 
 	if c.Cmd != "" {
 		fmt.Printf("Setting cmdline: %s\n", c.Cmd)
@@ -291,7 +295,7 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	}
 
 	args := make([]string, 0)
-	args = append(args, "-vnc", ":1")
+	args = append(args, "-vnc", "unix:"+c.VNCFile)
 	args = append(args, "-m", strconv.FormatInt(c.Memory, 10))
 	args = append(args, "-smp", strconv.Itoa(c.Cpus))
 	args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")
