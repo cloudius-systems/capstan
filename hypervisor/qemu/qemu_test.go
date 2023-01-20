@@ -62,7 +62,7 @@ func (s *suite) TestVmArguments(c *C) {
 				"-device", "isa-serial,chardev=stdio",
 				"-netdev", "user,id=un0,net=192.168.122.0/24,host=192.168.122.1",
 				"-device", "virtio-net-pci,netdev=un0",
-				"-chardev", "socket,id=charmonitor,path=,server,nowait",
+				"-chardev", "socket,id=charmonitor,path=,server=on,wait=off",
 				"-mon", "chardev=charmonitor,id=monitor,mode=control",
 			},
 		},
