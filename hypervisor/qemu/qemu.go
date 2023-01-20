@@ -163,11 +163,9 @@ func VMCommand(c *VMConfig, verbose bool, extra ...string) (*exec.Cmd, error) {
 		newDisk := dir + "/disk.qcow2"
 
 		if _, err := os.Stat(newDisk); os.IsNotExist(err) {
-			cmd := exec.Command("qemu-img", "create", "-f", "qcow2", "-o", backingFile, newDisk)
-			_, err = cmd.Output()
-			if err != nil {
-				fmt.Printf("qemu-img failed: %s", newDisk)
-				return nil, err
+			cmd := exec.Command("qemu-img", "create", "-f", "qcow2", "-F", "qcow2", "-o", backingFile, newDisk)
+			if stdout, err := cmd.CombinedOutput(); err != nil {
+				return nil, fmt.Errorf("qemu-img failed: %s\n%s", stdout, err)
 			}
 		}
 		c.Image = newDisk
@@ -331,7 +329,7 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 		return nil, err
 	}
 	args = append(args, net...)
-	monitor := fmt.Sprintf("socket,id=charmonitor,path=%s,server,nowait", c.Monitor)
+	monitor := fmt.Sprintf("socket,id=charmonitor,path=%s,server=on,wait=off", c.Monitor)
 	args = append(args, "-chardev", monitor, "-mon", "chardev=charmonitor,id=monitor,mode=control")
 	if !c.DisableKvm && runtime.GOOS == "linux" && checkKVM() {
 		args = append(args, "-enable-kvm", "-cpu", "host,+x2apic")
