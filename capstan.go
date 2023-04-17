@@ -45,7 +45,7 @@ func main() {
 	app.Usage = "pack, ship, and run applications in light-weight VMs"
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{Name: "u", Usage: fmt.Sprintf("remote repository URL (default: \"%s\")", util.DefaultRepositoryUrl)},
-		&cli.StringFlag{Name: "release-tag,r", Usage: "the release tag: any, latest, v0.51.0"},
+		&cli.StringFlag{Name: "release-tag", Aliases: []string{"r"}, Usage: "the release tag: any, latest, v0.51.0"},
 		&cli.BoolFlag{Name: "s3", Usage: fmt.Sprintf("searches and downloads from S3 repository at (\"%s\")", util.DefaultRepositoryUrl)},
 	}
 	app.Commands = []*cli.Command{
@@ -150,7 +150,7 @@ func main() {
 				&cli.StringSliceFlag{Name: "f", Value: new(cli.StringSlice), Usage: "port forwarding rules"},
 				&cli.StringFlag{Name: "gce-upload-dir", Value: "", Usage: "Directory to upload local image to: e.g., gs://osvimg"},
 				&cli.StringFlag{Name: "mac", Value: "", Usage: "MAC address. If not specified, the MAC address will be generated automatically."},
-				&cli.StringFlag{Name: "execute,e", Usage: "set the command line to execute"},
+				&cli.StringFlag{Name: "execute", Aliases: []string{"e"}, Usage: "set the command line to execute"},
 				&cli.StringSliceFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with (repeatable, will be run left to right)"},
 				&cli.BoolFlag{Name: "persist", Usage: "persist instance parameters (only relevant for qemu instances)"},
 				&cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
@@ -240,10 +240,10 @@ func main() {
 			Name:  "compose",
 			Usage: "compose the image from a folder or a file",
 			Flags: []cli.Flag{
-				&cli.StringFlag{Name: "loader_image, l", Value: "osv-loader", Usage: "the base loader image"},
-				&cli.StringFlag{Name: "size, s", Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
-				&cli.StringFlag{Name: "command_line, c", Usage: "command line OSv will boot with"},
-				&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+				&cli.StringFlag{Name: "loader_image", Aliases: []string{"l"}, Value: "osv-loader", Usage: "the base loader image"},
+				&cli.StringFlag{Name: "size", Aliases: []string{"s"}, Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
+				&cli.StringFlag{Name: "command_line", Aliases: []string{"c"}, Usage: "command line OSv will boot with"},
+				&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "verbose mode"},
 			},
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 2 {
@@ -348,13 +348,13 @@ func main() {
 					Usage:     "initialise package structure",
 					ArgsUsage: "[path]",
 					Flags: []cli.Flag{
-						&cli.StringFlag{Name: "name,n", Usage: "package name"},
-						&cli.StringFlag{Name: "title,t", Usage: "package title"},
-						&cli.StringFlag{Name: "author,a", Usage: "package author"},
-						&cli.StringFlag{Name: "version,v", Usage: "package version"},
+						&cli.StringFlag{Name: "name", Aliases: []string{"n"}, Usage: "package name"},
+						&cli.StringFlag{Name: "title", Aliases: []string{"t"}, Usage: "package title"},
+						&cli.StringFlag{Name: "author", Aliases: []string{"a"}, Usage: "package author"},
+						&cli.StringFlag{Name: "version", Aliases: []string{"v"}, Usage: "package version"},
 						&cli.StringSliceFlag{Name: "require", Usage: "specify package dependency"},
 						&cli.StringFlag{Name: "runtime", Usage: "runtime to stub package for. Use 'capstan runtime list' to list all"},
-						&cli.StringFlag{Name: "p, platform", Usage: "platform where package was built on"},
+						&cli.StringFlag{Name: "platform", Aliases: []string{"p"}, Usage: "platform where package was built on"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.Args().Len() > 1 {
@@ -427,16 +427,16 @@ func main() {
 					Usage:     "composes the package and all its dependencies into OSv image",
 					ArgsUsage: "image-name",
 					Flags: []cli.Flag{
-						&cli.StringFlag{Name: "size, s", Value: "10G", Usage: "total size of the target image (use M or G suffix)"},
+						&cli.StringFlag{Name: "size", Aliases: []string{"s"}, Value: "10G", Usage: "total size of the target image (use M or G suffix)"},
 						&cli.BoolFlag{Name: "update", Usage: "updates the existing target VM by uploading only modified files"},
-						&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "verbose mode"},
 						&cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
-						&cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+						&cli.BoolFlag{Name: "pull-missing", Aliases: []string{"p"}, Usage: "attempt to pull packages missing from a local repository"},
 						&cli.StringSliceFlag{Name: "boot", Usage: "specify default config_set name to boot unikernel with (repeatable, will be run left to right)"},
 						&cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
 						&cli.StringFlag{Name: "fs", Usage: "specify type of filesystem: zfs or rofs"},
 						&cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
-						&cli.StringFlag{Name: "loader_image, l", Value: "osv-loader", Usage: "the base loader image"},
+						&cli.StringFlag{Name: "loader_image", Aliases: []string{"l"}, Value: "osv-loader", Usage: "the base loader image"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.Args().Len() != 1 {
@@ -489,8 +489,8 @@ func main() {
 					Usage:     "composes the package and all its dependencies and uploads resulting files into remote OSv instance",
 					ArgsUsage: "remote-instance",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
-						&cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+						&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "verbose mode"},
+						&cli.BoolFlag{Name: "pull-missing", Aliases: []string{"p"}, Usage: "attempt to pull packages missing from a local repository"},
 						&cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
 					},
 					Action: func(c *cli.Context) error {
@@ -522,8 +522,8 @@ func main() {
 					Name:  "collect",
 					Usage: "collects contents of this package and all required packages",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
-						&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						&cli.BoolFlag{Name: "pull-missing", Aliases: []string{"p"}, Usage: "attempt to pull packages missing from a local repository"},
+						&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "verbose mode"},
 						&cli.BoolFlag{Name: "remote", Usage: "set when previewing the compose-remote"},
 						&cli.StringSliceFlag{Name: "require", Usage: "specify extra package dependency"},
 					},
@@ -609,7 +609,7 @@ func main() {
 					Usage:     "describes the package from local repository",
 					ArgsUsage: "[package-name]",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "content, c", Usage: "show file content"},
+						&cli.BoolFlag{Name: "content", Aliases: []string{"c"}, Usage: "show file content"},
 					},
 					Action: func(c *cli.Context) error {
 						// Name of the package is required argument.
@@ -638,7 +638,7 @@ func main() {
 					ArgsUsage: "[package-name]",
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: "created", Usage: "update package also if created date is newer (regardless version)"},
-						&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "verbose mode"},
 					},
 					Action: func(c *cli.Context) error {
 						// Initialise the repository
@@ -669,13 +669,13 @@ func main() {
 					Usage: "composes OSv image and pushes it to OpenStack",
 					Flags: append(
 						[]cli.Flag{
-							&cli.StringFlag{Name: "size, s", Value: "10G", Usage: "minimal size of the target user partition (use M or G suffix).\n" +
+							&cli.StringFlag{Name: "size", Aliases: []string{"s"}, Value: "10G", Usage: "minimal size of the target user partition (use M or G suffix).\n" +
 								"\tNOTE: will be enlarged to match flavor size."},
-							&cli.StringFlag{Name: "flavor, f", Usage: "OpenStack flavor name that created OSv image should fit to"},
+							&cli.StringFlag{Name: "flavor", Aliases: []string{"f"}, Usage: "OpenStack flavor name that created OSv image should fit to"},
 							&cli.StringFlag{Name: "run", Usage: "the command line to be executed in the VM"},
 							&cli.BoolFlag{Name: "keep-image", Usage: "don't delete local composed image in .capstan/repository/stack"},
-							&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
-							&cli.BoolFlag{Name: "pull-missing, p", Usage: "attempt to pull packages missing from a local repository"},
+							&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "verbose mode"},
+							&cli.BoolFlag{Name: "pull-missing", Aliases: []string{"p"}, Usage: "attempt to pull packages missing from a local repository"},
 							&cli.StringSliceFlag{Name: "boot", Usage: "specify config_set name to boot unikernel with (repeatable, will be run left to right)"},
 							&cli.StringSliceFlag{Name: "env", Value: new(cli.StringSlice), Usage: "specify value of environment variable e.g. PORT=8000 (repeatable)"},
 						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
@@ -695,11 +695,11 @@ func main() {
 					Usage: "runs image that was previously pushed to OpenStack",
 					Flags: append(
 						[]cli.Flag{
-							&cli.StringFlag{Name: "flavor, f", Usage: "OpenStack flavor to be run with"},
-							&cli.StringFlag{Name: "mem, m", Usage: "MB of memory (RAM) to be run with"},
-							&cli.StringFlag{Name: "name, n", Usage: "instance name"},
-							&cli.IntFlag{Name: "count, c", Value: 1, Usage: "number of instances to run"},
-							&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+							&cli.StringFlag{Name: "flavor", Aliases: []string{"f"}, Usage: "OpenStack flavor to be run with"},
+							&cli.StringFlag{Name: "mem", Aliases: []string{"m"}, Usage: "MB of memory (RAM) to be run with"},
+							&cli.StringFlag{Name: "name", Aliases: []string{"n"}, Usage: "instance name"},
+							&cli.IntFlag{Name: "count", Aliases: []string{"c"}, Value: 1, Usage: "number of instances to run"},
+							&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "verbose mode"},
 						}, openstack.OPENSTACK_CREDENTIALS_FLAGS...),
 					ArgsUsage: "image-name",
 					Description: "Run image that you've previously uploaded with 'capstan stack push'.\n   " +
@@ -725,7 +725,7 @@ func main() {
 					Name:  "preview",
 					Usage: "prints runtime yaml template to the console",
 					Flags: []cli.Flag{
-						&cli.StringFlag{Name: "runtime, r", Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
+						&cli.StringFlag{Name: "runtime", Aliases: []string{"r"}, Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
 						&cli.BoolFlag{Name: "plain", Usage: "Remove comments"},
 					},
 					Action: func(c *cli.Context) error {
@@ -744,9 +744,9 @@ func main() {
 					Name:  "init",
 					Usage: "prepares meta/run.yaml stub for selected runtime",
 					Flags: []cli.Flag{
-						&cli.StringFlag{Name: "runtime, r", Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
+						&cli.StringFlag{Name: "runtime", Aliases: []string{"r"}, Usage: "Runtime name. Use 'capstan runtime list' to see available names."},
 						&cli.BoolFlag{Name: "plain", Usage: "Remove comments"},
-						&cli.BoolFlag{Name: "force, f", Usage: "Override existing meta/run.yaml"},
+						&cli.BoolFlag{Name: "force", Aliases: []string{"f"}, Usage: "Override existing meta/run.yaml"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.String("runtime") == "" {
@@ -781,8 +781,8 @@ func main() {
 					Usage:     "create empty volume and store it into ./volumes directory",
 					ArgsUsage: "[volume-name]",
 					Flags: []cli.Flag{
-						&cli.StringFlag{Name: "size, s", Value: "1G", Usage: "total size of the target image (use M or G suffix)"},
-						&cli.StringFlag{Name: "format, f", Usage: "volume format, e.g. [raw|qcow2|vdi|vmdk|...]"},
+						&cli.StringFlag{Name: "size", Aliases: []string{"s"}, Value: "1G", Usage: "total size of the target image (use M or G suffix)"},
+						&cli.StringFlag{Name: "format", Aliases: []string{"f"}, Usage: "volume format, e.g. [raw|qcow2|vdi|vmdk|...]"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.Args().Len() != 1 {
@@ -814,7 +814,7 @@ func main() {
 					Usage:     "delete volume by name",
 					ArgsUsage: "[volume-name]",
 					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "verbose, v", Usage: "verbose mode"},
+						&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "verbose mode"},
 					},
 					Action: func(c *cli.Context) error {
 						if c.Args().Len() != 1 {
