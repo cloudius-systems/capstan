@@ -66,7 +66,7 @@ func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string
 		// It is asumed that the UploadPath is the first command executed by
 		// this virtual image.  Thus we also create the filesystem and start
 		// the 'cpiod' daemon responsible for copying files to target VM.
-		osvCmdline = "--norandom --nomount --noinit /tools/mkfs.so; /tools/cpiod.so --prefix /zfs/zfs; /zfs.so set compression=off osv"
+		osvCmdline = "--norandom --nomount --noinit --preload-zfs-library /tools/mkfs.so; /tools/cpiod.so --prefix /zfs/zfs; /zfs.so set compression=off osv"
 	} else {
 		fmt.Printf("Updating image %s...\n", appImage)
 		// If we are updating an existing image, we should only start cpiod
