@@ -195,10 +195,15 @@ func ComposePackage(repo *util.Repo, extraDependencies []string, imageSize int64
 	if filesystem == "zfs" {
 		imageCachePath := repo.ImageCachePath("qemu", appName)
 		var imageCache core.HashCache
+		zfsBuilderPath := ""
 
 		// If the user requested new image or requested to update a non-existent image,
 		// initialize it first.
 		if !updatePackage || !imageExists {
+			zfsBuilderPath, err = repo.GetZfsBuilderImagePath()
+			if err != nil {
+				return fmt.Errorf("Failed to find ZFS builder path.\nError was: %s", appName, err)
+			}
 			// Initialize an empty image based on the provided loader image. imageSize is used to
 			// determine the size of the user partition. Use default loader image.
 			if err := repo.InitializeZfsImage(loaderImage, appName, imageSize); err != nil {
@@ -212,7 +217,7 @@ func ComposePackage(repo *util.Repo, extraDependencies []string, imageSize int64
 		}
 
 		// Upload the specified path onto virtual image.
-		imageCache, err = UploadPackageContents(repo, imagePath, paths, imageCache, verbose)
+		imageCache, err = UploadPackageContents(repo, imagePath, paths, imageCache, verbose, zfsBuilderPath)
 		if err != nil {
 			return err
 		}

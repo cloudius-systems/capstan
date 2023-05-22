@@ -46,6 +46,8 @@ type VMConfig struct {
 	NatRules    []nat.Rule
 	MAC         string
 	VNCFile     string // VNC domain socket path
+	KernelMode  bool
+	KernelPath  string
 }
 
 type Version struct {
@@ -296,13 +298,21 @@ func (c *VMConfig) vmArguments(version *Version) ([]string, error) {
 	args = append(args, "-vnc", "unix:"+c.VNCFile)
 	args = append(args, "-m", strconv.FormatInt(c.Memory, 10))
 	args = append(args, "-smp", strconv.Itoa(c.Cpus))
-	args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")
+	if c.KernelMode {
+		args = append(args, "-device", "virtio-blk-pci,id=blk0,drive=hd0")
+	} else {
+		args = append(args, "-device", "virtio-blk-pci,id=blk0,bootindex=0,drive=hd0")
+	}
 	args = append(args, "-drive", "file="+c.Image+",if=none,id=hd0,aio="+c.AioType+",cache="+c.vmDriveCache())
 	if version.Major >= 1 && version.Minor >= 3 {
 		args = append(args, "-device", "virtio-rng-pci")
 	}
 	args = append(args, "-chardev", "stdio,mux=on,id=stdio,signal=off")
 	args = append(args, "-device", "isa-serial,chardev=stdio")
+	if c.KernelMode {
+		args = append(args, "-append", c.Cmd)
+		args = append(args, "-kernel", c.KernelPath)
+	}
 
 	if volumes, err := hypervisor.ParseVolumes(c.Volumes); err == nil {
 		for idx, v := range volumes {

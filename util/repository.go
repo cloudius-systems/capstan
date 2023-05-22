@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	NewLoaderImageName = "osv-loader"
-	OldLoaderImageName = "mike/osv-loader"
+	ZfsBuilderImageName = "osv-zfs-builder"
+	LoaderImageName = "osv-loader"
 	VmlinuzLoaderName = "osv-vmlinuz.bin"
 	GitHubRepositoryApiUrl = "https://api.github.com"
 )
@@ -317,7 +317,7 @@ func (r *Repo) DefaultImage() string {
 func (r *Repo) getLoaderImageInfo(loaderImage string) (string, os.FileInfo, error) {
 	loaderImageName := loaderImage
 	if loaderImageName == "" {
-		loaderImageName = NewLoaderImageName
+		loaderImageName = LoaderImageName
 	}
 	//
 	// Get the actual path of the loader image.
@@ -325,34 +325,37 @@ func (r *Repo) getLoaderImageInfo(loaderImage string) (string, os.FileInfo, erro
 	// Check whether the base loader image exists
 	loaderInfo, err := os.Stat(loaderImagePath)
 	if os.IsNotExist(err) {
-		if loaderImage == "" {
-			//
-			// Try older name
-			loaderImageName = OldLoaderImageName
-			loaderImagePath = r.ImagePath("qemu", loaderImageName)
-			// Check whether the base loader image exists
-			loaderInfo, err = os.Stat(loaderImagePath)
-			if os.IsNotExist(err) {
-				if loaderImageName, err = r.DownloadLoaderImage("qemu"); err != nil {
-					fmt.Printf("Failed to download default loader image (%s).\n", loaderImageName)
-					return "", nil, err
-				}
-				loaderImagePath = r.ImagePath("qemu", loaderImageName)
-				loaderInfo, err = os.Stat(loaderImagePath)
-			}
-		} else {
-			fmt.Printf("The specified loader image (%s) does not exist.\n", loaderImagePath)
+		if loaderImageName, err = r.DownloadLoaderImage(loaderImageName, "qemu"); err != nil {
+			fmt.Printf("Failed to download default loader image (%s).\n", loaderImageName)
 			return "", nil, err
 		}
+		loaderImagePath = r.ImagePath("qemu", loaderImageName)
+		loaderInfo, err = os.Stat(loaderImagePath)
 	}
 
 	return loaderImagePath, loaderInfo, err
 }
 
+func (r *Repo) GetZfsBuilderImagePath() (string, error) {
+	//
+	// Get the actual path of the image.
+	imagePath := r.ImagePath("qemu", ZfsBuilderImageName)
+	// Check whether the base loader image exists
+	_, err := os.Stat(imagePath)
+	if os.IsNotExist(err) {
+		if _, err = r.DownloadZfsBuilderImage("qemu"); err != nil {
+			fmt.Printf("Failed to download ZFS builder image (%s).\n", ZfsBuilderImageName)
+			return "", err
+		}
+	}
+
+	return imagePath, err
+}
+
 func (r *Repo) GetVmlinuzLoaderPath() (string, error) {
 	//
 	// Get the actual path of the loader image.
-	loaderImagePath := filepath.Join(r.RepoPath(), NewLoaderImageName, VmlinuzLoaderName)
+	loaderImagePath := filepath.Join(r.RepoPath(), LoaderImageName, VmlinuzLoaderName)
 	// Check whether the base loader image exists
 	_, err := os.Stat(loaderImagePath)
 	if os.IsNotExist(err) {
@@ -603,11 +606,19 @@ func (r *Repo) GetPackageDependencies(pkg core.Package, downloadMissing bool) ([
 	return dependencies, nil
 }
 
-func (r *Repo) DownloadLoaderImage(hypervisor string) (string, error) {
+func (r *Repo) DownloadLoaderImage(loaderImageName string, hypervisor string) (string, error) {
 	if r.UseS3 {
 		return r.downloadLoaderImageFromS3(hypervisor)
 	} else {
-		return r.downloadLoaderImageFromGithub(hypervisor)
+		return r.downloadLoaderImageFromGithub(loaderImageName, hypervisor)
+	}
+}
+
+func (r *Repo) DownloadZfsBuilderImage(hypervisor string) (string, error) {
+	if r.UseS3 {
+		return "", errors.New("Does not support downloading ZFS builder from S3 for now!")
+	} else {
+		return r.downloadImageFromGithub(ZfsBuilderImageName, hypervisor, "")
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"runtime"
 )
 
 const (
@@ -86,51 +87,61 @@ func (r *Repo) githubListPackagesRemote(search string) error {
 	return nil
 }
 
-func (r *Repo) downloadLoaderImageFromGithub(hypervisor string) (string, error) {
+func getArch() string {
+	arch := runtime.GOARCH
+	if arch == "arm64" {
+		return "aarch64"
+	} else if arch == "amd64" {
+		return "x86_64"
+	} else {
+		return arch
+	}
+}
+
+func (r *Repo) downloadImageFromGithub(imageName string, hypervisor string, contains string) (string, error) {
 	releases, err := r.queryReleases()
 	if err != nil {
-		return NewLoaderImageName, err
+		return imageName, err
 	}
 
-	err = os.MkdirAll(filepath.Join(r.RepoPath(), NewLoaderImageName), os.ModePerm)
+	err = os.MkdirAll(filepath.Join(r.RepoPath(), imageName), os.ModePerm)
 	if err != nil {
-		return NewLoaderImageName, err
+		return imageName, err
 	}
 
-	// Walk release by release until you find one that has both manifest and file asset
+	// Walk release by release until you find one that has file asset with correct prefix and containsFilter
+	containsFilter := contains
+	if containsFilter == "" {
+		containsFilter = getArch()
+	}
 	for _, release := range releases {
-		loaderFileUrl, loaderManifestUrl := "", ""
+		fileUrl := ""
 
 		for _, asset := range release.Assets {
-			if strings.HasPrefix(asset.Name, NewLoaderImageName) && strings.HasSuffix(asset.Name, hypervisor) {
-				loaderFileUrl = asset.DownloadUrl
-			}
-
-			if asset.Name == "index.yaml" {
-				loaderManifestUrl = asset.DownloadUrl
+			if strings.HasPrefix(asset.Name, imageName + ".") && strings.Contains(asset.Name, containsFilter) {
+				fileUrl = asset.DownloadUrl
 			}
 
 			// Both must be found for OSv loader to exist in remote repository.
-			if loaderFileUrl != "" && loaderManifestUrl != "" {
+			if fileUrl != "" {
 				// Download the loader file itself
-				fileName := fmt.Sprintf("%s/%s.%s", NewLoaderImageName, NewLoaderImageName, hypervisor)
-				if err = r.downloadFile(loaderFileUrl, r.RepoPath(), fileName); err != nil {
-					return NewLoaderImageName, err
-				}
-				// .. and then a manifest
-				fileName = fmt.Sprintf("%s/index.yaml", NewLoaderImageName)
-				if err = r.downloadFile(loaderManifestUrl, r.RepoPath(), fileName); err != nil {
-					return NewLoaderImageName, err
+				fileName := fmt.Sprintf("%s/%s.%s", imageName, imageName, hypervisor)
+				if err = r.downloadFile(fileUrl, r.RepoPath(), fileName); err != nil {
+					return imageName, err
 				}
 
-				fmt.Printf("Downloaded loader image (%s) from github.\n", NewLoaderImageName)
-				return NewLoaderImageName, nil
+				fmt.Printf("Downloaded image (%s) from github.\n", imageName)
+				return imageName, nil
 			}
 		}
 	}
 
-	return NewLoaderImageName, fmt.Errorf(
-		"The loader image: %s is not available in the given release (%s) in GitHub", NewLoaderImageName, r.ReleaseTag)
+	return imageName, fmt.Errorf(
+		"The image: %s is not available in the given release (%s) in GitHub", imageName, r.ReleaseTag)
+}
+
+func (r *Repo) downloadLoaderImageFromGithub(loaderImageName string, hypervisor string) (string, error) {
+	return r.downloadImageFromGithub(loaderImageName, hypervisor, hypervisor + "." + getArch())
 }
 
 // DownloadPackage downloads a package from the S3 repository into local.
@@ -188,7 +199,7 @@ func (r *Repo) getRemotePackageInfoInGithub(name string) (*RemotePackageDownload
 			if asset.Name == (name + ".yaml") {
 				info.manifestURL = asset.DownloadUrl
 			}
-			if asset.Name == (name + ".mpm") {
+			if asset.Name == (name + ".mpm") || asset.Name == (name + ".mpm.x86_64") {
 				info.fileURL = asset.DownloadUrl
 			}
 

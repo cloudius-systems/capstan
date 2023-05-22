@@ -26,9 +26,13 @@ import (
 )
 
 func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath string, appName string, commandLine string, verbose bool) error {
+	zfsBuilderPath, err := r.GetZfsBuilderImagePath()
+	if err != nil {
+		return err
+	}
 	// Initialize an empty image based on the provided loader image. imageSize is used to
 	// determine the size of the user partition.
-	err := r.InitializeZfsImage(loaderImage, appName, imageSize)
+	err = r.InitializeZfsImage(loaderImage, appName, imageSize)
 	if err != nil {
 		return err
 	}
@@ -42,7 +46,7 @@ func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath strin
 	}
 
 	// Upload the specified path onto virtual image.
-	if _, err = UploadPackageContents(r, imagePath, paths, nil, verbose); err != nil {
+	if _, err = UploadPackageContents(r, imagePath, paths, nil, verbose, zfsBuilderPath); err != nil {
 		return err
 	}
 
@@ -57,7 +61,7 @@ func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath strin
 	return nil
 }
 
-func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string]string, imageCache core.HashCache, verbose bool) (core.HashCache, error) {
+func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string]string, imageCache core.HashCache, verbose bool, zfsBuilderPath string) (core.HashCache, error) {
 
 	var osvCmdline string
 
@@ -74,6 +78,7 @@ func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string
 		// root
 		osvCmdline = "/tools/cpiod.so --prefix /"
 	}
+	osvCmdline = "--console=serial " + osvCmdline
 
 	// Specify the VM properties. Use the app image as the source to start.
 	vmconfig := &qemu.VMConfig{
@@ -86,6 +91,11 @@ func UploadPackageContents(r *util.Repo, appImage string, uploadPaths map[string
 		Cmd:         osvCmdline,
 		DisableKvm:  r.DisableKvm,
 		AioType:     r.QemuAioType,
+	}
+
+	if len(imageCache) == 0 {
+		vmconfig.KernelMode = true;
+		vmconfig.KernelPath = zfsBuilderPath;
 	}
 
 	// TODO Have to come up with a better error handling if necessary. Be more verbose on errors.

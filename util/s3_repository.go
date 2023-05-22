@@ -104,12 +104,8 @@ func IsRemoteImage(repo_url, name string) (bool, error) {
 }
 
 func (r *Repo) downloadLoaderImageFromS3(hypervisor string) (string, error) {
-	imageName := NewLoaderImageName
+	imageName := LoaderImageName
 	err := r.DownloadImage(hypervisor, imageName)
-	if err != nil {
-		imageName = OldLoaderImageName
-		err = r.DownloadImage(hypervisor, imageName)
-	}
 
 	if err == nil {
 		fmt.Printf("Downloaded loader image (%s) from S3.\n", imageName)
