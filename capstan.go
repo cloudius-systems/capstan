@@ -66,6 +66,7 @@ func main() {
 		{
 			Name:  "info",
 			Usage: "show disk image information",
+			ArgsUsage: "[image-file]",
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 1 {
 					return cli.NewExitError("usage: capstan info [image-file]", EX_USAGE)
@@ -80,6 +81,7 @@ func main() {
 		{
 			Name:  "import",
 			Usage: "import an image to the local repository",
+			ArgsUsage: "[image-name] [image-file]",
 			Flags: []cli.Flag{
 				&cli.StringFlag{Name: "v", Value: "", Usage: "image version"},
 				&cli.StringFlag{Name: "c", Value: "", Usage: "image creation date"},
@@ -101,6 +103,7 @@ func main() {
 		{
 			Name:  "pull",
 			Usage: "pull an image from a remote repository",
+			ArgsUsage: "[image-name]",
 			Flags: []cli.Flag{
 				&cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
 			},
@@ -123,6 +126,7 @@ func main() {
 		{
 			Name:  "rmi",
 			Usage: "delete an image from a repository",
+			ArgsUsage: "[image-name]",
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 1 {
 					return cli.NewExitError("usage: capstan rmi [image-name]", EX_USAGE)
@@ -138,7 +142,7 @@ func main() {
 		{
 			Name:      "run",
 			Usage:     "launch a VM. You may pass the image name as the first argument.",
-			ArgsUsage: "instance-name",
+			ArgsUsage: "[instance-name]",
 			Flags: []cli.Flag{
 				&cli.StringFlag{Name: "i", Value: "", Usage: "image_name"},
 				&cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce|hkit"},
@@ -204,6 +208,7 @@ func main() {
 		{
 			Name:  "build",
 			Usage: "build an image",
+			ArgsUsage: "[image-name]",
 			Flags: []cli.Flag{
 				&cli.StringFlag{Name: "p", Value: hypervisor.Default(), Usage: "hypervisor: qemu|vbox|vmw|gce"},
 				&cli.StringFlag{Name: "m", Value: "512M", Usage: "memory size"},
@@ -239,6 +244,7 @@ func main() {
 		{
 			Name:  "compose",
 			Usage: "compose the image from a folder or a file",
+			ArgsUsage: "[image-name] [path-to-upload]",
 			Flags: []cli.Flag{
 				&cli.StringFlag{Name: "loader_image", Aliases: []string{"l"}, Value: "osv-loader", Usage: "the base loader image"},
 				&cli.StringFlag{Name: "size", Aliases: []string{"s"}, Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
@@ -247,7 +253,7 @@ func main() {
 			},
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 2 {
-					return cli.NewExitError("Usage: capstan compose [image-name] [path-to-upload]", EX_USAGE)
+					return cli.NewExitError("Usage: capstan compose [image-name] [path-to-upload] (directory or file)", EX_USAGE)
 				}
 
 				// Name of the application (or image) that will be used in the internal repository.
@@ -314,6 +320,7 @@ func main() {
 		{
 			Name:  "stop",
 			Usage: "stop an instance",
+			ArgsUsage: "[instance-name]",
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 1 {
 					return cli.NewExitError("usage: capstan stop [instance_name]", EX_USAGE)
@@ -328,6 +335,7 @@ func main() {
 		{
 			Name:  "delete",
 			Usage: "delete an instance",
+			ArgsUsage: "[instance-name]",
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 1 {
 					return cli.NewExitError("usage: capstan delete [instance_name]", EX_USAGE)
@@ -425,7 +433,7 @@ func main() {
 				{
 					Name:      "compose",
 					Usage:     "composes the package and all its dependencies into OSv image",
-					ArgsUsage: "image-name",
+					ArgsUsage: "[image-name]",
 					Flags: []cli.Flag{
 						&cli.StringFlag{Name: "size", Aliases: []string{"s"}, Value: "10G", Usage: "total size of the target image (use M or G suffix)"},
 						&cli.BoolFlag{Name: "update", Usage: "updates the existing target VM by uploading only modified files"},
@@ -487,7 +495,7 @@ func main() {
 				{
 					Name:      "compose-remote",
 					Usage:     "composes the package and all its dependencies and uploads resulting files into remote OSv instance",
-					ArgsUsage: "remote-instance",
+					ArgsUsage: "[remote-instance]",
 					Flags: []cli.Flag{
 						&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "verbose mode"},
 						&cli.BoolFlag{Name: "pull-missing", Aliases: []string{"p"}, Usage: "attempt to pull packages missing from a local repository"},
