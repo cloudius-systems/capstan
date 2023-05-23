@@ -37,8 +37,8 @@ func (s *suite) TestGithubPackageInfoRemote(c *C) {
 }
 
 func (s *suite) TestGithubDownloadLoaderImage(c *C) {
-	s.repo.ReleaseTag = "v0.51.0"
-	loaderName, err := s.repo.DownloadLoaderImage("qemu")
+	s.repo.ReleaseTag = "v0.57.0"
+	loaderName, err := s.repo.DownloadLoaderImage("osv-loader", "qemu")
 	c.Assert(err, IsNil)
 	c.Check(loaderName, Equals, "osv-loader")
 }

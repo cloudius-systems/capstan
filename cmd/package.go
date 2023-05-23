@@ -202,7 +202,7 @@ func ComposePackage(repo *util.Repo, extraDependencies []string, imageSize int64
 		if !updatePackage || !imageExists {
 			zfsBuilderPath, err = repo.GetZfsBuilderImagePath()
 			if err != nil {
-				return fmt.Errorf("Failed to find ZFS builder path.\nError was: %s", appName, err)
+				return fmt.Errorf("Failed to find ZFS builder path.\nError was: %s", err)
 			}
 			// Initialize an empty image based on the provided loader image. imageSize is used to
 			// determine the size of the user partition. Use default loader image.
