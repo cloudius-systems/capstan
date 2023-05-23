@@ -250,6 +250,7 @@ func main() {
 				&cli.StringFlag{Name: "size", Aliases: []string{"s"}, Value: "10G", Usage: "size of the target user partition (use M or G suffix)"},
 				&cli.StringFlag{Name: "command_line", Aliases: []string{"c"}, Usage: "command line OSv will boot with"},
 				&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "verbose mode"},
+				&cli.StringFlag{Name: "fs", Usage: "specify type of filesystem: zfs or rofs"},
 			},
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 2 {
@@ -274,7 +275,12 @@ func main() {
 					return cli.NewExitError(fmt.Sprintf("Incorrect image size format: %s\n", err), EX_DATAERR)
 				}
 
-				if err := cmd.Compose(repo, loaderImage, imageSize, uploadPath, appName, commandLine, verbose); err != nil {
+				filesystem := c.String("fs")
+				if filesystem == "" || (filesystem != "zfs" && filesystem != "rofs") {
+					filesystem = "zfs"
+				}
+
+				if err := cmd.Compose(repo, loaderImage, imageSize, filesystem, uploadPath, appName, commandLine, verbose); err != nil {
 					return cli.NewExitError(err.Error(), EX_DATAERR)
 				}
 				return nil

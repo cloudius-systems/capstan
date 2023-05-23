@@ -21,18 +21,14 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
 
-func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath string, appName string, commandLine string, verbose bool) error {
-	zfsBuilderPath, err := r.GetZfsBuilderImagePath()
-	if err != nil {
-		return err
-	}
-	// Initialize an empty image based on the provided loader image. imageSize is used to
-	// determine the size of the user partition.
-	err = r.InitializeZfsImage(loaderImage, appName, imageSize)
+func Compose(r *util.Repo, loaderImage string, imageSize int64, filesystem string, uploadPath string, appName string, commandLine string, verbose bool) error {
+	// If all is well, we have to start preparing the files for upload.
+	paths, err := CollectPathContents(uploadPath)
 	if err != nil {
 		return err
 	}
@@ -40,14 +36,38 @@ func Compose(r *util.Repo, loaderImage string, imageSize int64, uploadPath strin
 	// Get the path of imported image.
 	imagePath := r.ImagePath("qemu", appName)
 
-	paths, err := CollectPathContents(uploadPath)
-	if err != nil {
-		return err
-	}
+	if filesystem == "zfs" {
+		// Create ZFS
+		zfsBuilderPath, err := r.GetZfsBuilderImagePath()
+		if err != nil {
+			return err
+		}
+		// Initialize an empty image based on the provided loader image. imageSize is used to
+		// determine the size of the user partition.
+		err = r.InitializeZfsImage(loaderImage, appName, imageSize)
+		if err != nil {
+			return err
+		}
 
-	// Upload the specified path onto virtual image.
-	if _, err = UploadPackageContents(r, imagePath, paths, nil, verbose, zfsBuilderPath); err != nil {
-		return err
+		// Upload the specified path onto virtual image.
+		if _, err = UploadPackageContents(r, imagePath, paths, nil, verbose, zfsBuilderPath); err != nil {
+			return err
+		}
+	} else {
+		// Create ROFS
+		// Create temporary folder in which the image will be composed.
+		tmp, _ := ioutil.TempDir("", "capstan")
+		// Once this function is finished, remove temporary file.
+		defer os.RemoveAll(tmp)
+		rofs_image_path := path.Join(tmp, "rofs.img")
+
+		if err := util.WriteRofsImage(rofs_image_path, paths, uploadPath, verbose); err != nil {
+			return fmt.Errorf("Failed to write ROFS image named %s.\nError was: %s", rofs_image_path, err)
+		}
+
+		if err = r.CreateRofsImage(loaderImage, appName, rofs_image_path); err != nil {
+			return fmt.Errorf("Failed to create ROFS image named %s.\nError was: %s", appName, err)
+		}
 	}
 
 	if commandLine != "" {
